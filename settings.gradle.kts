@@ -1,1 +1,1 @@
-rootProject.name = "sparkel-sykepengeperioder"
+rootProject.name = "spokelse"

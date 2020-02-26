@@ -1,7 +1,7 @@
 apiVersion: nais.io/v1alpha1
 kind: Application
 metadata:
-  name: sparkel-sykepengeperioder
+  name: spokelse
   namespace: default
   labels:
     team: {{team}}
@@ -35,16 +35,16 @@ spec:
     enabled: true
     paths:
       - mountPath: /var/run/secrets/nais.io/vault
-        kvPath: /kv/prod/fss/sparkel-sykepengeperioder/default
+        kvPath: /kv/prod/fss/spokelse/default
       - mountPath: /var/run/secrets/nais.io/azure
-        kvPath: /azuread/data/prod/creds/sparkel-sykepengeperioder
+        kvPath: /azuread/data/prod/creds/spokelse
       - mountPath: /var/run/secrets/nais.io/service_user
-        kvPath: /serviceuser/data/prod/srvsparkelsykepeng
+        kvPath: /serviceuser/data/prod/srvspokelse
   env:
   - name: KAFKA_BOOTSTRAP_SERVERS
     value: a01apvl00145.adeo.no:8443,a01apvl00146.adeo.no:8443,a01apvl00147.adeo.no:8443,a01apvl00148.adeo.no:8443,a01apvl00149.adeo.no:8443,a01apvl00150.adeo.no:8443
   - name: KAFKA_CONSUMER_GROUP_ID
-    value: sparkel-sykepengeperioder-v1
+    value: spokelse-v1
   - name: KAFKA_RAPID_TOPIC
     value: helse-rapid-v1
   - name: AZURE_TENANT_ID
