@@ -1,0 +1,52 @@
+name: master
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-java@v1
+      with:
+        java-version: '12.x'
+    - name: create docker tag
+      env:
+        DOCKER_IMAGE: docker.pkg.github.com/${{ github.repository }}/sparkel-sykepengeperioder
+      run: |
+        echo $DOCKER_IMAGE > .docker_image
+        echo $(echo $GITHUB_SHA | cut -c1-7) > .docker_tag
+    - name: test and build
+      run: ./gradlew test build
+      env:
+        ORG_GRADLE_PROJECT_githubUser: x-access-token
+        ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
+    - name: build docker image
+      run: docker build . --pull -t $(cat .docker_image):$(cat .docker_tag)
+    - name: push docker image
+      run: |
+        echo "$GITHUB_TOKEN" | docker login --username "$GITHUB_REPOSITORY" --password-stdin https://docker.pkg.github.com
+        docker push $(cat .docker_image):$(cat .docker_tag)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: deploy to dev
+      uses: navikt/deployment-cli/action@0.4.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        AWAIT_SECONDS: 0
+      with:
+        cluster: dev-fss
+        team: tbd
+        resources: deploy/preprod.yaml
+    - name: deploy to prod
+      uses: navikt/deployment-cli/action@0.4.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        AWAIT_SECONDS: 0
+      with:
+        cluster: prod-fss
+        team: tbd
+        resources: deploy/prod.yaml

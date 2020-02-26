@@ -1,0 +1,1780 @@
+{
+    "sykmeldingsperioder": [
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2019-06-03",
+        "sykemeldtTom": "2019-08-05",
+        "grad": "100",
+        "erArbeidsgiverPeriode": false,
+        "stansAarsakKode": "",
+        "stansAarsak": "Ukjent..",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "PIKACHU",
+        "behandlet": "2019-06-03",
+        "yrkesskadeArt": "",
+        "utbetalingList": [],
+        "inntektList": [],
+        "graderingList": [
+        {
+            "gradertFom": "2019-06-03",
+            "gradertTom": "2019-06-28",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2019-06-03",
+            "gradertTom": "2019-08-05",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2018-12-03",
+        "sykemeldtTom": "2019-04-11",
+        "grad": "050",
+        "slutt": "2019-11-08",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "opphoerFom": "2019-04-12",
+        "sykemelder": "CHARMANDER",
+        "behandlet": "2018-12-03",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2019-03-18",
+            "tom": "2019-04-11",
+            "utbetalingsGrad": "050",
+            "oppgjorsType": "",
+            "utbetalt": "2019-05-07",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": null,
+            "tom": "2019-03-17",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": "2019-04-01",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2019-03-04",
+            "tom": null,
+            "utbetalingsGrad": "050",
+            "oppgjorsType": "",
+            "utbetalt": "2019-03-20",
+            "dagsats": 765.0,
+            "typeKode": "7",
+            "typeTekst": "Tilbakeført",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2019-03-04",
+            "tom": "2019-03-06",
+            "utbetalingsGrad": "050",
+            "oppgjorsType": "",
+            "utbetalt": "2019-03-20",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2019-02-21",
+            "tom": "2019-03-03",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": "2019-03-20",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2019-02-18",
+            "tom": "2019-03-17",
+            "utbetalingsGrad": "050",
+            "oppgjorsType": "",
+            "utbetalt": "2019-03-04",
+            "dagsats": 765.0,
+            "typeKode": "7",
+            "typeTekst": "Tilbakeført",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2019-02-18",
+            "tom": "2019-02-20",
+            "utbetalingsGrad": "050",
+            "oppgjorsType": "",
+            "utbetalt": "2019-03-04",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2019-02-04",
+            "tom": "2019-02-17",
+            "utbetalingsGrad": "050",
+            "oppgjorsType": "",
+            "utbetalt": "2019-02-15",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2019-01-19",
+            "tom": "2019-02-03",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": "2019-02-15",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2018-12-20",
+            "tom": "2019-01-18",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": "2019-01-22",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2018-12-10",
+            "tom": "2018-12-19",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": "2018-12-21",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2018-12-03",
+            "tom": "2018-12-19",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": null,
+            "dagsats": 765.0,
+            "typeKode": "",
+            "typeTekst": "Ukjent..",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2018-12-10",
+            "refusjonTom": null,
+            "refusjonsType": "J",
+            "periodeKode": "U",
+            "periode": "Ukentlig",
+            "loenn": 12788.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2019-03-18",
+            "gradertTom": "2019-04-11",
+            "grad": "050"
+        },
+        {
+            "gradertFom": "2019-03-04",
+            "gradertTom": "2019-03-17",
+            "grad": "050"
+        },
+        {
+            "gradertFom": "2019-02-21",
+            "gradertTom": "2019-03-03",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2019-02-18",
+            "gradertTom": "2019-03-17",
+            "grad": "050"
+        },
+        {
+            "gradertFom": "2019-01-19",
+            "gradertTom": "2019-02-03",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2019-01-19",
+            "gradertTom": "2019-02-17",
+            "grad": "050"
+        },
+        {
+            "gradertFom": "2018-12-20",
+            "gradertTom": "2019-01-18",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2018-12-03",
+            "gradertTom": "2018-12-19",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2018-12-03",
+            "gradertTom": "2019-03-17",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2018-12-03",
+            "gradertTom": "2019-04-11",
+            "grad": "050"
+        },
+        {
+            "gradertFom": "2018-12-03",
+            "gradertTom": "2019-02-20",
+            "grad": "050"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2018-11-09",
+        "sykemeldtTom": "2018-11-18",
+        "grad": "100",
+        "erArbeidsgiverPeriode": false,
+        "stansAarsakKode": "",
+        "stansAarsak": "Ukjent..",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "RAICHU",
+        "behandlet": "2018-11-09",
+        "yrkesskadeArt": "",
+        "utbetalingList": [],
+        "inntektList": [],
+        "graderingList": [
+        {
+            "gradertFom": "2018-11-09",
+            "gradertTom": "2018-11-18",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2018-09-13",
+        "sykemeldtTom": "2018-10-07",
+        "grad": "100",
+        "slutt": "2019-09-06",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "opphoerFom": "2018-10-08",
+        "sykemelder": "VENASAUR",
+        "behandlet": "2018-09-12",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2018-09-26",
+            "tom": "2018-10-07",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": "2018-10-09",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 98888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "98888888",
+            "sykepengerFom": "2018-09-26",
+            "refusjonTom": null,
+            "refusjonsType": "J",
+            "periodeKode": "U",
+            "periode": "Ukentlig",
+            "loenn": 11200.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2018-09-22",
+            "gradertTom": "2018-09-30",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2018-09-13",
+            "gradertTom": "2018-09-21",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2018-09-13",
+            "gradertTom": "2018-10-07",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2018-08-28",
+        "sykemeldtTom": "2018-08-29",
+        "grad": "100",
+        "erArbeidsgiverPeriode": false,
+        "stansAarsakKode": "",
+        "stansAarsak": "Ukjent..",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "GEODUDE",
+        "behandlet": "2018-08-26",
+        "yrkesskadeArt": "",
+        "utbetalingList": [],
+        "inntektList": [],
+        "graderingList": [
+        {
+            "gradertFom": "2018-08-28",
+            "gradertTom": "2018-08-29",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2018-03-26",
+        "sykemeldtTom": "2018-03-27",
+        "grad": "100",
+        "slutt": "2019-02-22",
+        "erArbeidsgiverPeriode": false,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "opphoerFom": "2018-03-28",
+        "sykemelder": "RATATA",
+        "behandlet": "2018-03-26",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2018-03-26",
+            "tom": "2018-03-27",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": null,
+            "dagsats": 765.0,
+            "typeKode": "",
+            "typeTekst": "Ukjent..",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2018-03-26",
+            "tom": "2018-03-27",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": "2018-05-04",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2018-03-26",
+            "refusjonTom": null,
+            "refusjonsType": "J",
+            "periodeKode": "U",
+            "periode": "Ukentlig",
+            "loenn": 10581.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2018-03-26",
+            "gradertTom": "2018-03-27",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2018-03-06",
+        "sykemeldtTom": "2018-03-21",
+        "grad": "100",
+        "slutt": "2019-02-20",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "opphoerFom": "2018-03-22",
+        "sykemelder": "VENASAUR",
+        "behandlet": "2018-03-06",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2018-03-19",
+            "tom": "2018-03-21",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": "2018-05-03",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2018-03-12",
+            "tom": "2018-03-18",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": null,
+            "dagsats": 765.0,
+            "typeKode": "",
+            "typeTekst": "Ukjent..",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2018-03-12",
+            "tom": "2018-03-18",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": "2018-04-06",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2018-03-12",
+            "refusjonTom": null,
+            "refusjonsType": "J",
+            "periodeKode": "U",
+            "periode": "Ukentlig",
+            "loenn": 10581.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2018-03-12",
+            "gradertTom": "2018-03-18",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2018-03-06",
+            "gradertTom": "2018-03-11",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2018-03-06",
+            "gradertTom": "2018-03-21",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2018-02-12",
+        "sykemeldtTom": "2018-02-21",
+        "grad": "100",
+        "erArbeidsgiverPeriode": false,
+        "stansAarsakKode": "",
+        "stansAarsak": "Ukjent..",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "RATATA",
+        "behandlet": "2018-02-20",
+        "yrkesskadeArt": "",
+        "utbetalingList": [],
+        "inntektList": [],
+        "graderingList": [
+        {
+            "gradertFom": "2018-02-12",
+            "gradertTom": "2018-02-19",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2018-02-12",
+            "gradertTom": "2018-02-21",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1111",
+        "seq": 23456789,
+        "sykemeldtFom": "2017-02-26",
+        "sykemeldtTom": "2017-03-03",
+        "grad": "100",
+        "erArbeidsgiverPeriode": false,
+        "stansAarsakKode": "",
+        "stansAarsak": "Ukjent..",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "VENASAUR",
+        "behandlet": "2017-02-26",
+        "yrkesskadeArt": "",
+        "utbetalingList": [],
+        "inntektList": [],
+        "graderingList": [
+        {
+            "gradertFom": "2017-02-26",
+            "gradertTom": "2017-03-03",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "0602",
+        "seq": 23456789,
+        "sykemeldtFom": "2016-09-17",
+        "sykemeldtTom": "2016-09-26",
+        "grad": "100",
+        "erArbeidsgiverPeriode": false,
+        "stansAarsakKode": "",
+        "stansAarsak": "Ukjent..",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "SQUIRTLE",
+        "behandlet": "2016-09-17",
+        "yrkesskadeArt": "",
+        "utbetalingList": [],
+        "inntektList": [],
+        "graderingList": [
+        {
+            "gradertFom": "2016-09-17",
+            "gradertTom": "2016-09-26",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2012-12-27",
+        "sykemeldtTom": "2013-01-27",
+        "grad": "100",
+        "slutt": "2013-12-23",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "VENASAUR",
+        "behandlet": "2012-12-27",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2013-01-10",
+            "tom": "2013-01-27",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "81",
+            "utbetalt": "2013-01-31",
+            "dagsats": 765.0,
+            "typeKode": "0",
+            "typeTekst": "Utbetaling",
+            "arbOrgnr": 89888888
+        },
+        {
+            "fom": "2013-01-02",
+            "tom": "2013-01-20",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": null,
+            "dagsats": 765.0,
+            "typeKode": "",
+            "typeTekst": "Ukjent..",
+            "arbOrgnr": 89888888
+        },
+        {
+            "fom": "2013-01-02",
+            "tom": "2013-01-27",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "",
+            "utbetalt": null,
+            "dagsats": 765.0,
+            "typeKode": "",
+            "typeTekst": "Ukjent..",
+            "arbOrgnr": 89888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "89888888",
+            "sykepengerFom": "2013-01-10",
+            "refusjonTom": null,
+            "refusjonsType": " ",
+            "periodeKode": "U",
+            "periode": "Ukentlig",
+            "loenn": 7400.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2013-01-21",
+            "gradertTom": "2013-01-22",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2013-01-12",
+            "gradertTom": "2013-01-20",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2013-01-02",
+            "gradertTom": "2013-01-08",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2013-01-02",
+            "gradertTom": "2013-01-11",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2012-12-27",
+            "gradertTom": "2013-01-01",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2012-12-27",
+            "gradertTom": "2013-01-27",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2009-08-14",
+        "sykemeldtTom": "2010-08-11",
+        "grad": "100",
+        "slutt": "2010-08-11",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "MAX",
+        "stansAarsak": "MaxUtbetaling",
+        "unntakAktivitet": "M",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "RATATA",
+        "behandlet": "2009-08-14",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2010-04-16",
+            "tom": "2010-08-11",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2010-11-10",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2010-03-01",
+            "tom": "2010-04-15",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2010-06-25",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2010-02-11",
+            "tom": "2010-02-28",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2010-02-19",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-12-14",
+            "tom": "2010-01-31",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "61",
+            "utbetalt": null,
+            "dagsats": 765.0,
+            "typeKode": "",
+            "typeTekst": "Ukjent..",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-12-14",
+            "tom": "2010-02-10",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2010-02-19",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-11-19",
+            "tom": "2009-12-13",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2009-12-17",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-11-09",
+            "tom": "2009-11-18",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2009-12-17",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-10-07",
+            "tom": "2009-11-08",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2009-12-17",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-09-21",
+            "tom": "2009-10-06",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2009-12-17",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-09-14",
+            "tom": "2009-09-20",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2009-12-17",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-08-31",
+            "tom": "2009-09-13",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2009-11-20",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2009-08-31",
+            "refusjonTom": null,
+            "refusjonsType": "J",
+            "periodeKode": "U",
+            "periode": "Ukentlig",
+            "loenn": 6994.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2010-03-01",
+            "gradertTom": "2010-04-15",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2009-12-14",
+            "gradertTom": "2010-02-28",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2009-11-09",
+            "gradertTom": "2009-12-13",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2009-10-07",
+            "gradertTom": "2009-11-08",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2009-09-21",
+            "gradertTom": "2009-10-06",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2009-09-14",
+            "gradertTom": "2009-09-20",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2009-08-31",
+            "gradertTom": "2009-09-13",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2009-08-22",
+            "gradertTom": "2009-08-30",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2009-08-14",
+            "gradertTom": "2009-08-21",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2009-08-14",
+            "gradertTom": "2010-08-11",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2009-01-23",
+        "sykemeldtTom": "2009-04-05",
+        "grad": "100",
+        "slutt": "2010-01-15",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "M",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "RATATA",
+        "behandlet": "2009-01-23",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2009-03-20",
+            "tom": "2009-03-19",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "61",
+            "utbetalt": null,
+            "dagsats": 765.0,
+            "typeKode": "",
+            "typeTekst": "Ukjent..",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-03-20",
+            "tom": "2009-04-05",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "61",
+            "utbetalt": null,
+            "dagsats": 765.0,
+            "typeKode": "",
+            "typeTekst": "Ukjent..",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-03-20",
+            "tom": "2009-04-05",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "50",
+            "utbetalt": "2010-04-16",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2009-02-04",
+            "tom": "2009-03-19",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "50",
+            "utbetalt": "2010-04-16",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2009-02-04",
+            "refusjonTom": null,
+            "refusjonsType": "J",
+            "periodeKode": "U",
+            "periode": "Ukentlig",
+            "loenn": 6546.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2009-01-23",
+            "gradertTom": "2009-04-05",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2007-09-03",
+        "sykemeldtTom": "2008-01-31",
+        "grad": "100",
+        "slutt": "2008-08-25",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "M",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "RATATA",
+        "behandlet": "2007-09-03",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2007-10-30",
+            "tom": "2008-01-31",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "50",
+            "utbetalt": "2008-03-10",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2007-10-29",
+            "tom": "2007-10-29",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2007-12-12",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2007-09-13",
+            "tom": "2007-10-27",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2007-11-22",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2007-09-13",
+            "refusjonTom": null,
+            "refusjonsType": "J",
+            "periodeKode": "M",
+            "periode": "Månedlig",
+            "loenn": 25667.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2007-10-30",
+            "gradertTom": "2008-01-04",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2007-10-01",
+            "gradertTom": "2007-10-29",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2007-09-03",
+            "gradertTom": "2008-01-31",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2007-09-03",
+            "gradertTom": "2007-09-30",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2006-11-20",
+        "sykemeldtTom": "2007-02-11",
+        "grad": "060",
+        "slutt": "2007-02-28",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "ONYX",
+        "behandlet": "2006-11-20",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2007-02-01",
+            "tom": "2007-02-11",
+            "utbetalingsGrad": "060",
+            "oppgjorsType": "51",
+            "utbetalt": "2007-02-22",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2007-02-01",
+            "tom": "2007-02-11",
+            "utbetalingsGrad": "060",
+            "oppgjorsType": "50",
+            "utbetalt": "2007-03-27",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2007-01-08",
+            "tom": "2007-01-31",
+            "utbetalingsGrad": "060",
+            "oppgjorsType": "51",
+            "utbetalt": "2007-01-31",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2007-01-08",
+            "tom": "2007-01-31",
+            "utbetalingsGrad": "060",
+            "oppgjorsType": "50",
+            "utbetalt": "2007-03-27",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-12-12",
+            "tom": "2007-01-05",
+            "utbetalingsGrad": "060",
+            "oppgjorsType": "51",
+            "utbetalt": "2007-01-23",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-12-12",
+            "tom": "2007-01-05",
+            "utbetalingsGrad": "060",
+            "oppgjorsType": "50",
+            "utbetalt": "2007-03-27",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-12-06",
+            "tom": "2006-12-11",
+            "utbetalingsGrad": "050",
+            "oppgjorsType": "51",
+            "utbetalt": "2007-01-23",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-12-06",
+            "tom": "2006-12-11",
+            "utbetalingsGrad": "050",
+            "oppgjorsType": "50",
+            "utbetalt": "2007-03-27",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2006-12-06",
+            "refusjonTom": null,
+            "refusjonsType": "J",
+            "periodeKode": "M",
+            "periode": "Månedlig",
+            "loenn": 24416.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2006-12-12",
+            "gradertTom": "2007-01-05",
+            "grad": "060"
+        },
+        {
+            "gradertFom": "2006-11-20",
+            "gradertTom": "2006-12-11",
+            "grad": "050"
+        },
+        {
+            "gradertFom": "2006-11-20",
+            "gradertTom": "2007-02-11",
+            "grad": "060"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2005-10-26",
+        "sykemeldtTom": "2006-07-31",
+        "grad": "100",
+        "slutt": "2006-10-24",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "M",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "ONYX",
+        "behandlet": "2005-11-01",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2006-07-03",
+            "tom": "2006-07-31",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-07-25",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-06-05",
+            "tom": "2006-06-30",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-06-30",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-06-01",
+            "tom": "2006-06-04",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-06-26",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-05-08",
+            "tom": "2006-05-31",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-05-24",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-04-10",
+            "tom": "2006-05-07",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-05-24",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-04-03",
+            "tom": "2006-04-07",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-04-25",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-03-07",
+            "tom": "2006-03-31",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-03-24",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-02-08",
+            "tom": "2006-03-06",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-03-24",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-02-01",
+            "tom": "2006-02-07",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-02-22",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-01-09",
+            "tom": "2006-01-31",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-01-25",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2006-01-02",
+            "tom": "2006-01-06",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2006-01-25",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2005-11-11",
+            "tom": "2005-12-31",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2005-12-12",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+                "sykepengerFom": "2005-11-11",
+            "refusjonTom": null,
+            "refusjonsType": "J",
+            "periodeKode": "M",
+            "periode": "Månedlig",
+            "loenn": 11079.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2006-06-05",
+            "gradertTom": "2006-06-30",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2006-05-08",
+            "gradertTom": "2006-06-04",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2006-04-08",
+            "gradertTom": "2006-05-07",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2006-03-07",
+            "gradertTom": "2006-04-07",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2006-02-08",
+            "gradertTom": "2006-03-06",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2006-01-07",
+            "gradertTom": "2006-02-07",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2005-11-12",
+            "gradertTom": "2006-01-06",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2005-10-26",
+            "gradertTom": "2005-11-11",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2005-10-26",
+            "gradertTom": "2006-07-31",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2003-02-24",
+        "sykemeldtTom": "2003-09-10",
+        "grad": "100",
+        "slutt": "2004-02-20",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "ZUBAT",
+        "behandlet": "2003-02-24",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2003-08-11",
+            "tom": "2003-09-10",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "21",
+            "utbetalt": "2003-09-30",
+            "dagsats": 765.0,
+            "typeKode": "0",
+            "typeTekst": "Utbetaling",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2003-08-01",
+            "tom": "2003-08-10",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2003-08-25",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2003-05-15",
+            "tom": "2003-07-31",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2003-07-31",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2003-05-05",
+            "tom": "2003-05-14",
+            "utbetalingsGrad": "020",
+            "oppgjorsType": "51",
+            "utbetalt": "2003-07-31",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2003-05-01",
+            "tom": "2003-05-04",
+            "utbetalingsGrad": "040",
+            "oppgjorsType": "51",
+            "utbetalt": "2003-05-23",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2003-03-17",
+            "tom": "2003-04-30",
+            "utbetalingsGrad": "040",
+            "oppgjorsType": "51",
+            "utbetalt": "2003-04-25",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        },
+        {
+            "fom": "2003-03-12",
+            "tom": "2003-03-16",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "51",
+            "utbetalt": "2003-04-25",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2003-03-12",
+            "refusjonTom": "2003-08-07",
+            "refusjonsType": "J",
+            "periodeKode": "U",
+            "periode": "Ukentlig",
+            "loenn": 5112.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2003-09-11",
+            "gradertTom": "2003-09-28",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2003-08-11",
+            "gradertTom": "2003-09-10",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2003-06-30",
+            "gradertTom": "2003-08-10",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2003-06-16",
+            "gradertTom": "2003-06-29",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2003-05-15",
+            "gradertTom": "2003-06-15",
+            "grad": "100"
+        },
+        {
+            "gradertFom": "2003-02-24",
+            "gradertTom": "2003-05-14",
+            "grad": "020"
+        },
+        {
+            "gradertFom": "2003-02-24",
+            "gradertTom": "2003-09-10",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2000-04-03",
+        "sykemeldtTom": "2000-04-23",
+        "grad": "100",
+        "slutt": "2001-03-30",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "NØDNUMMER",
+        "behandlet": "2000-04-05",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2000-04-19",
+            "tom": "2000-04-23",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "50",
+            "utbetalt": "2000-05-16",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2000-04-19",
+            "refusjonTom": "2000-04-30",
+            "refusjonsType": "H",
+            "periodeKode": "U",
+            "periode": "Ukentlig",
+            "loenn": 4350.5
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2000-04-03",
+            "gradertTom": "2000-04-23",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2000-04-03",
+        "sykemeldtTom": "2000-04-23",
+        "grad": "100",
+        "slutt": "2001-03-30",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "NØDNUMMER",
+        "behandlet": "2000-04-05",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2000-04-19",
+            "tom": "2000-04-23",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "50",
+            "utbetalt": "2000-05-16",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2000-04-19",
+            "refusjonTom": "2000-04-30",
+            "refusjonsType": "H",
+            "periodeKode": "X",
+            "periode": "Inntekt fastsatt etter 25% avvik",
+            "loenn": 435000.0
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2000-04-03",
+            "gradertTom": "2000-04-23",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    },
+    {
+        "ident": 1234,
+        "tknr": "1234",
+        "seq": 23456789,
+        "sykemeldtFom": "2000-04-03",
+        "sykemeldtTom": "2000-04-23",
+        "grad": "100",
+        "slutt": "2001-03-30",
+        "erArbeidsgiverPeriode": true,
+        "stansAarsakKode": "AF",
+        "stansAarsak": "AvsluttetFrisk",
+        "unntakAktivitet": "",
+        "arbeidsKategoriKode": "01",
+        "arbeidsKategori": "Arbeidstaker",
+        "arbeidsKategori99": "",
+        "erSanksjonBekreftet": "",
+        "sanksjonsDager": 0,
+        "sykemelder": "NØDNUMMER",
+        "behandlet": "2000-04-05",
+        "yrkesskadeArt": "",
+        "utbetalingList": [
+        {
+            "fom": "2000-04-19",
+            "tom": "2000-04-23",
+            "utbetalingsGrad": "100",
+            "oppgjorsType": "50",
+            "utbetalt": "2000-05-16",
+            "dagsats": 765.0,
+            "typeKode": "5",
+            "typeTekst": "ArbRef",
+            "arbOrgnr": 88888888
+        }
+        ],
+        "inntektList": [
+        {
+            "orgNr": "88888888",
+            "sykepengerFom": "2000-04-19",
+            "refusjonTom": "2000-04-30",
+            "refusjonsType": "H",
+            "periodeKode": "Y",
+            "periode": "Premiegrunnlag oppdragstaker (gjelder de 2 første ukene)",
+            "loenn": 4350.5
+        }
+        ],
+        "graderingList": [
+        {
+            "gradertFom": "2000-04-03",
+            "gradertTom": "2000-04-23",
+            "grad": "100"
+        }
+        ],
+        "forsikring": []
+    }
+    ]
+}

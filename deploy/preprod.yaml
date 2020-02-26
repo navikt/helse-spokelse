@@ -1,0 +1,58 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: sparkel-sykepengeperioder
+  namespace: default
+  labels:
+    team: {{team}}
+spec:
+  image: {{image}}:{{tag}}
+  port: 8080
+  liveness:
+    path: isalive
+    initialDelay: 5
+  readiness:
+    path: isready
+    initialDelay: 5
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  replicas:
+    min: 1
+    max: 1
+    cpuThresholdPercentage: 90
+  prometheus:
+    enabled: true
+    path: /metrics
+  webproxy: true
+  secureLogs:
+    enabled: true
+  vault:
+    enabled: true
+    paths:
+      - mountPath: /var/run/secrets/nais.io/vault
+        kvPath: /kv/preprod/fss/sparkel-sykepengeperioder/default
+      - mountPath: /var/run/secrets/nais.io/azure
+        kvPath: /azuread/data/dev/creds/sparkel-sykepengeperioder
+      - mountPath: /var/run/secrets/nais.io/service_user
+        kvPath: /serviceuser/data/dev/srvsparkelsykepeng
+  env:
+  - name: KAFKA_BOOTSTRAP_SERVERS
+    value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
+  - name: KAFKA_CONSUMER_GROUP_ID
+    value: sparkel-sykepengeperioder-v1
+  - name: KAFKA_RAPID_TOPIC
+    value: helse-rapid-v1
+  - name: AZURE_TENANT_ID
+    value: 966ac572-f5b7-4bbe-aa88-c76419c0f851
+  - name: AZURE_TENANT_BASEURL
+    value: https://login.microsoftonline.com
+  - name: INFOTRYGD_SCOPE
+    value: api://df41895c-b7f3-4b8c-b333-8801710093ad/.default
+  - name: INFOTRYGD_URL
+    value: http://infotrygd-sykepenger.default.svc.nais.local
+
