@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: test output
-        run: echo ${{jobs.build.steps.create_image_tag.output.imagetest}}
+        run: echo ${{steps.create_image_tag.output.imagetest}}
       - name: Create image tag
         run: echo ::set-env name=IMAGE::docker.pkg.github.com/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)
       - uses: actions/checkout@v1
