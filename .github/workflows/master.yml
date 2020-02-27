@@ -35,28 +35,15 @@ jobs:
         docker push $(cat .docker_image):$(cat .docker_tag)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: deploy to dev
-      uses: navikt/deployment-cli/action@0.4.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        AWAIT_SECONDS: 0
-      with:
-        cluster: dev-fss
-        team: tbd
-        resources: deploy/preprod.yaml
-    - name: deploy to prod
-      uses: navikt/deployment-cli/action@0.4.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        AWAIT_SECONDS: 0
-      with:
-        cluster: prod-fss
-        team: tbd
-        resources: deploy/prod.yaml
-    - name: Ny deploy to NAIS
-      uses: actions/checkout@v1
-      uses: nais/deploy/actions/deploy@v1
-      env:
-        APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-        CLUSTER: dev-fss
-        RESOURCE: deploy/dev-fss.yml
+
+
+  deploy:
+    name: Deploy to dev
+    needs: build
+    steps:
+      - uses: actions/checkout@v1
+      - uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: dev-fss
+          RESOURCE: deploy/dev-fss.yml
