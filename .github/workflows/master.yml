@@ -21,11 +21,11 @@ jobs:
         ORG_GRADLE_PROJECT_githubUser: x-access-token
         ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
     - name: build docker image
-      run: docker build . --pull -t ${IMAGE}
+      run: docker build . --pull -t ${{ IMAGE }}
     - name: push docker image
       run: |
         docker login --username "$GITHUB_REPOSITORY" -p ${{ secrets.GITHUB_TOKEN }} https://docker.pkg.github.com
-        docker push ${IMAGE}
+        docker push ${{ IMAGE }}
 
   deploy:
     name: Deploy to dev
