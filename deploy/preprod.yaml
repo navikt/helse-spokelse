@@ -36,8 +36,6 @@ spec:
     paths:
       - mountPath: /var/run/secrets/nais.io/vault
         kvPath: /kv/preprod/fss/spokelse/default
-      - mountPath: /var/run/secrets/nais.io/azure
-        kvPath: /azuread/data/dev/creds/spokelse
       - mountPath: /var/run/secrets/nais.io/service_user
         kvPath: /serviceuser/data/dev/srvspokelse
   env:
@@ -47,12 +45,4 @@ spec:
     value: spokelse-v1
   - name: KAFKA_RAPID_TOPIC
     value: helse-rapid-v1
-  - name: AZURE_TENANT_ID
-    value: 966ac572-f5b7-4bbe-aa88-c76419c0f851
-  - name: AZURE_TENANT_BASEURL
-    value: https://login.microsoftonline.com
-  - name: INFOTRYGD_SCOPE
-    value: api://df41895c-b7f3-4b8c-b333-8801710093ad/.default
-  - name: INFOTRYGD_URL
-    value: http://infotrygd-sykepenger.default.svc.nais.local
 
