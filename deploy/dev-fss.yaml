@@ -1,0 +1,48 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: spokelse
+  namespace: default
+  labels:
+    team: tbd
+spec:
+  image: {{image}}
+  port: 8080
+  liveness:
+    path: isalive
+    initialDelay: 5
+  readiness:
+    path: isready
+    initialDelay: 5
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  replicas:
+    min: 1
+    max: 1
+    cpuThresholdPercentage: 90
+  prometheus:
+    enabled: true
+    path: /metrics
+  webproxy: true
+  secureLogs:
+    enabled: true
+  vault:
+    enabled: true
+    paths:
+      - mountPath: /var/run/secrets/nais.io/vault
+        kvPath: /kv/preprod/fss/spokelse/default
+      - mountPath: /var/run/secrets/nais.io/service_user
+        kvPath: /serviceuser/data/dev/srvspokelse
+  env:
+  - name: KAFKA_BOOTSTRAP_SERVERS
+    value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
+  - name: KAFKA_CONSUMER_GROUP_ID
+    value: spokelse-v1
+  - name: KAFKA_RAPID_TOPIC
+    value: helse-rapid-v1
+

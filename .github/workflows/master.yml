@@ -5,6 +5,9 @@ on:
     branches:
     - master
 
+env:
+  IMAGE: docker.pkg.github.com/${{ github.repository }}/myapplication:${{ github.sha }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -50,3 +53,10 @@ jobs:
         cluster: prod-fss
         team: tbd
         resources: deploy/prod.yaml
+    - name: Ny deploy to NAIS
+      uses: actions/checkout@v1
+      uses: nais/deploy/actions/deploy@v1
+      env:
+        APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+        CLUSTER: dev-fss
+        RESOURCE: deploy/dev-fss.yml
