@@ -4,9 +4,9 @@ metadata:
   name: spokelse
   namespace: default
   labels:
-    team: {{team}}
+    team: tbd
 spec:
-  image: {{image}}:{{tag}}
+  image: {{image}}
   port: 8080
   liveness:
     path: isalive
@@ -36,8 +36,6 @@ spec:
     paths:
       - mountPath: /var/run/secrets/nais.io/vault
         kvPath: /kv/prod/fss/spokelse/default
-      - mountPath: /var/run/secrets/nais.io/azure
-        kvPath: /azuread/data/prod/creds/spokelse
       - mountPath: /var/run/secrets/nais.io/service_user
         kvPath: /serviceuser/data/prod/srvspokelse
   env:
@@ -45,13 +43,3 @@ spec:
     value: a01apvl00145.adeo.no:8443,a01apvl00146.adeo.no:8443,a01apvl00147.adeo.no:8443,a01apvl00148.adeo.no:8443,a01apvl00149.adeo.no:8443,a01apvl00150.adeo.no:8443
   - name: KAFKA_CONSUMER_GROUP_ID
     value: spokelse-v1
-  - name: KAFKA_RAPID_TOPIC
-    value: helse-rapid-v1
-  - name: AZURE_TENANT_ID
-    value: 62366534-1ec3-4962-8869-9b5535279d0b
-  - name: AZURE_TENANT_BASEURL
-    value: https://login.microsoftonline.com
-  - name: INFOTRYGD_SCOPE
-    value: api://847deffa-0b46-4b8f-ae79-c7773ee3dfb3/.default
-  - name: INFOTRYGD_URL
-    value: http://infotrygd-sykepenger.default.svc.nais.local

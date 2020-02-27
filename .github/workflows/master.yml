@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: create image tag
-      run: |
-        echo ::set-env name=IMAGE::docker.pkg.github.com/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)
+      run: echo ::set-env name=IMAGE::docker.pkg.github.com/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)
     - uses: actions/checkout@v1
     - uses: actions/setup-java@v1
       with:
@@ -40,4 +39,4 @@ jobs:
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-fss
-          RESOURCE: deploy/dev-fss.yml
+          RESOURCE: deploy/preprod.yml

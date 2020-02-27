@@ -4,9 +4,9 @@ metadata:
   name: spokelse
   namespace: default
   labels:
-    team: {{team}}
+    team: tbd
 spec:
-  image: {{image}}:{{tag}}
+  image: {{image}}
   port: 8080
   liveness:
     path: isalive
@@ -43,6 +43,4 @@ spec:
     value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
   - name: KAFKA_CONSUMER_GROUP_ID
     value: spokelse-v1
-  - name: KAFKA_RAPID_TOPIC
-    value: helse-rapid-v1
 
