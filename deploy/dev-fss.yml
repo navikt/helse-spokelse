@@ -35,7 +35,7 @@ spec:
     enabled: true
     paths:
     - mountPath: /var/run/secrets/nais.io/vault
-      kvPath: /kv/preprod/fss/spre/default
+      kvPath: /kv/preprod/fss/spokelse/default
     - mountPath: /var/run/secrets/nais.io/service_user
       kvPath: /serviceuser/data/dev/srvspokelse
   env:
