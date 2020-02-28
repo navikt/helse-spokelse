@@ -9,7 +9,7 @@ val micrometerRegistryPrometheusVersion = "1.1.5"
 val wireMockVersion = "2.19.0"
 val mockkVersion = "1.9.3.kotlin12"
 val junitJupiterVersion = "5.4.0"
-val mainClass = "no.nav.helse.sparkel.sykepengeperioder.AppKt"
+val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
     kotlin("jvm") version "1.3.60"
