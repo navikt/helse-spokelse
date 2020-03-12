@@ -41,16 +41,16 @@ jobs:
           CLUSTER: dev-fss
           RESOURCE: deploy/preprod.yml
 
-  deployProd:
-    name: Deploy to prod
-    needs: [build, deployDev]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create image tag
-        run: echo ::set-env name=IMAGE::docker.pkg.github.com/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)
-      - uses: actions/checkout@v1
-      - uses: nais/deploy/actions/deploy@v1
-        env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-          CLUSTER: prod-fss
-          RESOURCE: deploy/prod.yml
+#  deployProd:
+#    name: Deploy to prod
+#    needs: [build, deployDev]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Create image tag
+#        run: echo ::set-env name=IMAGE::docker.pkg.github.com/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)
+#      - uses: actions/checkout@v1
+#      - uses: nais/deploy/actions/deploy@v1
+#        env:
+#          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+#          CLUSTER: prod-fss
+#          RESOURCE: deploy/prod.yml

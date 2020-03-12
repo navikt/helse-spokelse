@@ -25,6 +25,7 @@ dependencies {
     implementation("no.nav.helse:rapids-rivers:1.40300fd")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
+    implementation("com.ibm.mq:com.ibm.mq.allclient:9.1.4.0")
 
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("com.github.tomakehurst:wiremock:$wireMockVersion") {
