@@ -44,13 +44,13 @@ spec:
   - name: KAFKA_CONSUMER_GROUP_ID
     value: spokelse-v1
   - name: MQ_HOSTNAME
-    value: b27apvl171.preprod.local
+    value: b27apvl176.preprod.local
   - name: MQ_PORT
     value: "1413"
   - name: MQ_CHANNEL
     value: Q1_SPOKELSE
   - name: MQ_QUEUE_MANAGER
-    value: MQXLSC02
+    value: MQ1LSC02
   - name: MQ_INFOTRYGD_TIL_ARENA_INPUT
     value: Q1_SPOKELSE.INFOTRYGD_TIL_ARENA
   - name: MQ_INFOTRYGD_TIL_ARENA_OUTPUT
