@@ -33,38 +33,14 @@ fun main() {
 
     val session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)
 
-    mitm(
-        session = session,
-        inputQueue = System.getenv("MQ_INFOTRYGD_TIL_ARENA_INPUT"),
-        outputQueue = System.getenv("MQ_INFOTRYGD_TIL_ARENA_OUTPUT")
-    )
-    mitm(
-        session = session,
-        inputQueue = System.getenv("MQ_INFOTRYGD_TIL_ARENA_KVITTERING_INPUT"),
-        outputQueue = System.getenv("MQ_INFOTRYGD_TIL_ARENA_KVITTERING_OUTPUT")
-    )
-    mitm(
-        session = session,
-        inputQueue = System.getenv("MQ_ARENA_TIL_INFOTRYGD_INPUT"),
-        outputQueue = System.getenv("MQ_ARENA_TIL_INFOTRYGD_OUTPUT")
-    )
-    mitm(
-        session = session,
-        inputQueue = System.getenv("MQ_ARENA_TIL_INFOTRYGD_KVITTERING_INPUT"),
-        outputQueue = System.getenv("MQ_ARENA_TIL_INFOTRYGD_KVITTERING_OUTPUT")
-    )
-}
+    val arenaOutput = session.createConsumer(session.createQueue(System.getenv("MQ_ARENA_OUTPUT")))
+    val arenaInputKvittering = session.createConsumer(session.createQueue(System.getenv("MQ_ARENA_INPUT_KVITTERING")))
 
-fun mitm(session: Session, inputQueue: String, outputQueue: String) {
-    val consumer = session.createConsumer(session.createQueue(inputQueue))
-    val producer = session.createProducer(session.createQueue(outputQueue))
-    consumer.setMessageListener {
-        val body = it.getBody(String::class.java)
-        log.debug("Router melding fra $inputQueue til $outputQueue")
-        tjenestekallLog.debug(
-            "Interceptet melding mellom $inputQueue og $outputQueue, {}",
-            keyValue("innhold", body)
-        )
-        producer.send(it)
+    arenaOutput.setMessageListener {
+        tjenestekallLog.debug("Mottok melding fra arena {}", keyValue("data", it.getBody(String::class.java)))
+    }
+
+    arenaInputKvittering.setMessageListener {
+        tjenestekallLog.debug("Mottok kvittering fra arena {}", keyValue("data", it.getBody(String::class.java)))
     }
 }
