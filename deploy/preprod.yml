@@ -55,4 +55,12 @@ spec:
     value: QA.Q1_SPOKELSE.ARENA_TIL_INFOTRYGD
   - name: MQ_ARENA_INPUT_KVITTERING
     value: QA.Q1_SPOKELSE.ARENA_TIL_INFOTRYGD_KVITTERING
+  - name: DATABASE_HOST
+    value: b27dbvl013.preprod.local
+  - name: DATABASE_PORT
+    value: "5432"
+  - name: DATABASE_NAME
+    value: spre-oppgaver
+  - name: VAULT_MOUNTPATH
+    value: postgresql/preprod-fss/
 
