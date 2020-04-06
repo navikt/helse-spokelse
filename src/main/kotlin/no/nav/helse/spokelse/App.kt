@@ -1,9 +1,7 @@
 package no.nav.helse.spokelse
 
 import io.ktor.util.KtorExperimentalAPI
-import io.prometheus.client.CollectorRegistry
 import net.logstash.logback.argument.StructuredArguments.keyValue
-import no.nav.helse.rapids_rivers.KtorBuilder
 import no.nav.helse.rapids_rivers.RapidApplication
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -40,7 +38,7 @@ fun main() {
             .apply(DataSourceBuilder::migrate)
             .getDataSource()
 
-    val vedtakDao = VedtakDao(dataSource)
+    val vedtakDao = VedtakDAO(dataSource)
 
     RapidApplication.create(System.getenv()).apply {
         VedtakRiver(this, vedtakDao)

@@ -40,6 +40,7 @@ dependencies {
     testImplementation("org.awaitility:awaitility:4.0.1")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
+    testImplementation("com.opentable.components:otj-pg-embedded:0.13.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
 }
 
