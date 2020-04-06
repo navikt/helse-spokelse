@@ -12,7 +12,7 @@ val junitJupiterVersion = "5.4.0"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
-    kotlin("jvm") version "1.3.60"
+    kotlin("jvm") version "1.3.70"
 }
 
 buildscript {
@@ -22,7 +22,7 @@ buildscript {
 }
 
 dependencies {
-    implementation("no.nav.helse:rapids-rivers:1.40300fd")
+    implementation("no.nav.helse:rapids-rivers:1.2436e10")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
     implementation("com.ibm.mq:com.ibm.mq.allclient:9.1.4.0")
@@ -45,7 +45,7 @@ repositories {
     jcenter()
     mavenCentral()
     maven("https://dl.bintray.com/kotlin/ktor")
-    maven("http://packages.confluent.io/maven/")
+    maven("https://packages.confluent.io/maven/")
     maven {
         url = uri("https://maven.pkg.github.com/navikt/helse-spleis")
         credentials {
@@ -95,5 +95,5 @@ tasks.withType<Test> {
 }
 
 tasks.withType<Wrapper> {
-    gradleVersion = "5.6.2"
+    gradleVersion = "6.3"
 }
