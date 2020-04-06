@@ -42,5 +42,6 @@ fun main() {
 
     RapidApplication.create(System.getenv()).apply {
         VedtakRiver(this, vedtakDao)
+        start()
     }
 }
