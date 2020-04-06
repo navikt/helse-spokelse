@@ -44,7 +44,7 @@ spec:
   - name: KAFKA_CONSUMER_GROUP_ID
     value: spokelse-v1
   - name: DATABASE_HOST
-    value: a01dbvl011.adeo.no
+    value: a01dbvl009.adeo.no
   - name: DATABASE_PORT
     value: "5432"
   - name: DATABASE_NAME

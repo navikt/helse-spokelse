@@ -60,7 +60,7 @@ spec:
   - name: DATABASE_PORT
     value: "5432"
   - name: DATABASE_NAME
-    value: spre-oppgaver
+    value: spokelse
   - name: VAULT_MOUNTPATH
     value: postgresql/preprod-fss/
 
