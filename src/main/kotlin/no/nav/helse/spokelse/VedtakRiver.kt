@@ -3,12 +3,13 @@ package no.nav.helse.spokelse
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
+import no.nav.helse.rapids_rivers.asLocalDate
+import java.util.*
 
-class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: VedtakDAO): River.PacketListener {
+class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: VedtakDAO) : River.PacketListener {
     init {
         River(rapidsConnection).apply {
-            validate { it.requireKey("id") }
-            validate { it.requireKey("fnr") }
+            validate { it.requireKey("fnr", "vedtaksperiodeId", "fom", "tom", "grad") }
         }.register(this)
     }
 
@@ -17,4 +18,10 @@ class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: Ved
     }
 }
 
-private fun JsonMessage.toVedtak() = Vedtak(this["id"].asInt(), this["fnr"].asText())
+private fun JsonMessage.toVedtak() = Vedtak(
+    fnr = this["fnr"].asText(),
+    vedtaksperiodeId = UUID.fromString(this["vedtaksperiodeId"].asText()),
+    fom = this["fom"].asLocalDate(),
+    tom = this["tom"].asLocalDate(),
+    grad = this["grad"].asDouble()
+)

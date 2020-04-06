@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.time.LocalDate
+import java.util.*
 
 @KtorExperimentalAPI
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -36,9 +38,9 @@ class EndToEndTest {
         dataSource = HikariDataSource(hikariConfig)
 
         Flyway.configure()
-                .dataSource(dataSource)
-                .load()
-                .migrate()
+            .dataSource(dataSource)
+            .load()
+            .migrate()
 
         vedtakDAO = VedtakDAO(dataSource)
 
@@ -46,9 +48,22 @@ class EndToEndTest {
     }
 
     @Test
-    fun `skriver vedtak til db`(){
-        rapid.sendToListeners("""{"id":3, "fnr":"01010145678"}""")
+    fun `skriver vedtak til db`() {
+        rapid.sendToListeners(
+            """{
+                  "fnr": "01010145678",
+                  "vedtaksperiodeId": "e6e5fdaa-743c-4755-8b86-c03ef9c624a9",
+                  "fom": "2020-04-01",
+                  "tom": "2020-04-06",
+                  "grad": 6.0
+                }""")
 
-        assertEquals(3, vedtakDAO.hentVedtak("01010145678")?.id)
+        val vedtak = vedtakDAO.hentVedtak("01010145678")
+
+        assertEquals("01010145678", vedtak?.fnr)
+        assertEquals(UUID.fromString("e6e5fdaa-743c-4755-8b86-c03ef9c624a9"), vedtak?.vedtaksperiodeId)
+        assertEquals(LocalDate.of(2020, 4, 1), vedtak?.fom)
+        assertEquals(LocalDate.of(2020, 4, 6), vedtak?.tom)
+        assertEquals(6.0, vedtak?.grad)
     }
 }
