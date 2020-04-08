@@ -2,22 +2,20 @@ package no.nav.helse.spokelse
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
-import io.ktor.auth.Authentication
 import io.ktor.auth.authenticate
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
 import io.ktor.response.respond
+import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.util.KtorExperimentalAPI
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.rapids_rivers.RapidApplication
-import no.nav.security.token.support.ktor.IssuerConfig
-import no.nav.security.token.support.ktor.TokenSupportConfig
-import no.nav.security.token.support.ktor.tokenValidationSupport
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.jms.Session
@@ -54,43 +52,34 @@ fun launchApplication(env: Environment) {
 
     val vedtakDao = VedtakDAO(dataSource)
 
-    RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw)).withKtorModule {
-        install(Authentication) {
-            tokenValidationSupport(config = TokenSupportConfig(
-                IssuerConfig(
-                    name = env.auth.name,
-                    acceptedAudience = listOf(env.auth.acceptedAudience),
-                    discoveryUrl = env.auth.discoveryUrl
-                )
-            ),
-                additionalValidation = {
-                    val claims = it.getClaims(env.auth.name)
-                    val groups = claims?.getAsList("groups")
-                    val hasGroup = groups != null && groups.contains(env.auth.requiredGroup)
-                    if (!hasGroup) log.info("missing required group ${env.auth.requiredGroup}")
-                    val hasIdentRequiredForAuditLog = claims?.getStringClaim("prefered_username") != null
-                    if (!hasIdentRequiredForAuditLog) log.info("missing claim prefered_username required for auditlog")
-                    hasGroup && hasIdentRequiredForAuditLog
-                })
+    RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
+        .withKtorModule { spokelse(env.auth) }
+        .build().apply {
+            VedtakRiver(this, vedtakDao)
+            start()
         }
+}
 
-        install(ContentNegotiation) {
-            jackson {
-                disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                registerModule(JavaTimeModule())
-            }
+@KtorExperimentalAPI
+internal fun Application.spokelse(env: Environment.Auth) {
+    azureAdAppAuthentication(env)
+    install(ContentNegotiation) {
+        jackson {
+            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            registerModule(JavaTimeModule())
         }
+    }
 
-        routing {
-            authenticate {
-                get("/grunnlag") {
-                    requireNotNull(call.request.queryParameters["fødselsnummer"]) { "Mangler fødselsnummer query param" }
-                    call.respond(HttpStatusCode.OK)
-                }
-            }
+    routing {
+        authenticate {
+            grunnlagApi()
         }
-    }.build().apply {
-        VedtakRiver(this, vedtakDao)
-        start()
+    }
+}
+
+internal fun Route.grunnlagApi() {
+    get("/grunnlag") {
+        requireNotNull(call.request.queryParameters["fødselsnummer"]) { "Mangler fødselsnummer query param" }
+        call.respond(HttpStatusCode.OK)
     }
 }

@@ -1,0 +1,25 @@
+package no.nav.helse.spokelse
+
+import io.ktor.application.Application
+import io.ktor.application.install
+import io.ktor.application.log
+import io.ktor.auth.Authentication
+import io.ktor.auth.jwt.JWTPrincipal
+import io.ktor.auth.jwt.jwt
+
+internal fun Application.azureAdAppAuthentication(env: Environment.Auth) {
+    install(Authentication) {
+        jwt {
+            verifier(env.jwkProvider, env.issuer)
+            validate { credentials ->
+                val groupsClaim = credentials.payload.getClaim("groups").asList(String::class.java)
+                if (env.requiredGroup !in groupsClaim || env.clientId !in credentials.payload.audience) {
+                    log.info("${credentials.payload.subject} with audience ${credentials.payload.audience} is not authorized to use this app, denying access")
+                    return@validate null
+                }
+
+                JWTPrincipal(credentials.payload)
+            }
+        }
+    }
+}

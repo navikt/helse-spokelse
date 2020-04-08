@@ -20,7 +20,18 @@ class EndToEndTest {
     private lateinit var hikariConfig: HikariConfig
     private lateinit var dataSource: HikariDataSource
     private lateinit var vedtakDAO: VedtakDAO
-    private val rapid = inMemoryRapid {}
+    private val rapid = inMemoryRapid {
+        this.ktor {
+            this.module {
+                spokelse(Environment.Auth(
+                    name = "issuer",
+                    acceptedAudience = "aud",
+                    discoveryUrl = "http://discoveryUrl",
+                    requiredGroup = "gruppe"
+                ))
+            }
+        }
+    }
 
     @BeforeAll
     fun setup() {

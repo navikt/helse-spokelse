@@ -25,13 +25,8 @@ dependencies {
     implementation("no.nav.helse:rapids-rivers:1.2436e10")
     implementation("io.ktor:ktor-jackson:$ktorVersion")
     implementation("com.ibm.mq:com.ibm.mq.allclient:9.1.4.0")
-    implementation("no.nav.security:token-validation-ktor:1.1.4") {
-        exclude("net.minidev", "json-smart")
-        exclude("com.nimbusds", "lang-tag")
-        exclude("com.nimbusds", "nimbus-jose-jwt")
-        implementation("com.nimbusds:lang-tag:1.4.3")
-        implementation("net.minidev:json-smart:2.3")
-        implementation("com.nimbusds:nimbus-jose-jwt:8.6")
+    implementation("io.ktor:ktor-auth-jwt:$ktorVersion") {
+        exclude(group = "junit")
     }
 
     implementation("com.zaxxer:HikariCP:3.4.2")
