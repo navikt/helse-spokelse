@@ -22,7 +22,7 @@ class Environment(
             name = raw.getValue("DATABASE_NAME"),
             host = raw.getValue("DATABASE_HOST"),
             port = raw.getValue("DATABASE_PORT").toInt(),
-            vaultMountPath = raw.getValue("VAULT_MOUNTPATH")
+            vaultMountPath = raw.getValue("DATABASE_VAULT_MOUNT_PATH")
         ),
         auth = Auth(
             name = "ourissuer",
