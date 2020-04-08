@@ -63,6 +63,11 @@ spec:
     value: "5432"
   - name: DATABASE_NAME
     value: spokelse
-  - name: VAULT_MOUNTPATH
+  - name: DATABASE_VAULT_MOUNT_PATH
     value: postgresql/preprod-fss/
-
+  - name: ACCEPTED_AUDIENCE
+    value: d8f61c0a-ac96-4c5c-9e70-2c630852851a
+  - name: DISCOVERY_URL
+    value: https://login.microsoftonline.com/966ac572-f5b7-4bbe-aa88-c76419c0f851/v2.0/.well-known/openid-configuration
+  - name: REQUIRED_GROUP
+    value: f844f535-2174-445c-a0db-b6c55f2e4780
