@@ -79,7 +79,7 @@ internal fun Application.spokelse(env: Environment.Auth) {
 
 internal fun Route.grunnlagApi() {
     get("/grunnlag") {
-        requireNotNull(call.request.queryParameters["fødselsnummer"]) { "Mangler fødselsnummer query param" }
+        requireNotNull(call.request.queryParameters["fodselsnummer"]) { "Mangler fødselsnummer query param" }
         call.respond(HttpStatusCode.OK)
     }
 }
