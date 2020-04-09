@@ -55,8 +55,6 @@ spec:
     value: spokelse
   - name: DATABASE_VAULT_MOUNT_PATH
     value: postgresql/prod-fss/
-  - name: ACCEPTED_AUDIENCE
-    value: 3f591062-1747-468c-acda-d62d66c17937
   - name: DISCOVERY_URL
     value: https://login.microsoftonline.com/62366534-1ec3-4962-8869-9b5535279d0b/v2.0/.well-known/openid-configuration
   - name: REQUIRED_GROUP

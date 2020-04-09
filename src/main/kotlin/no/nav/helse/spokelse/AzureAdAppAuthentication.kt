@@ -12,8 +12,7 @@ internal fun Application.azureAdAppAuthentication(env: Environment.Auth) {
         jwt {
             verifier(env.jwkProvider, env.issuer)
             validate { credentials ->
-                val groupsClaim = credentials.payload.getClaim("groups").asList(String::class.java)
-                if (env.requiredGroup !in groupsClaim || env.clientId !in credentials.payload.audience) {
+                if (env.clientId !in credentials.payload.audience) {
                     log.info("${credentials.payload.subject} with audience ${credentials.payload.audience} is not authorized to use this app, denying access")
                     return@validate null
                 }
