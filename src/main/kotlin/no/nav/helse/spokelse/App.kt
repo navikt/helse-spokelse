@@ -79,12 +79,9 @@ internal fun Application.spokelse(env: Environment.Auth, vedtakDAO: VedtakDAO) {
 
 internal fun Route.grunnlagApi(vedtakDAO: VedtakDAO) {
     get("/grunnlag") {
-        val fnr = call.request.queryParameters["fodselsnummer"] ?: run {
-            call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
-            return@get
-        }
-        vedtakDAO.hentVedtak(fnr)
-            ?.let { call.respond(HttpStatusCode.OK, it) }
-            ?: call.response.status(HttpStatusCode.NotFound)
+        val fnr = call.request.queryParameters["fodselsnummer"]
+            ?: return@get call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
+
+        call.respond(HttpStatusCode.OK, vedtakDAO.hentVedtakListe(fnr))
     }
 }

@@ -22,21 +22,24 @@ class VedtakDAO(private val dataSource: DataSource) {
         }
     }
 
-    fun hentVedtak(fnr: String) = sessionOf(dataSource)
+    fun hentVedtakListe(fnr: String) = sessionOf(dataSource)
         .use { session ->
             session.run(
-                queryOf(
-                    "SELECT vedtaksperiodeId, fom, tom, grad FROM vedtak WHERE fnr = ?",
-                    fnr
-                ).map { row ->
-                    Vedtak(
-                        fnr = fnr,
-                        vedtaksperiodeId = UUID.fromString(row.string("vedtaksperiodeId")),
-                        fom = row.localDate("fom"),
-                        tom = row.localDate("tom"),
-                        grad =row.double("grad")
-                    )
-                }.asSingle
+                vedtakQuery(fnr).asList
+            )
+        }
+
+    private fun vedtakQuery(fnr: String) =
+        queryOf(
+            "SELECT vedtaksperiodeId, fom, tom, grad FROM vedtak WHERE fnr = ?",
+            fnr
+        ).map { row ->
+            Vedtak(
+                fnr = fnr,
+                vedtaksperiodeId = UUID.fromString(row.string("vedtaksperiodeId")),
+                fom = row.localDate("fom"),
+                tom = row.localDate("tom"),
+                grad = row.double("grad")
             )
         }
 }

@@ -112,37 +112,48 @@ class EndToEndTest {
     @Test
     fun `skriver vedtak til db`() {
         val fnr = "01010145678"
-        val vedtaksperiodeId = UUID.randomUUID()
 
-        rapid.sendToListeners(
-            """{
-                  "fnr": "$fnr",
-                  "vedtaksperiodeId": "$vedtaksperiodeId",
-                  "fom": "2020-04-01",
-                  "tom": "2020-04-06",
-                  "grad": 6.0
-                }""")
+        val vedtaksperiodeId1 = UUID.randomUUID()
+        val fom1 = LocalDate.of(2020, 4, 1)
+        val tom1 = LocalDate.of(2020, 4, 6)
+        val grad1 = 50.0
+        rapid.sendToListeners(opprettVedtak(fnr, vedtaksperiodeId1, fom1, tom1, grad1))
 
-        val vedtak = vedtakDAO.hentVedtak(fnr)
-
-        assertEquals(fnr, vedtak?.fnr)
-        assertEquals(vedtaksperiodeId, vedtak?.vedtaksperiodeId)
-        assertEquals(LocalDate.of(2020, 4, 1), vedtak?.fom)
-        assertEquals(LocalDate.of(2020, 4, 6), vedtak?.tom)
-        assertEquals(6.0, vedtak?.grad)
+        val vedtaksperiodeId2 = UUID.randomUUID()
+        val fom2 = LocalDate.of(2020, 4, 10)
+        val tom2 = LocalDate.of(2020, 4, 16)
+        val grad2 = 70.0
+        rapid.sendToListeners(opprettVedtak(fnr, vedtaksperiodeId2, fom2, tom2, grad2))
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted {
             "/grunnlag?fodselsnummer=$fnr".httpGet {
-                objectMapper.readValue<Vedtak>(this).also { vedtakFraRest ->
-                    assertEquals(fnr, vedtakFraRest.fnr)
-                    assertEquals(vedtaksperiodeId, vedtakFraRest.vedtaksperiodeId)
-                    assertEquals(LocalDate.of(2020, 4, 1), vedtakFraRest.fom)
-                    assertEquals(LocalDate.of(2020, 4, 6), vedtakFraRest.tom)
-                    assertEquals(6.0, vedtakFraRest.grad)
+                objectMapper.readValue<List<Vedtak>>(this).apply {
+                    assertEquals(2, size)
+
+                    assertEquals(fnr, this[0].fnr)
+                    assertEquals(vedtaksperiodeId1, this[0].vedtaksperiodeId)
+                    assertEquals(fom1, this[0].fom)
+                    assertEquals(tom1, this[0].tom)
+                    assertEquals(grad1, this[0].grad)
+
+                    assertEquals(fnr, this[1].fnr)
+                    assertEquals(vedtaksperiodeId2, this[1].vedtaksperiodeId)
+                    assertEquals(fom2, this[1].fom)
+                    assertEquals(tom2, this[1].tom)
+                    assertEquals(grad2, this[1].grad)
                 }
             }
         }
     }
+
+    private fun opprettVedtak(fnr: String, vedtaksperiodeId: UUID?, fom: LocalDate?, tom: LocalDate?, grad: Double) =
+        """{
+              "fnr": "$fnr",
+              "vedtaksperiodeId": "$vedtaksperiodeId",
+              "fom": "$fom",
+              "tom": "$tom",
+              "grad": $grad
+            }"""
 
     @Test
     fun `kall til grunnlag uten fnr gir 400`() {
