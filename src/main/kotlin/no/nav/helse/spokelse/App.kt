@@ -53,7 +53,7 @@ fun launchApplication(env: Environment) {
     val vedtakDao = VedtakDAO(dataSource)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
-        .withKtorModule { spokelse(env.auth) }
+        .withKtorModule { spokelse(env.auth, vedtakDao) }
         .build().apply {
             VedtakRiver(this, vedtakDao)
             start()
@@ -61,7 +61,7 @@ fun launchApplication(env: Environment) {
 }
 
 @KtorExperimentalAPI
-internal fun Application.spokelse(env: Environment.Auth) {
+internal fun Application.spokelse(env: Environment.Auth, vedtakDAO: VedtakDAO) {
     azureAdAppAuthentication(env)
     install(ContentNegotiation) {
         jackson {
@@ -72,14 +72,19 @@ internal fun Application.spokelse(env: Environment.Auth) {
 
     routing {
         authenticate {
-            grunnlagApi()
+            grunnlagApi(vedtakDAO)
         }
     }
 }
 
-internal fun Route.grunnlagApi() {
+internal fun Route.grunnlagApi(vedtakDAO: VedtakDAO) {
     get("/grunnlag") {
-        requireNotNull(call.request.queryParameters["fodselsnummer"]) { "Mangler fødselsnummer query param" }
-        call.respond(HttpStatusCode.OK)
+        val fnr = call.request.queryParameters["fodselsnummer"] ?: run {
+            call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
+            return@get
+        }
+        vedtakDAO.hentVedtak(fnr)
+            ?.let { call.respond(HttpStatusCode.OK, it) }
+            ?: call.response.status(HttpStatusCode.NotFound)
     }
 }

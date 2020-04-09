@@ -1,5 +1,9 @@
 package no.nav.helse.spokelse
 
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
@@ -13,7 +17,7 @@ import io.ktor.util.KtorExperimentalAPI
 import no.nav.helse.rapids_rivers.InMemoryRapid
 import no.nav.helse.rapids_rivers.inMemoryRapid
 import no.nav.helse.spokelse.Environment.Auth.Companion.auth
-import org.awaitility.Awaitility
+import org.awaitility.Awaitility.await
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -43,6 +47,11 @@ class EndToEndTest {
 
     private lateinit var appBaseUrl: String
 
+    private val objectMapper = jacksonObjectMapper().apply {
+        registerModule(JavaTimeModule())
+        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    }
+
     @BeforeAll
     fun setup() {
         embeddedPostgres = EmbeddedPostgres.builder().start()
@@ -63,9 +72,11 @@ class EndToEndTest {
             .load()
             .migrate()
 
+        vedtakDAO = VedtakDAO(dataSource)
+
         //Stub ID provider (for authentication of REST endpoints)
         wireMockServer.start()
-        Awaitility.await("vent på WireMockServer har startet")
+        await("vent på WireMockServer har startet")
             .atMost(5, TimeUnit.SECONDS)
             .until {
                 try {
@@ -88,44 +99,61 @@ class EndToEndTest {
                     spokelse(auth(
                         name = "issuer",
                         clientId = "spokelse_azure_ad_app_id",
-                        requiredGroup = "gruppe",
                         discoveryUrl = "${wireMockServer.baseUrl()}/config"
-                    ))
+                    ), vedtakDAO)
                 }
             }
         }.apply { start() }
 
-        vedtakDAO = VedtakDAO(dataSource)
 
         VedtakRiver(rapid, vedtakDAO)
     }
 
     @Test
     fun `skriver vedtak til db`() {
+        val fnr = "01010145678"
+        val vedtaksperiodeId = UUID.randomUUID()
+
         rapid.sendToListeners(
             """{
-                  "fnr": "01010145678",
-                  "vedtaksperiodeId": "e6e5fdaa-743c-4755-8b86-c03ef9c624a9",
+                  "fnr": "$fnr",
+                  "vedtaksperiodeId": "$vedtaksperiodeId",
                   "fom": "2020-04-01",
                   "tom": "2020-04-06",
                   "grad": 6.0
                 }""")
 
-        val vedtak = vedtakDAO.hentVedtak("01010145678")
+        val vedtak = vedtakDAO.hentVedtak(fnr)
 
-        assertEquals("01010145678", vedtak?.fnr)
-        assertEquals(UUID.fromString("e6e5fdaa-743c-4755-8b86-c03ef9c624a9"), vedtak?.vedtaksperiodeId)
+        assertEquals(fnr, vedtak?.fnr)
+        assertEquals(vedtaksperiodeId, vedtak?.vedtaksperiodeId)
         assertEquals(LocalDate.of(2020, 4, 1), vedtak?.fom)
         assertEquals(LocalDate.of(2020, 4, 6), vedtak?.tom)
         assertEquals(6.0, vedtak?.grad)
 
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted { "/grunnlag?fodselsnummer=12341234123".httpGet() }
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            "/grunnlag?fodselsnummer=$fnr".httpGet {
+                objectMapper.readValue<Vedtak>(this).also { vedtakFraRest ->
+                    assertEquals(fnr, vedtakFraRest.fnr)
+                    assertEquals(vedtaksperiodeId, vedtakFraRest.vedtaksperiodeId)
+                    assertEquals(LocalDate.of(2020, 4, 1), vedtakFraRest.fom)
+                    assertEquals(LocalDate.of(2020, 4, 6), vedtakFraRest.tom)
+                    assertEquals(6.0, vedtakFraRest.grad)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `kall til grunnlag uten fnr gir 400`() {
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            "/grunnlag".httpGet(HttpStatusCode.BadRequest)
+        }
     }
 
     private fun String.httpGet(expectedStatus: HttpStatusCode = HttpStatusCode.OK, testBlock: String.() -> Unit = {}) {
         val token = jwtStub.createTokenFor(
             subject = "en_saksbehandler_ident",
-            groups = listOf("gruppe"),
             audience = "spokelse_azure_ad_app_id"
         )
 

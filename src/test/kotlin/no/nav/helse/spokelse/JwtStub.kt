@@ -27,7 +27,7 @@ class JwtStub(private val issuer: String, private val wireMockServer: WireMockSe
       publicKey = keyPair.public as RSAPublicKey
    }
 
-   fun createTokenFor(subject: String, groups: List<String>, audience: String): String {
+   fun createTokenFor(subject: String, audience: String): String {
       val algorithm = Algorithm.RSA256(publicKey, privateKey)
 
       return JWT.create()
