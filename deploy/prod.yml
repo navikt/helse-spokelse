@@ -47,6 +47,8 @@ spec:
     value: helse-rapid-v1
   - name: KAFKA_CONSUMER_GROUP_ID
     value: spokelse-v1
+  - name: KAFKA_RESET_POLICY
+    value: earliest
   - name: DATABASE_HOST
     value: a01dbvl009.adeo.no
   - name: DATABASE_PORT
