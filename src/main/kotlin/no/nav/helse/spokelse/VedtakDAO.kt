@@ -7,39 +7,58 @@ import javax.sql.DataSource
 
 class VedtakDAO(private val dataSource: DataSource) {
     fun save(vedtak: Vedtak) {
-        sessionOf(dataSource).use { session ->
-            session.run(
+        sessionOf(dataSource, true).use { session ->
+            val vedtakId = session.run(
                 queryOf(
-                    "INSERT INTO vedtak(id, fnr, vedtaksperiodeId, fom, tom, grad) VALUES (?, ?, ?, ?, ? ,?)",
-                    (Math.random() * 1000).toInt(), //FIXME: La stå!!
-                    vedtak.fnr,
+                    "INSERT INTO vedtak(fodselsnummer, gruppeId, vedtaksperiodeId, opprettet) VALUES (?, ?, ?, ?)",
+                    vedtak.fødselsnummer,
+                    vedtak.gruppeId,
                     vedtak.vedtaksperiodeId,
-                    vedtak.fom,
-                    vedtak.tom,
-                    vedtak.grad
-                ).asUpdate
+                    vedtak.opprettet
+                ).asUpdateAndReturnGeneratedKey
             )
+
+            vedtak.utbetalinger.forEach {
+                session.run(
+                    queryOf(
+                        "INSERT INTO utbetaling(vedtak_id, fom, tom, grad) VALUES (?, ?, ?, ?)",
+                        vedtakId,
+                        it.fom,
+                        it.tom,
+                        it.grad
+                    ).asUpdate
+                )
+            }
         }
     }
 
     fun hentVedtakListe(fnr: String) = sessionOf(dataSource)
         .use { session ->
             session.run(
-                vedtakQuery(fnr).asList
-            )
-        }
-
-    private fun vedtakQuery(fnr: String) =
-        queryOf(
-            "SELECT vedtaksperiodeId, fom, tom, grad FROM vedtak WHERE fnr = ?",
-            fnr
-        ).map { row ->
-            Vedtak(
-                fnr = fnr,
-                vedtaksperiodeId = UUID.fromString(row.string("vedtaksperiodeId")),
-                fom = row.localDate("fom"),
-                tom = row.localDate("tom"),
-                grad = row.double("grad")
+                queryOf(
+                    "SELECT id, fodselsnummer, gruppeId, vedtaksperiodeId, opprettet FROM vedtak WHERE fodselsnummer = ?",
+                    fnr
+                ).map { row ->
+                    val utbetalinger = session.run(
+                        queryOf(
+                            "SELECT fom, tom, grad FROM utbetaling WHERE vedtak_id = ?",
+                            row.long("id"))
+                            .map { utbetalingRow ->
+                                Utbetaling(
+                                    fom = utbetalingRow.localDate("fom"),
+                                    tom = utbetalingRow.localDate("tom"),
+                                    grad = utbetalingRow.double("grad")
+                                )
+                            }.asList
+                    )
+                    Vedtak(
+                        fødselsnummer = fnr,
+                        gruppeId = UUID.fromString(row.string("gruppeId")),
+                        vedtaksperiodeId = UUID.fromString(row.string("vedtaksperiodeId")),
+                        utbetalinger = utbetalinger,
+                        opprettet = row.localDateTime("opprettet")
+                    )
+                }.asList
             )
         }
 }

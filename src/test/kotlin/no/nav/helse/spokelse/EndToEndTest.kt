@@ -29,6 +29,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.URL
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -113,46 +114,68 @@ class EndToEndTest {
     fun `skriver vedtak til db`() {
         val fnr = "01010145678"
 
+        val gruppeId1 = UUID.randomUUID()
         val vedtaksperiodeId1 = UUID.randomUUID()
         val fom1 = LocalDate.of(2020, 4, 1)
         val tom1 = LocalDate.of(2020, 4, 6)
         val grad1 = 50.0
-        rapid.sendToListeners(opprettVedtak(fnr, vedtaksperiodeId1, fom1, tom1, grad1))
+        rapid.sendToListeners(opprettVedtak(fnr, gruppeId1, vedtaksperiodeId1, fom1, tom1, grad1))
 
+        val gruppeId2 = UUID.randomUUID()
         val vedtaksperiodeId2 = UUID.randomUUID()
         val fom2 = LocalDate.of(2020, 4, 10)
         val tom2 = LocalDate.of(2020, 4, 16)
         val grad2 = 70.0
-        rapid.sendToListeners(opprettVedtak(fnr, vedtaksperiodeId2, fom2, tom2, grad2))
+        rapid.sendToListeners(opprettVedtak(fnr, gruppeId2, vedtaksperiodeId2, fom2, tom2, grad2))
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted {
             "/grunnlag?fodselsnummer=$fnr".httpGet {
                 objectMapper.readValue<List<Vedtak>>(this).apply {
                     assertEquals(2, size)
 
-                    assertEquals(fnr, this[0].fnr)
+                    assertEquals(fnr, this[0].fødselsnummer)
+                    assertEquals(gruppeId1, this[0].gruppeId)
                     assertEquals(vedtaksperiodeId1, this[0].vedtaksperiodeId)
-                    assertEquals(fom1, this[0].fom)
-                    assertEquals(tom1, this[0].tom)
-                    assertEquals(grad1, this[0].grad)
+                    assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[0].opprettet)
+                    assertEquals(fom1, this[0].utbetalinger[0].fom)
+                    assertEquals(tom1, this[0].utbetalinger[0].tom)
+                    assertEquals(grad1, this[0].utbetalinger[0].grad)
 
-                    assertEquals(fnr, this[1].fnr)
+                    assertEquals(fnr, this[1].fødselsnummer)
+                    assertEquals(gruppeId2, this[1].gruppeId)
                     assertEquals(vedtaksperiodeId2, this[1].vedtaksperiodeId)
-                    assertEquals(fom2, this[1].fom)
-                    assertEquals(tom2, this[1].tom)
-                    assertEquals(grad2, this[1].grad)
+                    assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[1].opprettet)
+                    assertEquals(fom2, this[1].utbetalinger[0].fom)
+                    assertEquals(tom2, this[1].utbetalinger[0].tom)
+                    assertEquals(grad2, this[1].utbetalinger[0].grad)
                 }
             }
         }
     }
 
-    private fun opprettVedtak(fnr: String, vedtaksperiodeId: UUID?, fom: LocalDate?, tom: LocalDate?, grad: Double) =
+    private fun opprettVedtak(fnr: String, gruppeId: UUID, vedtaksperiodeId: UUID, fom: LocalDate, tom: LocalDate, grad: Double) =
         """{
-              "fnr": "$fnr",
+              "@event_name": "utbetalt",
+              "aktørId": "aktørId",
+              "fødselsnummer": "$fnr",
+              "gruppeId": "$gruppeId",
               "vedtaksperiodeId": "$vedtaksperiodeId",
-              "fom": "$fom",
-              "tom": "$tom",
-              "grad": $grad
+              "utbetaling": [
+                {
+                  "utbetalingsreferanse": "WKOZJT3JYNB3VNT5CE5U54R3Y4",
+                  "utbetalingslinjer": [
+                    {
+                      "fom": "$fom",
+                      "tom": "$tom",
+                      "dagsats": 1000,
+                      "grad": $grad
+                    }
+                  ]
+                }
+              ],
+              "forbrukteSykedager": 123,
+              "opprettet": "2020-04-11T10:00:00.00000",
+              "system_read_count": 0
             }"""
 
     @Test
