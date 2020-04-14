@@ -6,7 +6,6 @@ import java.util.*
 
 class Vedtak(
     val fødselsnummer: String,
-    val gruppeId: UUID,
     val vedtaksperiodeId: UUID,
     val utbetalinger: List<Utbetaling>,
     val opprettet: LocalDateTime
@@ -18,16 +17,14 @@ class Utbetaling(
     val grad: Double
 )
 
-data class FpVedtak(
-    val aktør: String,
-    val vedtattTidspunkt: LocalDateTime,
-    val saksnummer: String,
-    val vedtakReferanse: String,
-    val perioder: List<Utbetalingsperioder>
-)
+ class FpVedtak(
+     val vedtaksreferanse: UUID,
+     val utbetalinger: List<Utbetalingsperiode>,
+     val vedtattTidspunkt: LocalDateTime
+ )
 
-data class Utbetalingsperioder(
+class Utbetalingsperiode(
     val fom: LocalDate,
     val tom: LocalDate,
-    val utbetalingsgrad: Double
+    val grad: Double
 )

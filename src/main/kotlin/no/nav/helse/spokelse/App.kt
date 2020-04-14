@@ -82,6 +82,21 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDAO) {
         val fnr = call.request.queryParameters["fodselsnummer"]
             ?: return@get call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
 
-        call.respond(HttpStatusCode.OK, vedtakDAO.hentVedtakListe(fnr))
+        call.respond(HttpStatusCode.OK, vedtakDAO.hentVedtakListe(fnr).asFpVedtak())
     }
 }
+
+private fun List<Vedtak>.asFpVedtak() =
+    map { vedtak ->
+        FpVedtak(
+            vedtaksreferanse = vedtak.vedtaksperiodeId,
+            utbetalinger = vedtak.utbetalinger.map { utbetaling ->
+                Utbetalingsperiode(
+                    fom = utbetaling.fom,
+                    tom = utbetaling.tom,
+                    grad = utbetaling.grad
+                )
+            },
+            vedtattTidspunkt = vedtak.opprettet
+        )
+    }

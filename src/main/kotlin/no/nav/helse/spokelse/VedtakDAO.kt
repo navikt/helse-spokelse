@@ -10,9 +10,8 @@ class VedtakDAO(private val dataSource: DataSource) {
         sessionOf(dataSource, true).use { session ->
             val vedtakId = session.run(
                 queryOf(
-                    "INSERT INTO vedtak(fodselsnummer, gruppeId, vedtaksperiodeId, opprettet) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO vedtak(fodselsnummer, vedtaksperiodeId, opprettet) VALUES (?, ?, ?)",
                     vedtak.fødselsnummer,
-                    vedtak.gruppeId,
                     vedtak.vedtaksperiodeId,
                     vedtak.opprettet
                 ).asUpdateAndReturnGeneratedKey
@@ -36,7 +35,7 @@ class VedtakDAO(private val dataSource: DataSource) {
         .use { session ->
             session.run(
                 queryOf(
-                    "SELECT id, fodselsnummer, gruppeId, vedtaksperiodeId, opprettet FROM vedtak WHERE fodselsnummer = ?",
+                    "SELECT id, fodselsnummer, vedtaksperiodeId, opprettet FROM vedtak WHERE fodselsnummer = ?",
                     fnr
                 ).map { row ->
                     val utbetalinger = session.run(
@@ -53,7 +52,6 @@ class VedtakDAO(private val dataSource: DataSource) {
                     )
                     Vedtak(
                         fødselsnummer = fnr,
-                        gruppeId = UUID.fromString(row.string("gruppeId")),
                         vedtaksperiodeId = UUID.fromString(row.string("vedtaksperiodeId")),
                         utbetalinger = utbetalinger,
                         opprettet = row.localDateTime("opprettet")

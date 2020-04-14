@@ -46,7 +46,7 @@ spec:
   - name: KAFKA_RAPID_TOPIC
     value: helse-rapid-v1
   - name: KAFKA_CONSUMER_GROUP_ID
-    value: spokelse-v2
+    value: spokelse-v3
   - name: KAFKA_RESET_POLICY
     value: earliest
   - name: MQ_HOSTNAME

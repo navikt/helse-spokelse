@@ -114,37 +114,31 @@ class EndToEndTest {
     fun `skriver vedtak til db`() {
         val fnr = "01010145678"
 
-        val gruppeId1 = UUID.randomUUID()
         val vedtaksperiodeId1 = UUID.randomUUID()
         val fom1 = LocalDate.of(2020, 4, 1)
         val tom1 = LocalDate.of(2020, 4, 6)
         val grad1 = 50.0
-        rapid.sendToListeners(opprettVedtak(fnr, gruppeId1, vedtaksperiodeId1, fom1, tom1, grad1))
+        rapid.sendToListeners(opprettVedtak(fnr, vedtaksperiodeId1, fom1, tom1, grad1))
 
-        val gruppeId2 = UUID.randomUUID()
         val vedtaksperiodeId2 = UUID.randomUUID()
         val fom2 = LocalDate.of(2020, 4, 10)
         val tom2 = LocalDate.of(2020, 4, 16)
         val grad2 = 70.0
-        rapid.sendToListeners(opprettVedtak(fnr, gruppeId2, vedtaksperiodeId2, fom2, tom2, grad2))
+        rapid.sendToListeners(opprettVedtak(fnr, vedtaksperiodeId2, fom2, tom2, grad2))
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted {
             "/grunnlag?fodselsnummer=$fnr".httpGet {
-                objectMapper.readValue<List<Vedtak>>(this).apply {
+                objectMapper.readValue<List<FpVedtak>>(this).apply {
                     assertEquals(2, size)
 
-                    assertEquals(fnr, this[0].fødselsnummer)
-                    assertEquals(gruppeId1, this[0].gruppeId)
-                    assertEquals(vedtaksperiodeId1, this[0].vedtaksperiodeId)
-                    assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[0].opprettet)
+                    assertEquals(vedtaksperiodeId1, this[0].vedtaksreferanse)
+                    assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[0].vedtattTidspunkt)
                     assertEquals(fom1, this[0].utbetalinger[0].fom)
                     assertEquals(tom1, this[0].utbetalinger[0].tom)
                     assertEquals(grad1, this[0].utbetalinger[0].grad)
 
-                    assertEquals(fnr, this[1].fødselsnummer)
-                    assertEquals(gruppeId2, this[1].gruppeId)
-                    assertEquals(vedtaksperiodeId2, this[1].vedtaksperiodeId)
-                    assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[1].opprettet)
+                    assertEquals(vedtaksperiodeId2, this[1].vedtaksreferanse)
+                    assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[1].vedtattTidspunkt)
                     assertEquals(fom2, this[1].utbetalinger[0].fom)
                     assertEquals(tom2, this[1].utbetalinger[0].tom)
                     assertEquals(grad2, this[1].utbetalinger[0].grad)
@@ -153,12 +147,11 @@ class EndToEndTest {
         }
     }
 
-    private fun opprettVedtak(fnr: String, gruppeId: UUID, vedtaksperiodeId: UUID, fom: LocalDate, tom: LocalDate, grad: Double) =
+    private fun opprettVedtak(fnr: String, vedtaksperiodeId: UUID, fom: LocalDate, tom: LocalDate, grad: Double) =
         """{
               "@event_name": "utbetalt",
               "aktørId": "aktørId",
               "fødselsnummer": "$fnr",
-              "gruppeId": "$gruppeId",
               "vedtaksperiodeId": "$vedtaksperiodeId",
               "utbetaling": [
                 {

@@ -11,7 +11,6 @@ class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: Ved
                 it.requireKey(
                     "fødselsnummer",
                     "utbetaling",
-                    "gruppeId",
                     "vedtaksperiodeId",
                     "forbrukteSykedager",
                     "opprettet"
@@ -27,7 +26,6 @@ class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: Ved
 
 private fun JsonMessage.toVedtak() = Vedtak(
     fødselsnummer = this["fødselsnummer"].asText(),
-    gruppeId = UUID.fromString(this["gruppeId"].asText()),
     vedtaksperiodeId = UUID.fromString(this["vedtaksperiodeId"].asText()),
     utbetalinger = this["utbetaling"].flatMap { it["utbetalingslinjer"] }.map {
         Utbetaling(
