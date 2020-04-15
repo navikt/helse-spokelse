@@ -49,18 +49,6 @@ spec:
     value: spokelse-v3
   - name: KAFKA_RESET_POLICY
     value: earliest
-  - name: MQ_HOSTNAME
-    value: b27apvl176.preprod.local
-  - name: MQ_PORT
-    value: "1413"
-  - name: MQ_CHANNEL
-    value: Q1_SPOKELSE
-  - name: MQ_QUEUE_MANAGER
-    value: MQ1LSC02
-  - name: MQ_ARENA_OUTPUT
-    value: QA.Q1_SPOKELSE.ARENA_TIL_INFOTRYGD
-  - name: MQ_ARENA_INPUT_KVITTERING
-    value: QA.Q1_SPOKELSE.ARENA_TIL_INFOTRYGD_KVITTERING
   - name: DATABASE_HOST
     value: b27dbvl013.preprod.local
   - name: DATABASE_PORT

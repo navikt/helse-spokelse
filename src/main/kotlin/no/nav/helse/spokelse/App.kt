@@ -14,11 +14,9 @@ import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.util.KtorExperimentalAPI
-import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.rapids_rivers.RapidApplication
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.jms.Session
 
 private val log: Logger = LoggerFactory.getLogger("spokelse")
 private val tjenestekallLog = LoggerFactory.getLogger("tjenestekall")
@@ -31,21 +29,6 @@ fun main() {
 
 @KtorExperimentalAPI
 fun launchApplication(env: Environment) {
-    val connection = createConnection(env.mq)
-
-    val session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)
-
-    val arenaOutput = session.createConsumer(session.createQueue(env.mq.arenaOutput))
-    val arenaInputKvittering = session.createConsumer(session.createQueue(env.mq.arenaInputKvittering))
-
-    arenaOutput.setMessageListener {
-        tjenestekallLog.debug("Mottok melding fra arena {}", keyValue("data", it.getBody(String::class.java)))
-    }
-
-    arenaInputKvittering.setMessageListener {
-        tjenestekallLog.debug("Mottok kvittering fra arena {}", keyValue("data", it.getBody(String::class.java)))
-    }
-
     val dataSource = DataSourceBuilder(env.db)
         .apply(DataSourceBuilder::migrate)
         .getDataSource()
