@@ -2,7 +2,6 @@ package no.nav.helse.spokelse
 
 import kotliquery.queryOf
 import kotliquery.sessionOf
-import java.util.*
 import javax.sql.DataSource
 
 class VedtakDAO(private val dataSource: DataSource) {
@@ -10,9 +9,9 @@ class VedtakDAO(private val dataSource: DataSource) {
         sessionOf(dataSource, true).use { session ->
             val vedtakId = session.run(
                 queryOf(
-                    "INSERT INTO vedtak(fodselsnummer, vedtaksperiodeId, opprettet) VALUES (?, ?, ?)",
+                    "INSERT INTO vedtak(fodselsnummer, forste_fravarsdag, opprettet) VALUES (?, ?, ?)",
                     vedtak.fødselsnummer,
-                    vedtak.vedtaksperiodeId,
+                    vedtak.førsteFraværsdag,
                     vedtak.opprettet
                 ).asUpdateAndReturnGeneratedKey
             )
@@ -35,7 +34,7 @@ class VedtakDAO(private val dataSource: DataSource) {
         .use { session ->
             session.run(
                 queryOf(
-                    "SELECT id, fodselsnummer, vedtaksperiodeId, opprettet FROM vedtak WHERE fodselsnummer = ?",
+                    "SELECT id, forste_fravarsdag, opprettet FROM vedtak WHERE fodselsnummer = ?",
                     fnr
                 ).map { row ->
                     val utbetalinger = session.run(
@@ -52,7 +51,7 @@ class VedtakDAO(private val dataSource: DataSource) {
                     )
                     Vedtak(
                         fødselsnummer = fnr,
-                        vedtaksperiodeId = UUID.fromString(row.string("vedtaksperiodeId")),
+                        førsteFraværsdag = row.localDate("forste_fravarsdag"),
                         utbetalinger = utbetalinger,
                         opprettet = row.localDateTime("opprettet")
                     )

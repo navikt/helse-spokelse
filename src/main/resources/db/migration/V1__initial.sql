@@ -1,9 +1,9 @@
 CREATE TABLE vedtak
 (
-    id               SERIAL PRIMARY KEY,
-    fodselsnummer    CHAR(11)  NOT NULL,
-    vedtaksperiodeId CHAR(36)  NOT NULL,
-    opprettet        TIMESTAMP NOT NULL
+    id                SERIAL PRIMARY KEY,
+    fodselsnummer     CHAR(11)  NOT NULL,
+    forste_fravarsdag DATE      NOT NULL,
+    opprettet         TIMESTAMP NOT NULL
 );
 
 CREATE TABLE utbetaling

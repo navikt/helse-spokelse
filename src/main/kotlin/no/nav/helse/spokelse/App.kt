@@ -89,7 +89,7 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDAO) {
 private fun List<Vedtak>.asFpVedtak() =
     map { vedtak ->
         FpVedtak(
-            vedtaksreferanse = vedtak.vedtaksperiodeId,
+            vedtaksreferanse = vedtak.førsteFraværsdag,
             utbetalinger = vedtak.utbetalinger.map { utbetaling ->
                 Utbetalingsperiode(
                     fom = utbetaling.fom,

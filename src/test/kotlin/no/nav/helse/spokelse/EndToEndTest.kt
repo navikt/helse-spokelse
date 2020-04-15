@@ -30,7 +30,6 @@ import java.net.Socket
 import java.net.URL
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 @KtorExperimentalAPI
@@ -114,30 +113,28 @@ class EndToEndTest {
     fun `skriver vedtak til db`() {
         val fnr = "01010145678"
 
-        val vedtaksperiodeId1 = UUID.randomUUID()
         val fom1 = LocalDate.of(2020, 4, 1)
         val tom1 = LocalDate.of(2020, 4, 6)
         val grad1 = 50.0
-        rapid.sendToListeners(opprettVedtak(fnr, vedtaksperiodeId1, fom1, tom1, grad1))
+        rapid.sendToListeners(opprettVedtak(fnr, fom1, tom1, grad1))
 
-        val vedtaksperiodeId2 = UUID.randomUUID()
         val fom2 = LocalDate.of(2020, 4, 10)
         val tom2 = LocalDate.of(2020, 4, 16)
         val grad2 = 70.0
-        rapid.sendToListeners(opprettVedtak(fnr, vedtaksperiodeId2, fom2, tom2, grad2))
+        rapid.sendToListeners(opprettVedtak(fnr, fom2, tom2, grad2))
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted {
             "/grunnlag?fodselsnummer=$fnr".httpGet {
                 objectMapper.readValue<List<FpVedtak>>(this).apply {
                     assertEquals(2, size)
 
-                    assertEquals(vedtaksperiodeId1, this[0].vedtaksreferanse)
+                    assertEquals(fom1, this[0].vedtaksreferanse)
                     assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[0].vedtattTidspunkt)
                     assertEquals(fom1, this[0].utbetalinger[0].fom)
                     assertEquals(tom1, this[0].utbetalinger[0].tom)
                     assertEquals(grad1, this[0].utbetalinger[0].grad)
 
-                    assertEquals(vedtaksperiodeId2, this[1].vedtaksreferanse)
+                    assertEquals(fom2, this[1].vedtaksreferanse)
                     assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[1].vedtattTidspunkt)
                     assertEquals(fom2, this[1].utbetalinger[0].fom)
                     assertEquals(tom2, this[1].utbetalinger[0].tom)
@@ -147,12 +144,12 @@ class EndToEndTest {
         }
     }
 
-    private fun opprettVedtak(fnr: String, vedtaksperiodeId: UUID, fom: LocalDate, tom: LocalDate, grad: Double) =
+    private fun opprettVedtak(fnr: String, fom: LocalDate, tom: LocalDate, grad: Double) =
         """{
               "@event_name": "utbetalt",
               "aktørId": "aktørId",
               "fødselsnummer": "$fnr",
-              "vedtaksperiodeId": "$vedtaksperiodeId",
+              "førsteFraværsdag": "$fom",
               "utbetaling": [
                 {
                   "utbetalingsreferanse": "WKOZJT3JYNB3VNT5CE5U54R3Y4",

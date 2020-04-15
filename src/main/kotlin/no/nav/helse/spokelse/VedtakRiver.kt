@@ -1,7 +1,6 @@
 package no.nav.helse.spokelse
 
 import no.nav.helse.rapids_rivers.*
-import java.util.*
 
 class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: VedtakDAO) : River.PacketListener {
     init {
@@ -11,7 +10,7 @@ class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: Ved
                 it.requireKey(
                     "fødselsnummer",
                     "utbetaling",
-                    "vedtaksperiodeId",
+                    "førsteFraværsdag",
                     "forbrukteSykedager",
                     "opprettet"
                 )
@@ -26,7 +25,7 @@ class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: Ved
 
 private fun JsonMessage.toVedtak() = Vedtak(
     fødselsnummer = this["fødselsnummer"].asText(),
-    vedtaksperiodeId = UUID.fromString(this["vedtaksperiodeId"].asText()),
+    førsteFraværsdag = this["førsteFraværsdag"].asLocalDate(),
     utbetalinger = this["utbetaling"].flatMap { it["utbetalingslinjer"] }.map {
         Utbetaling(
             fom = it["fom"].asLocalDate(),
