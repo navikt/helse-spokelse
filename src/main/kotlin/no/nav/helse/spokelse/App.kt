@@ -10,6 +10,7 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
 import io.ktor.response.respond
+import io.ktor.response.respondText
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.routing
@@ -65,7 +66,14 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDAO) {
         val fnr = call.request.queryParameters["fodselsnummer"]
             ?: return@get call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
 
-        call.respond(HttpStatusCode.OK, vedtakDAO.hentVedtakListe(fnr).asFpVedtak())
+        tjenestekallLog.info("FP henter vedtak for $fnr")
+
+        try {
+            call.respond(HttpStatusCode.OK, vedtakDAO.hentVedtakListe(fnr).asFpVedtak())
+        } catch (e: Exception) {
+            tjenestekallLog.error("Feil ved henting av vedtak for $fnr", e)
+            call.respond(HttpStatusCode.InternalServerError, "Feil ved henting av vedtak")
+        }
     }
 }
 
