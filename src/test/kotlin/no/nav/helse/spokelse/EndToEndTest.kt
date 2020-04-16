@@ -116,12 +116,12 @@ class EndToEndTest {
         val fom1 = LocalDate.of(2020, 4, 1)
         val tom1 = LocalDate.of(2020, 4, 6)
         val grad1 = 50.0
-        rapid.sendToListeners(opprettVedtak(fnr, fom1, tom1, grad1))
+        rapid.sendToListeners(opprettVedtakUtenUtbetalingsreferanse(fnr, fom1, tom1, grad1))
 
         val fom2 = LocalDate.of(2020, 4, 10)
         val tom2 = LocalDate.of(2020, 4, 16)
         val grad2 = 70.0
-        rapid.sendToListeners(opprettVedtak(fnr, fom2, tom2, grad2))
+        rapid.sendToListeners(opprettVedtakUtenUtbetalingsreferanse(fnr, fom2, tom2, grad2))
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted {
             "/grunnlag?fodselsnummer=$fnr".httpGet {
@@ -144,7 +144,68 @@ class EndToEndTest {
         }
     }
 
-    private fun opprettVedtak(fnr: String, fom: LocalDate, tom: LocalDate, grad: Double) =
+    @Test
+    fun `støtter utbetalt-event på to formater`() {
+        val fnr = "01010145679"
+
+        val fom1 = LocalDate.of(2020, 4, 1)
+        val tom1 = LocalDate.of(2020, 4, 6)
+        val grad1 = 50.0
+        rapid.sendToListeners(opprettVedtakMedUtbetalingsreferanse(fnr, fom1, tom1, grad1))
+
+        val fom2 = LocalDate.of(2020, 4, 10)
+        val tom2 = LocalDate.of(2020, 4, 16)
+        val grad2 = 70.0
+        rapid.sendToListeners(opprettVedtakUtenUtbetalingsreferanse(fnr, fom2, tom2, grad2))
+
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            "/grunnlag?fodselsnummer=$fnr".httpGet {
+                objectMapper.readValue<List<FpVedtak>>(this).apply {
+                    assertEquals(2, size)
+
+                    assertEquals(fom1, this[0].vedtaksreferanse)
+                    assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[0].vedtattTidspunkt)
+                    assertEquals(fom1, this[0].utbetalinger[0].fom)
+                    assertEquals(tom1, this[0].utbetalinger[0].tom)
+                    assertEquals(grad1, this[0].utbetalinger[0].grad)
+
+                    assertEquals(fom2, this[1].vedtaksreferanse)
+                    assertEquals(LocalDateTime.of(2020, 4, 11, 10, 0), this[1].vedtattTidspunkt)
+                    assertEquals(fom2, this[1].utbetalinger[0].fom)
+                    assertEquals(tom2, this[1].utbetalinger[0].tom)
+                    assertEquals(grad2, this[1].utbetalinger[0].grad)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `kall til grunnlag uten fnr gir 400`() {
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            "/grunnlag".httpGet(HttpStatusCode.BadRequest)
+        }
+    }
+
+    private fun opprettVedtakUtenUtbetalingsreferanse(fnr: String, fom: LocalDate, tom: LocalDate, grad: Double) =
+        """{
+              "@event_name": "utbetalt",
+              "aktørId": "aktørId",
+              "fødselsnummer": "$fnr",
+              "førsteFraværsdag": "$fom",
+              "utbetalingslinjer": [
+                {
+                  "fom": "$fom",
+                  "tom": "$tom",
+                  "dagsats": 1000,
+                  "grad": $grad
+                }
+              ],
+              "forbrukteSykedager": 123,
+              "opprettet": "2020-04-11T10:00:00.00000",
+              "system_read_count": 0
+            }"""
+
+    private fun opprettVedtakMedUtbetalingsreferanse(fnr: String, fom: LocalDate, tom: LocalDate, grad: Double) =
         """{
               "@event_name": "utbetalt",
               "aktørId": "aktørId",
@@ -167,13 +228,6 @@ class EndToEndTest {
               "opprettet": "2020-04-11T10:00:00.00000",
               "system_read_count": 0
             }"""
-
-    @Test
-    fun `kall til grunnlag uten fnr gir 400`() {
-        await().atMost(5, TimeUnit.SECONDS).untilAsserted {
-            "/grunnlag".httpGet(HttpStatusCode.BadRequest)
-        }
-    }
 
     private fun String.httpGet(expectedStatus: HttpStatusCode = HttpStatusCode.OK, testBlock: String.() -> Unit = {}) {
         val token = jwtStub.createTokenFor(

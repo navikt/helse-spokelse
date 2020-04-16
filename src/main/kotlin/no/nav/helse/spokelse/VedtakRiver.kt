@@ -9,11 +9,12 @@ class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: Ved
                 it.requireValue("@event_name", "utbetalt")
                 it.requireKey(
                     "fødselsnummer",
-                    "utbetaling",
                     "førsteFraværsdag",
                     "forbrukteSykedager",
                     "opprettet"
                 )
+                it.interestedIn("utbetaling")
+                it.interestedIn("utbetalingslinjer")
             }
         }.register(this)
     }
@@ -23,15 +24,21 @@ class VedtakRiver(rapidsConnection: RapidsConnection, private val vedtakDAO: Ved
     }
 }
 
-private fun JsonMessage.toVedtak() = Vedtak(
-    fødselsnummer = this["fødselsnummer"].asText(),
-    førsteFraværsdag = this["førsteFraværsdag"].asLocalDate(),
-    utbetalinger = this["utbetaling"].flatMap { it["utbetalingslinjer"] }.map {
-        Utbetaling(
-            fom = it["fom"].asLocalDate(),
-            tom = it["tom"].asLocalDate(),
-            grad = it["grad"].asDouble()
-        )
-    },
-    opprettet = this["opprettet"].asLocalDateTime()
-)
+private fun JsonMessage.toVedtak(): Vedtak {
+    val utbetalingslinjer =
+        this["utbetalingslinjer"].takeUnless { it.isMissingOrNull() }?.toList()
+            ?: this["utbetaling"].flatMap { it["utbetalingslinjer"] }
+
+    return Vedtak(
+        fødselsnummer = this["fødselsnummer"].asText(),
+        førsteFraværsdag = this["førsteFraværsdag"].asLocalDate(),
+        utbetalinger = utbetalingslinjer.map {
+            Utbetaling(
+                fom = it["fom"].asLocalDate(),
+                tom = it["tom"].asLocalDate(),
+                grad = it["grad"].asDouble()
+            )
+        },
+        opprettet = this["opprettet"].asLocalDateTime()
+    )
+}
