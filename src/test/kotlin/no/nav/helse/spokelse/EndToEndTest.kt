@@ -99,6 +99,7 @@ class EndToEndTest {
                     spokelse(auth(
                         name = "issuer",
                         clientId = "spokelse_azure_ad_app_id",
+                        validConsumers = listOf("fp_object_id"),
                         discoveryUrl = "${wireMockServer.baseUrl()}/config"
                     ), vedtakDAO)
                 }
@@ -231,7 +232,7 @@ class EndToEndTest {
 
     private fun String.httpGet(expectedStatus: HttpStatusCode = HttpStatusCode.OK, testBlock: String.() -> Unit = {}) {
         val token = jwtStub.createTokenFor(
-            subject = "en_saksbehandler_ident",
+            subject = "fp_object_id",
             audience = "spokelse_azure_ad_app_id"
         )
 

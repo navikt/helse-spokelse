@@ -26,6 +26,7 @@ class Environment(
         auth = auth(
             name = "ourissuer",
             clientId = "/var/run/secrets/nais.io/azure/client_id".readFile(),
+            validConsumers = emptyList(),
             discoveryUrl = raw.getValue("DISCOVERY_URL")
         )
     )
@@ -40,6 +41,7 @@ class Environment(
     class Auth(
         val name: String,
         val clientId: String,
+        val validConsumers: List<String>,
         val issuer: String,
         jwksUri: String
     ) {
@@ -48,11 +50,13 @@ class Environment(
         companion object {
             fun auth(name: String,
                      clientId: String,
+                     validConsumers: List<String>,
                      discoveryUrl: String): Auth {
                 val wellKnown = discoveryUrl.getJson()
                 return Auth(
                     name = name,
                     clientId = clientId,
+                    validConsumers = validConsumers,
                     issuer = wellKnown["issuer"].textValue(),
                     jwksUri = wellKnown["jwks_uri"].textValue()
                 )
