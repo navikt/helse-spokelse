@@ -22,7 +22,7 @@ buildscript {
 }
 
 dependencies {
-    implementation("no.nav.helse:rapids-rivers:1.2436e10")
+    implementation("com.github.navikt:rapids-and-rivers:1.2954646")
     implementation("io.ktor:ktor-jackson:$ktorVersion")
     implementation("com.ibm.mq:com.ibm.mq.allclient:9.1.4.0")
     implementation("io.ktor:ktor-auth-jwt:$ktorVersion") {
@@ -55,7 +55,7 @@ repositories {
     maven("https://dl.bintray.com/kotlin/ktor")
     maven("https://packages.confluent.io/maven/")
     maven {
-        url = uri("https://maven.pkg.github.com/navikt/helse-spleis")
+        url = uri("https://maven.pkg.github.com/navikt/rapids-and-rivers")
         credentials {
             username = githubUser
             password = githubPassword

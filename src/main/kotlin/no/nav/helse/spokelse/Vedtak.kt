@@ -3,27 +3,31 @@ package no.nav.helse.spokelse
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class Vedtak(
+data class Vedtak(
     val fødselsnummer: String,
-    val førsteFraværsdag: LocalDate,
-    val utbetalinger: List<Utbetaling>,
+    val orgnummer: String,
+    val dokumenter: Dokumenter,
+    val oppdrag: List<Oppdrag>,
+    val fom: LocalDate,
+    val tom: LocalDate,
+    val forbrukteSykedager: Int,
+    val gjenståendeSykedager: Int,
     val opprettet: LocalDateTime
-)
-
-class Utbetaling(
-    val fom: LocalDate,
-    val tom: LocalDate,
-    val grad: Double
-)
-
-class FpVedtak(
-    val vedtaksreferanse: LocalDate,
-    val utbetalinger: List<Utbetalingsperiode>,
-    val vedtattTidspunkt: LocalDateTime
-)
-
-class Utbetalingsperiode(
-    val fom: LocalDate,
-    val tom: LocalDate,
-    val grad: Double
-)
+) {
+    data class Oppdrag(
+        val mottaker: String,
+        val fagområde: String,
+        val fagsystemId: String,
+        val totalbeløp: Int,
+        val utbetalingslinjer: List<Utbetalingslinje>
+    ) {
+        data class Utbetalingslinje(
+            val fom: LocalDate,
+            val tom: LocalDate,
+            val dagsats: Int,
+            val beløp: Int,
+            val grad: Double,
+            val sykedager: Int
+        )
+    }
+}
