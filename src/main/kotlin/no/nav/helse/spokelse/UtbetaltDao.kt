@@ -39,8 +39,9 @@ class UtbetaltDao(val datasource: DataSource) {
             gjenstående_sykedager,
             sykmelding_id,
             soknad_id,
-            inntektsmelding_id)
-            VALUES(?,?,?,?,?,?,?,?,?,?)"""
+            inntektsmelding_id,
+            hendelse_id)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?)"""
         val key = run(
             queryOf(
                 query,
@@ -53,7 +54,8 @@ class UtbetaltDao(val datasource: DataSource) {
                 vedtak.gjenståendeSykedager,
                 vedtak.dokumenter.sykmelding.dokumentId,
                 vedtak.dokumenter.søknad.dokumentId,
-                vedtak.dokumenter.inntektsmelding?.dokumentId
+                vedtak.dokumenter.inntektsmelding?.dokumentId,
+                vedtak.hendelseId
             ).asUpdateAndReturnGeneratedKey
         )
         opprettOppdrag(requireNotNull(key), vedtak.oppdrag)

@@ -6,6 +6,7 @@ import com.zaxxer.hikari.HikariDataSource
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -48,10 +49,8 @@ internal class NyttDokumentRiverTest {
         testRapid.sendTestMessage(sendtSøknadMessage(sykmelding, søknad))
         testRapid.sendTestMessage(inntektsmeldingMessage(inntektsmelding))
 
-        val hendelser = dokumentDao.finn(listOf(sykmelding.hendelseId, søknad.hendelseId, inntektsmelding.hendelseId))
-        assertEquals(3, hendelser.size)
-        assertEquals(listOf(sykmelding, søknad, inntektsmelding), hendelser)
-
+        val dokumenter = dokumentDao.finn(listOf(sykmelding.hendelseId, søknad.hendelseId, inntektsmelding.hendelseId))
+        assertEquals(Dokumenter(sykmelding, søknad, inntektsmelding), dokumenter)
     }
 
     @Test
@@ -65,10 +64,8 @@ internal class NyttDokumentRiverTest {
         testRapid.sendTestMessage(sendtSøknadMessage(sykmelding, søknad))
         testRapid.sendTestMessage(inntektsmeldingMessage(inntektsmelding))
 
-        val hendelser = dokumentDao.finn(listOf(sykmelding.hendelseId, søknad.hendelseId, inntektsmelding.hendelseId))
-        assertEquals(3, hendelser.size)
-        assertEquals(listOf(sykmelding, søknad, inntektsmelding), hendelser)
-
+        val dokumenter = dokumentDao.finn(listOf(sykmelding.hendelseId, søknad.hendelseId, inntektsmelding.hendelseId))
+        assertEquals(Dokumenter(sykmelding, søknad, inntektsmelding), dokumenter)
     }
 
     private fun sendtSøknadMessage(sykmelding: Hendelse, søknad: Hendelse) =

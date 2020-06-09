@@ -37,6 +37,7 @@ internal class UtbetaltRiver(
 
     override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
         val vedtak = Vedtak(
+            hendelseId = UUID.fromString(packet["@id"].asText()),
             fødselsnummer = packet["fødselsnummer"].asText(),
             orgnummer = packet["organisasjonsnummer"].asText(),
             dokumenter = packet["hendelser"].toDokumenter(),
@@ -51,15 +52,8 @@ internal class UtbetaltRiver(
         log.info("Utbetaling på ${packet["aktørId"]} lagret")
     }
 
-    private fun JsonNode.toDokumenter() = map { UUID.fromString(it.asText()) }
-        .let { dokumentDao.finn(it) }
-        .let { hendelser ->
-            Dokumenter(
-                sykmelding = hendelser.first { it.type == Dokument.Sykmelding },
-                søknad = hendelser.first { it.type == Dokument.Søknad },
-                inntektsmelding = hendelser.firstOrNull { it.type == Dokument.Inntektsmelding }
-            )
-        }
+    private fun JsonNode.toDokumenter() =
+        dokumentDao.finn(map { UUID.fromString(it.asText()) })
 
     private fun JsonNode.toOppdrag() = map {
         Vedtak.Oppdrag(

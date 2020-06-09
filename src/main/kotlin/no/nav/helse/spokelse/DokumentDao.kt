@@ -33,6 +33,12 @@ class DokumentDao(val datasource: DataSource) {
                     )
                 }.asList
         )
+    }.let { hendelser ->
+        Dokumenter(
+            sykmelding = hendelser.first { it.type == Dokument.Sykmelding },
+            søknad = hendelser.first { it.type == Dokument.Søknad },
+            inntektsmelding = hendelser.firstOrNull { it.type == Dokument.Inntektsmelding }
+        )
     }
 }
 
