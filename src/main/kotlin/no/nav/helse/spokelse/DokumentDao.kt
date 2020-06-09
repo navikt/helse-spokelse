@@ -9,7 +9,7 @@ import javax.sql.DataSource
 class DokumentDao(val datasource: DataSource) {
     fun opprett(hendelse: Hendelse) {
         @Language("PostgreSQL")
-        val query = "INSERT INTO hendelse(hendelse_id, dokument_id, type) VALUES(?,?,?)"
+        val query = "INSERT INTO hendelse(hendelse_id, dokument_id, type) VALUES(?,?,?) ON CONFLICT DO NOTHING"
         sessionOf(datasource).use { session ->
             session.run(
                 queryOf(

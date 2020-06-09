@@ -18,7 +18,7 @@ import kotlin.streams.asSequence
 
 internal class EndToEndTest {
     val testRapid = TestRapid()
-    val embeddedPostgres = EmbeddedPostgres.builder().start()
+    val embeddedPostgres = EmbeddedPostgres.builder().setPort(56789).start()
     val hikariConfig = HikariConfig().apply {
         this.jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
         maximumPoolSize = 3
@@ -68,6 +68,40 @@ internal class EndToEndTest {
                             fødselsnummer = row.string("fodselsnummer"),
                             orgnummer = row.string("orgnummer"),
                             dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+                            oppdrag = emptyList(),
+                            fom = row.localDate("fom"),
+                            tom = row.localDate("tom"),
+                            forbrukteSykedager = row.int("forbrukte_sykedager"),
+                            gjenståendeSykedager = row.int("gjenstående_sykedager"),
+                            opprettet = row.localDateTime("opprettet")
+                        )
+                    }.asList
+            )
+        }
+
+        assertEquals(1, vedtak.size)
+
+    }
+
+    @Test
+    fun `lagrer vedtak uten inntektsmelding`() {
+        val søknadHendelseId = UUID.randomUUID()
+        val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
+        val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
+        testRapid.sendTestMessage(sendtSøknadMessage(sykmelding, søknad))
+
+        testRapid.sendTestMessage(utbetalingMessage(LocalDate.of(2020, 6, 1), LocalDate.of(2020, 6, 8), 0, listOf(sykmelding, søknad)))
+
+        val vedtak = sessionOf(dataSource).use { session ->
+            @Language("PostgreSQL")
+            val query = "SELECT * FROM vedtak"
+            session.run(
+                queryOf(query)
+                    .map { row ->
+                        Vedtak(
+                            fødselsnummer = row.string("fodselsnummer"),
+                            orgnummer = row.string("orgnummer"),
+                            dokumenter = Dokumenter(sykmelding, søknad, null),
                             oppdrag = emptyList(),
                             fom = row.localDate("fom"),
                             tom = row.localDate("tom"),
