@@ -146,7 +146,7 @@ internal class EndToEndTest {
     "fødselsnummer": "fnr",
     "organisasjonsnummer": "orgnummer",
     "hendelser": ${hendelser.map { "\"${it.hendelseId}\"" }},
-    "oppdrag": [
+    "utbetalt": [
         {
             "mottaker": "orgnummer",
             "fagområde": "SPREF",

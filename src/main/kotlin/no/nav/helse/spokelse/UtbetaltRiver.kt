@@ -24,7 +24,7 @@ internal class UtbetaltRiver(
                     "@id",
                     "organisasjonsnummer",
                     "hendelser",
-                    "oppdrag",
+                    "utbetalt",
                     "forbrukteSykedager",
                     "gjenståendeSykedager"
                 )
@@ -40,7 +40,7 @@ internal class UtbetaltRiver(
             fødselsnummer = packet["fødselsnummer"].asText(),
             orgnummer = packet["organisasjonsnummer"].asText(),
             dokumenter = packet["hendelser"].toDokumenter(),
-            oppdrag = packet["oppdrag"].toOppdrag(),
+            oppdrag = packet["utbetalt"].toOppdrag(),
             fom = packet["fom"].asLocalDate(),
             tom = packet["tom"].asLocalDate(),
             forbrukteSykedager = packet["forbrukteSykedager"].asInt(),
