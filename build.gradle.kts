@@ -22,7 +22,7 @@ buildscript {
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:1.2954646")
+    implementation("com.github.navikt:rapids-and-rivers:1.e22c895")
     implementation("io.ktor:ktor-jackson:$ktorVersion")
     implementation("com.ibm.mq:com.ibm.mq.allclient:9.1.4.0")
     implementation("io.ktor:ktor-auth-jwt:$ktorVersion") {
