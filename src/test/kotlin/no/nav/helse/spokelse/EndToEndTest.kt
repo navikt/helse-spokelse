@@ -30,7 +30,6 @@ internal class EndToEndTest {
     val dataSource = HikariDataSource(hikariConfig)
     val dokumentDao = DokumentDao(dataSource)
     val utbetaltDao = UtbetaltDao(dataSource)
-    val vedtakDao = VedtakDao(dataSource)
 
     init {
         NyttDokumentRiver(testRapid, dokumentDao)
@@ -45,6 +44,15 @@ internal class EndToEndTest {
     @BeforeEach
     fun setup() {
         testRapid.reset()
+        sessionOf(dataSource).use { session ->
+            @Language("PostgreSQL")
+            val query = """
+                DELETE FROM utbetaling;
+                DELETE FROM oppdrag;
+                DELETE FROM vedtak;
+                DELETE FROM hendelse"""
+            session.run(queryOf(query).asExecute)
+        }
     }
 
     @Test

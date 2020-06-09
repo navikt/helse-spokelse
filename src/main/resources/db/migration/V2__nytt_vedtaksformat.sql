@@ -3,7 +3,6 @@ DROP TABLE vedtak;
 
 CREATE TABLE hendelse
 (
-    id          SERIAL UNIQUE,
     dokument_id UUID,
     hendelse_id UUID,
     type        VARCHAR,
@@ -20,9 +19,9 @@ CREATE TABLE vedtak
     tom                   DATE      NOT NULL,
     forbrukte_sykedager   INTEGER   NOT NULL,
     gjenstående_sykedager INTEGER   NOT NULL,
-    sykmelding_id         INTEGER REFERENCES hendelse (id),
-    soknad_id             INTEGER REFERENCES hendelse (id),
-    inntektsmelding_id    INTEGER REFERENCES hendelse (id)
+    sykmelding_id         UUID      NOT NULL,
+    soknad_id             UUID      NOT NULL,
+    inntektsmelding_id    UUID
 );
 
 CREATE TABLE oppdrag
