@@ -2,7 +2,11 @@ package no.nav.helse.spokelse
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.*
+
+private val log: Logger = LoggerFactory.getLogger("spokelse")
 
 class OldUtbetalingRiver(
     rapidsConnection: RapidsConnection,
@@ -56,7 +60,7 @@ class OldUtbetalingRiver(
             forbrukteSykedager = this["forbrukteSykedager"].asInt(),
             gjenståendeSykedager = this["gjenståendeSykedager"].takeUnless { it.isMissingOrNull() }?.asInt(),
             dokumenter = dokumenter
-        )
+        ).also { log.info("Lagret gammelt vedtak med vedtakperiodeId $vedtaksperiodeId") }
     }
 }
 
