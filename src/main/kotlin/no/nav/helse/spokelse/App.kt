@@ -23,11 +23,14 @@ fun launchApplication(env: Environment) {
 
     val dokumentDao = DokumentDao(dataSource)
     val utbetaltDao = UtbetaltDao(dataSource)
+    val vedtakDao = VedtakDao(dataSource)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
         .build().apply {
             NyttDokumentRiver(this, dokumentDao)
             UtbetaltRiver(this, utbetaltDao, dokumentDao)
+            OldUtbetalingRiver(this, vedtakDao, dokumentDao)
+            TilUtbetalingBehovRiver(this, dokumentDao)
             start()
         }
 }
