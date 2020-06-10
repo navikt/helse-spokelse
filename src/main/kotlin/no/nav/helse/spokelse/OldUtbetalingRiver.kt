@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.time.DayOfWeek
+import java.time.LocalDate
 import java.util.*
+import kotlin.streams.asSequence
 
 private val log: Logger = LoggerFactory.getLogger("spokelse")
 
@@ -23,7 +26,7 @@ class OldUtbetalingRiver(
                     "fødselsnummer",
                     "organisasjonsnummer",
                     "forbrukteSykedager",
-                    "opprettet"
+                    "@opprettet"
                 )
                 it.interestedIn("utbetaling", "utbetalingslinjer", "gjenståendeSykedager")
             }
@@ -50,18 +53,30 @@ class OldUtbetalingRiver(
             fødselsnummer = this["fødselsnummer"].asText(),
             orgnummer = this["organisasjonsnummer"].asText(),
             utbetalinger = utbetalingslinjer.map {
+                val fom = it["fom"].asLocalDate()
+                val tom = it["tom"].asLocalDate()
+                val beløp = it["beløp"].asInt()
                 OldUtbetaling(
-                    fom = it["fom"].asLocalDate(),
-                    tom = it["tom"].asLocalDate(),
-                    grad = it["grad"].asDouble()
+                    fom = fom,
+                    tom = tom,
+                    grad = it["grad"].asDouble(),
+                    dagsats = it["dagsats"].asInt(),
+                    beløp = beløp,
+                    totalbeløp = beregnTotalbeløp(fom, tom, beløp)
                 )
             },
-            opprettet = this["opprettet"].asLocalDateTime(),
+            opprettet = this["@opprettet"].asLocalDateTime(),
             forbrukteSykedager = this["forbrukteSykedager"].asInt(),
             gjenståendeSykedager = this["gjenståendeSykedager"].takeUnless { it.isMissingOrNull() }?.asInt(),
             dokumenter = dokumenter
         ).also { log.info("Lagret gammelt vedtak med vedtakperiodeId $vedtaksperiodeId") }
     }
+
+    private fun beregnTotalbeløp(fom: LocalDate, tom: LocalDate, beløp: Int) =
+        fom.datesUntil(tom.plusDays(1))
+            .asSequence()
+            .filterNot { it.dayOfWeek in arrayOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) }
+            .sumBy { beløp }
 }
 
 

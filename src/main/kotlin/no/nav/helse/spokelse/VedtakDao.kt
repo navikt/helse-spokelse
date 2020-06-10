@@ -37,7 +37,7 @@ class VedtakDao(private val dataSource: DataSource) {
                 )
 
                 @Language("PostgreSQL")
-                val queryUtbetaling = "INSERT INTO old_utbetaling(vedtak_id, fom, tom, grad) VALUES (?, ?, ?, ?)"
+                val queryUtbetaling = "INSERT INTO old_utbetaling(vedtak_id, fom, tom, grad, dagsats, belop, totalbelop) VALUES (?, ?, ?, ?, ?, ?, ?)"
                 vedtak.utbetalinger.forEach { utbetaling ->
                     session.run(
                         queryOf(
@@ -45,7 +45,10 @@ class VedtakDao(private val dataSource: DataSource) {
                             vedtakId,
                             utbetaling.fom,
                             utbetaling.tom,
-                            utbetaling.grad
+                            utbetaling.grad,
+                            utbetaling.dagsats,
+                            utbetaling.beløp,
+                            utbetaling.totalbeløp
                         ).asUpdate
                     )
                 }

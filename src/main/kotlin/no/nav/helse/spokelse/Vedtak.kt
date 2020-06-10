@@ -18,7 +18,10 @@ class OldVedtak(
 class OldUtbetaling(
     val fom: LocalDate,
     val tom: LocalDate,
-    val grad: Double
+    val grad: Double,
+    val dagsats: Int,
+    val beløp: Int,
+    val totalbeløp: Int
 )
 
 data class Vedtak(

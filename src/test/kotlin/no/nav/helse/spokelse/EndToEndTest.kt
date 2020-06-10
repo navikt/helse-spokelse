@@ -3,6 +3,7 @@ package no.nav.helse.spokelse
 import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import kotliquery.Row
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
@@ -13,8 +14,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 import kotlin.streams.asSequence
+
+private const val FNR = "12020052345"
+private const val ORGNUMMER = "987654321"
 
 internal class EndToEndTest {
     val testRapid = TestRapid()
@@ -151,21 +156,61 @@ internal class EndToEndTest {
     }
 
     @Test
-    fun `rapport`() {
-        val søknadHendelseId = UUID.randomUUID()
-        val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
-        val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
-        val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-        testRapid.sendTestMessage(sendtSøknadMessage(sykmelding, søknad))
-        testRapid.sendTestMessage(inntektsmeldingMessage(inntektsmelding))
-        val hendelseId = UUID.randomUUID()
+    fun `genererer rapport fra alle vedtak i basen`() {
+        fun Row.uuid(columnLabel: String): UUID = UUID.fromString(string(columnLabel))
+
+        data class Rapport(
+            val fødselsnummer: String,
+            val sykmeldingId: UUID,
+            val soknadId: UUID,
+            val inntektsmeldingId: UUID,
+            val førsteUtbetalingsdag: LocalDate,
+            val sisteUtbetalingsdag: LocalDate,
+            val sum: Int,
+            val maksgrad: Double,
+            val utbetaltTidspunkt: LocalDateTime,
+            val orgnummer: String,
+            val forbrukteSykedager: Int,
+            val gjenståendeSykedager: Int?,
+            val fom: LocalDate,
+            val tom: LocalDate
+        )
+
+        val gammeltVedtakSøknadHendelseId = UUID.randomUUID()
+        val gammeltVedtakSykmelding = Hendelse(UUID.randomUUID(), gammeltVedtakSøknadHendelseId, Dokument.Sykmelding)
+        val gammeltVedtakSøknad = Hendelse(UUID.randomUUID(), gammeltVedtakSøknadHendelseId, Dokument.Søknad)
+        val gammeltVedtakInntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
+        testRapid.sendTestMessage(sendtSøknadMessage(gammeltVedtakSykmelding, gammeltVedtakSøknad))
+        testRapid.sendTestMessage(inntektsmeldingMessage(gammeltVedtakInntektsmelding))
+        val gammeltVedtakVedtaksperiodeId = UUID.randomUUID()
+        val gammeltVedtakFagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ4"
+        testRapid.sendTestMessage(utbetalingBehov(
+            gammeltVedtakVedtaksperiodeId,
+            gammeltVedtakFagsystemId,
+            LocalDate.of(2020, 6, 9),
+            LocalDate.of(2020, 6, 20)
+        ))
+        testRapid.sendTestMessage(vedtakMedUtbetalingslinjernøkkel(
+            LocalDate.of(2020, 6, 9),
+            LocalDate.of(2020, 6, 20),
+            gammeltVedtakVedtaksperiodeId,
+            listOf(gammeltVedtakSykmelding, gammeltVedtakSøknad, gammeltVedtakInntektsmelding))
+        )
+
+        val nyttVedtakSøknadHendelseId = UUID.randomUUID()
+        val nyttVedtakSykmelding = Hendelse(UUID.randomUUID(), nyttVedtakSøknadHendelseId, Dokument.Sykmelding)
+        val nyttVedtakSøknad = Hendelse(UUID.randomUUID(), nyttVedtakSøknadHendelseId, Dokument.Søknad)
+        val nyttVedtakInntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
+        testRapid.sendTestMessage(sendtSøknadMessage(nyttVedtakSykmelding, nyttVedtakSøknad))
+        testRapid.sendTestMessage(inntektsmeldingMessage(nyttVedtakInntektsmelding))
+        val nyttVedtakHendelseId = UUID.randomUUID()
         testRapid.sendTestMessage(
             utbetalingMessage(
-                hendelseId,
-                LocalDate.of(2020, 6, 1),
-                LocalDate.of(2020, 6, 8),
+                nyttVedtakHendelseId,
+                LocalDate.of(2020, 7, 1),
+                LocalDate.of(2020, 7, 8),
                 0,
-                listOf(sykmelding, søknad, inntektsmelding)
+                listOf(nyttVedtakSykmelding, nyttVedtakSøknad, nyttVedtakInntektsmelding)
             )
         )
 
@@ -184,8 +229,79 @@ internal class EndToEndTest {
                             fom,
                             tom
                         FROM vedtak v
+                        UNION
+                        SELECT fodselsnummer, sykmelding_id, soknad_id, inntektsmelding_id,
+                         (SELECT min(ou.fom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) forste_utbetalingsdag,
+                         (SELECT max(ou.tom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) siste_utbetalingsdag,
+                         (SELECT sum(ou.totalbelop) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) sum,
+                         (SELECT max(ou.grad) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) maksgrad,
+                         opprettet utbetalt_tidspunkt,
+                         orgnummer,
+                         forbrukte_sykedager,
+                         gjenstående_sykedager,
+                         (SELECT min(ou.fom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) fom,
+                         (SELECT max(ou.tom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) tom
+                        FROM old_vedtak ov
                 """
-        }
+            session.run(queryOf(query).map { row ->
+                Rapport(
+                    fødselsnummer = row.string("fodselsnummer"),
+                    sykmeldingId = row.uuid("sykmelding_id"),
+                    soknadId = row.uuid("soknad_id"),
+                    inntektsmeldingId = row.uuid("inntektsmelding_id"),
+                    førsteUtbetalingsdag = row.localDate("forste_utbetalingsdag"),
+                    sisteUtbetalingsdag = row.localDate("siste_utbetalingsdag"),
+                    sum = row.int("sum"),
+                    maksgrad = row.double("maksgrad"),
+                    utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
+                    orgnummer = row.string("orgnummer"),
+                    forbrukteSykedager = row.int("forbrukte_sykedager"),
+                    gjenståendeSykedager = row.intOrNull("gjenstående_sykedager"),
+                    fom = row.localDate("fom"),
+                    tom = row.localDate("tom")
+                )
+            }.asList)
+        }.sortedBy { it.fom }
+
+        assertEquals(2, rapport.size)
+        assertEquals(
+            Rapport(
+                fødselsnummer = FNR,
+                sykmeldingId = gammeltVedtakSykmelding.dokumentId,
+                soknadId = gammeltVedtakSøknad.dokumentId,
+                inntektsmeldingId = gammeltVedtakInntektsmelding.dokumentId,
+                førsteUtbetalingsdag = LocalDate.of(2020, 6, 9),
+                sisteUtbetalingsdag = LocalDate.of(2020, 6, 20),
+                sum = 12879,
+                maksgrad = 100.0,
+                utbetaltTidspunkt = LocalDateTime.of(2020, 6, 10, 10, 46, 46, 7000000),
+                orgnummer = ORGNUMMER,
+                forbrukteSykedager = 9,
+                gjenståendeSykedager = null,
+                fom = LocalDate.of(2020, 6, 9),
+                tom = LocalDate.of(2020, 6, 20)
+            ),
+            rapport.first())
+
+        assertEquals(
+            Rapport(
+                fødselsnummer = FNR,
+                sykmeldingId = nyttVedtakSykmelding.dokumentId,
+                soknadId = nyttVedtakSøknad.dokumentId,
+                inntektsmeldingId = nyttVedtakInntektsmelding.dokumentId,
+                førsteUtbetalingsdag = LocalDate.of(2020, 7, 1),
+                sisteUtbetalingsdag = LocalDate.of(2020, 7, 8),
+                sum = 8586,
+                maksgrad = 100.0,
+                utbetaltTidspunkt = LocalDateTime.of(2020, 5, 4, 11, 27, 13, 521000000),
+                orgnummer = ORGNUMMER,
+                forbrukteSykedager = 6,
+                gjenståendeSykedager = 242,
+                fom = LocalDate.of(2020, 7, 1),
+                tom = LocalDate.of(2020, 7, 8)
+            ),
+            rapport.last())
+
     }
 
     @Test
@@ -242,7 +358,10 @@ internal class EndToEndTest {
                         OldUtbetaling(
                             fom = row.localDate("fom"),
                             tom = row.localDate("tom"),
-                            grad = row.double("grad")
+                            grad = row.double("grad"),
+                            dagsats = row.int("dagsats"),
+                            beløp = row.int("belop"),
+                            totalbeløp = row.int("totalbelop")
                         )
                     }.asList
             )
@@ -254,6 +373,9 @@ internal class EndToEndTest {
         assertEquals(LocalDate.of(2020, 6, 9), utbetaling.fom)
         assertEquals(LocalDate.of(2020, 6, 20), utbetaling.tom)
         assertEquals(100.0, utbetaling.grad)
+        assertEquals(1431, utbetaling.dagsats)
+        assertEquals(1431, utbetaling.beløp)
+        assertEquals(12879, utbetaling.totalbeløp)
     }
 
     private fun sendtSøknadMessage(sykmelding: Hendelse, søknad: Hendelse) =
@@ -280,12 +402,12 @@ internal class EndToEndTest {
         hendelser: List<Hendelse>
     ) = """{
     "aktørId": "aktørId",
-    "fødselsnummer": "fnr",
-    "organisasjonsnummer": "orgnummer",
+    "fødselsnummer": "$FNR",
+    "organisasjonsnummer": "$ORGNUMMER",
     "hendelser": ${hendelser.map { "\"${it.hendelseId}\"" }},
     "utbetalt": [
         {
-            "mottaker": "orgnummer",
+            "mottaker": "$ORGNUMMER",
             "fagområde": "SPREF",
             "fagsystemId": "77ATRH3QENHB5K4XUY4LQ7HRTY",
             "førsteSykepengedag": "",
@@ -302,7 +424,7 @@ internal class EndToEndTest {
             ]
         },
         {
-            "mottaker": "fnr",
+            "mottaker": "$FNR",
             "fagområde": "SP",
             "fagsystemId": "353OZWEIBBAYZPKU6WYKTC54SE",
             "totalbeløp": 0,
@@ -360,9 +482,6 @@ internal class EndToEndTest {
     "organisasjonsnummer": "$ORGNUMMER"
 }"""
 
-    private val FNR = "12020052345"
-    private val ORGNUMMER = "987654321"
-
     @Language("JSON")
     private fun utbetalingBehov(vedtaksperiodeId: UUID, fagsystemId: String, fom: LocalDate, tom: LocalDate) = """{
     "@event_name": "behov",
@@ -378,10 +497,10 @@ internal class EndToEndTest {
     },
     "aktørId": "42",
     "fødselsnummer": "12020052345",
-    "organisasjonsnummer": "987654321",
+    "organisasjonsnummer": "$ORGNUMMER",
     "vedtaksperiodeId": "$vedtaksperiodeId",
     "tilstand": "TIL_UTBETALING",
-    "mottaker": "987654321",
+    "mottaker": "$ORGNUMMER",
     "fagområde": "SPREF",
     "linjer": [
         {
