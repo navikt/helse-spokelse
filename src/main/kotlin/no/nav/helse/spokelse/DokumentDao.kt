@@ -40,6 +40,20 @@ class DokumentDao(val datasource: DataSource) {
             inntektsmelding = hendelser.firstOrNull { it.type == Dokument.Inntektsmelding }
         )
     }
+
+    fun lagre(vedtaksperiodeId: UUID, fagsystemId: String) {
+        @Language("PostgreSQL")
+        val query = "INSERT INTO vedtak_utbetalingsref(vedtaksperiode_id, utbetalingsref) VALUES(?,?) ON CONFLICT DO NOTHING"
+        sessionOf(datasource).use { session ->
+            session.run(
+                queryOf(
+                    query,
+                    vedtaksperiodeId,
+                    fagsystemId
+                ).asUpdate
+            )
+        }
+    }
 }
 
 data class Hendelse(
