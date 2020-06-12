@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val slf4jVersion = "1.7.25"
-val ktorVersion = "1.2.4"
+val ktorVersion = "1.3.2"
 val jacksonVersion = "2.9.8"
 val kafkaVersion = "2.3.1"
 val prometheusVersion = "0.6.0"
@@ -12,7 +12,7 @@ val junitJupiterVersion = "5.4.0"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
-    kotlin("jvm") version "1.3.70"
+    kotlin("jvm") version "1.3.72"
 }
 
 buildscript {
@@ -22,7 +22,7 @@ buildscript {
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:1.e22c895")
+    implementation("com.github.navikt:rapids-and-rivers:1.74ae9cb")
     implementation("io.ktor:ktor-jackson:$ktorVersion")
     implementation("com.ibm.mq:com.ibm.mq.allclient:9.1.4.0")
     implementation("io.ktor:ktor-auth-jwt:$ktorVersion") {
