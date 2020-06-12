@@ -2,7 +2,7 @@ apiVersion: nais.io/v1alpha1
 kind: Application
 metadata:
   name: spokelse
-  namespace: default
+  namespace: tbd
   labels:
     team: tbd
 spec:
@@ -34,8 +34,6 @@ spec:
   vault:
     enabled: true
     paths:
-      - mountPath: /var/run/secrets/nais.io/vault
-        kvPath: /kv/preprod/fss/spokelse/default
       - mountPath: /var/run/secrets/nais.io/service_user
         kvPath: /serviceuser/data/dev/srvspokelse
       - mountPath: /var/run/secrets/nais.io/azure
