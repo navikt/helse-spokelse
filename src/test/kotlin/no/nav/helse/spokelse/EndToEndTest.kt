@@ -216,32 +216,53 @@ internal class EndToEndTest {
 
         val rapport = sessionOf(dataSource).use { session ->
             @Language("PostgreSQL")
-            val query = """
-                        SELECT fodselsnummer, sykmelding_id, soknad_id, inntektsmelding_id,
-                            (SELECT min(u.fom) FROM oppdrag o INNER JOIN utbetaling u on o.id = u.oppdrag_id WHERE o.vedtak_id = v.id) forste_utbetalingsdag,
-                            (SELECT max(u.tom) FROM oppdrag o INNER JOIN utbetaling u on o.id = u.oppdrag_id WHERE o.vedtak_id = v.id) siste_utbetalingsdag,
-                            (SELECT sum(o.totalbeløp) FROM oppdrag o WHERE o.vedtak_id = v.id) sum,
-                            (SELECT max(u.grad) FROM oppdrag o INNER JOIN utbetaling u on o.id = u.oppdrag_id WHERE o.vedtak_id = v.id) maksgrad,
-                            opprettet utbetalt_tidspunkt,
-                            orgnummer,
-                            forbrukte_sykedager,
-                            gjenstående_sykedager,
-                            fom,
-                            tom
-                        FROM vedtak v
+            val query = """(SELECT v.fodselsnummer,
+                                v.sykmelding_id,
+                                v.soknad_id,
+                                v.inntektsmelding_id,
+                                o.totalbeløp            sum,
+                                o.fagsystemid,
+                                u.fom                   forste_utbetalingsdag,
+                                u.tom                   siste_utbetalingsdag,
+                                u.grad                  maksgrad,
+                                u.belop,
+                                u.dagsats,
+                                u.sykedager,
+                                (u.belop * u.sykedager) totalbelop,
+                                v.opprettet             utbetalt_tidspunkt,
+                                v.orgnummer,
+                                v.forbrukte_sykedager,
+                                v.gjenstående_sykedager,
+                                v.fom,
+                                v.tom
+                         FROM vedtak v
+                                  INNER JOIN oppdrag o on v.id = o.vedtak_id
+                                  INNER JOIN utbetaling u on o.id = u.oppdrag_id)
                         UNION ALL
-                        SELECT fodselsnummer, sykmelding_id, soknad_id, inntektsmelding_id,
-                         (SELECT min(ou.fom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) forste_utbetalingsdag,
-                         (SELECT max(ou.tom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) siste_utbetalingsdag,
-                         (SELECT sum(ou.totalbelop) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) sum,
-                         (SELECT max(ou.grad) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) maksgrad,
-                         opprettet utbetalt_tidspunkt,
-                         orgnummer,
-                         forbrukte_sykedager,
-                         gjenstående_sykedager,
-                         (SELECT min(ou.fom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) fom,
-                         (SELECT max(ou.tom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) tom
-                        FROM old_vedtak ov
+                        (SELECT ov.fodselsnummer,
+                                ov.sykmelding_id,
+                                ov.soknad_id,
+                                ov.inntektsmelding_id,
+                                (SELECT sum(ou3.totalbelop) FROM old_utbetaling ou3 WHERE ou3.vedtak_id = ov.id) sum,
+                                (SELECT distinct vu.utbetalingsref
+                                 FROM vedtak_utbetalingsref vu
+                                 WHERE vu.vedtaksperiode_id = ov.vedtaksperiode_id)                              fagsystemId,
+                                ou2.fom                                                                          forste_utbetalingsdag,
+                                ou2.tom                                                                          siste_utbetalingsdag,
+                                ou2.grad                                                                         maksgrad,
+                                ou2.belop,
+                                ou2.dagsats,
+                                (ou2.totalbelop / ou2.belop)                                                     sykedager,
+                                ou2.totalbelop,
+                                ov.opprettet                                                                     utbetalt_tidspunkt,
+                                ov.orgnummer,
+                                ov.forbrukte_sykedager,
+                                ov.gjenstående_sykedager,
+                                ou2.fom                                                                          fom,
+                                ou2.tom                                                                          tom
+                         FROM old_vedtak ov
+                                  INNER JOIN old_utbetaling ou2 on ov.id = ou2.vedtak_id)
+                        ORDER BY utbetalt_tidspunkt, forste_utbetalingsdag, siste_utbetalingsdag
                 """
             session.run(queryOf(query).map { row ->
                 Rapport(
