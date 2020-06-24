@@ -229,7 +229,7 @@ internal class EndToEndTest {
                             fom,
                             tom
                         FROM vedtak v
-                        UNION
+                        UNION ALL
                         SELECT fodselsnummer, sykmelding_id, soknad_id, inntektsmelding_id,
                          (SELECT min(ou.fom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) forste_utbetalingsdag,
                          (SELECT max(ou.tom) FROM old_utbetaling ou WHERE ou.vedtak_id = ov.id) siste_utbetalingsdag,
