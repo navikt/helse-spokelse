@@ -20,7 +20,18 @@ class DokumentDao(val datasource: DataSource) {
         }
     }
 
-    fun finn(hendelseIder: List<UUID>) = sessionOf(datasource).use { session ->
+    fun finnHendelser(hendelseIder: List<UUID>): List<Hendelse> = finn(hendelseIder)
+
+    fun finnDokumenter(hendelseIder: List<UUID>) = finn(hendelseIder)
+        .let { hendelser ->
+            Dokumenter(
+                sykmelding = hendelser.first { it.type == Dokument.Sykmelding },
+                søknad = hendelser.first { it.type == Dokument.Søknad },
+                inntektsmelding = hendelser.firstOrNull { it.type == Dokument.Inntektsmelding }
+            )
+        }
+
+    private fun finn(hendelseIder: List<UUID>) = sessionOf(datasource).use { session ->
         @Language("PostgreSQL")
         val query = "SELECT * FROM hendelse WHERE hendelse_id = ANY((?)::uuid[])"
         session.run(
@@ -32,12 +43,6 @@ class DokumentDao(val datasource: DataSource) {
                         type = enumValueOf(row.string("type"))
                     )
                 }.asList
-        )
-    }.let { hendelser ->
-        Dokumenter(
-            sykmelding = hendelser.first { it.type == Dokument.Sykmelding },
-            søknad = hendelser.first { it.type == Dokument.Søknad },
-            inntektsmelding = hendelser.firstOrNull { it.type == Dokument.Inntektsmelding }
         )
     }
 

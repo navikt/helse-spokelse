@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
+import javax.sql.DataSource
 import kotlin.streams.asSequence
 
 private const val FNR = "12020052345"
@@ -23,16 +24,7 @@ private const val ORGNUMMER = "987654321"
 
 internal class EndToEndTest {
     val testRapid = TestRapid()
-    val embeddedPostgres = EmbeddedPostgres.builder().setPort(56789).start()
-    val hikariConfig = HikariConfig().apply {
-        this.jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
-        maximumPoolSize = 3
-        minimumIdle = 1
-        idleTimeout = 10001
-        connectionTimeout = 1000
-        maxLifetime = 30001
-    }
-    val dataSource = HikariDataSource(hikariConfig)
+    val dataSource = testDataSource()
     val dokumentDao = DokumentDao(dataSource)
     val utbetaltDao = UtbetaltDao(dataSource)
     val vedtakDao = VedtakDao(dataSource)
@@ -184,17 +176,21 @@ internal class EndToEndTest {
         testRapid.sendTestMessage(inntektsmeldingMessage(gammeltVedtakInntektsmelding))
         val gammeltVedtakVedtaksperiodeId = UUID.randomUUID()
         val gammeltVedtakFagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ4"
-        testRapid.sendTestMessage(utbetalingBehov(
-            gammeltVedtakVedtaksperiodeId,
-            gammeltVedtakFagsystemId,
-            LocalDate.of(2020, 6, 9),
-            LocalDate.of(2020, 6, 20)
-        ))
-        testRapid.sendTestMessage(vedtakMedUtbetalingslinjernøkkel(
-            LocalDate.of(2020, 6, 9),
-            LocalDate.of(2020, 6, 20),
-            gammeltVedtakVedtaksperiodeId,
-            listOf(gammeltVedtakSykmelding, gammeltVedtakSøknad, gammeltVedtakInntektsmelding))
+        testRapid.sendTestMessage(
+            utbetalingBehov(
+                gammeltVedtakVedtaksperiodeId,
+                gammeltVedtakFagsystemId,
+                LocalDate.of(2020, 6, 9),
+                LocalDate.of(2020, 6, 20)
+            )
+        )
+        testRapid.sendTestMessage(
+            vedtakMedUtbetalingslinjernøkkel(
+                LocalDate.of(2020, 6, 9),
+                LocalDate.of(2020, 6, 20),
+                gammeltVedtakVedtaksperiodeId,
+                listOf(gammeltVedtakSykmelding, gammeltVedtakSøknad, gammeltVedtakInntektsmelding)
+            )
         )
 
         val nyttVedtakSøknadHendelseId = UUID.randomUUID()
@@ -302,7 +298,8 @@ internal class EndToEndTest {
                 fom = LocalDate.of(2020, 6, 9),
                 tom = LocalDate.of(2020, 6, 20)
             ),
-            rapport.first())
+            rapport.first()
+        )
 
         assertEquals(
             Rapport(
@@ -321,7 +318,8 @@ internal class EndToEndTest {
                 fom = LocalDate.of(2020, 7, 1),
                 tom = LocalDate.of(2020, 7, 8)
             ),
-            rapport.last())
+            rapport.last()
+        )
 
     }
 
@@ -335,17 +333,21 @@ internal class EndToEndTest {
         testRapid.sendTestMessage(inntektsmeldingMessage(inntektsmelding))
         val vedtaksperiodeId = UUID.randomUUID()
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ4"
-        testRapid.sendTestMessage(utbetalingBehov(
-            vedtaksperiodeId,
-            fagsystemId,
-            LocalDate.of(2020, 6, 9),
-            LocalDate.of(2020, 6, 20)
-        ))
-        testRapid.sendTestMessage(vedtakMedUtbetalingslinjernøkkel(
-            LocalDate.of(2020, 6, 9),
-            LocalDate.of(2020, 6, 20),
-            vedtaksperiodeId,
-            listOf(sykmelding, søknad, inntektsmelding))
+        testRapid.sendTestMessage(
+            utbetalingBehov(
+                vedtaksperiodeId,
+                fagsystemId,
+                LocalDate.of(2020, 6, 9),
+                LocalDate.of(2020, 6, 20)
+            )
+        )
+        testRapid.sendTestMessage(
+            vedtakMedUtbetalingslinjernøkkel(
+                LocalDate.of(2020, 6, 9),
+                LocalDate.of(2020, 6, 20),
+                vedtaksperiodeId,
+                listOf(sykmelding, søknad, inntektsmelding)
+            )
         )
 
         val vedtak = sessionOf(dataSource).use { session ->
@@ -399,20 +401,6 @@ internal class EndToEndTest {
         assertEquals(12879, utbetaling.totalbeløp)
     }
 
-    private fun sendtSøknadMessage(sykmelding: Hendelse, søknad: Hendelse) =
-        """{
-            "@event_name": "sendt_søknad_nav",
-            "@id": "${sykmelding.hendelseId}",
-            "id": "${søknad.dokumentId}",
-            "sykmeldingId": "${sykmelding.dokumentId}"
-        }"""
-
-    private fun inntektsmeldingMessage(hendelse: Hendelse) =
-        """{
-            "@event_name": "inntektsmelding",
-            "@id": "${hendelse.hendelseId}",
-            "inntektsmeldingId": "${hendelse.dokumentId}"
-        }"""
 
     @Language("JSON")
     private fun utbetalingMessage(
@@ -470,7 +458,12 @@ internal class EndToEndTest {
 """
 
     @Language("JSON")
-    private fun vedtakMedUtbetalingslinjernøkkel(fom: LocalDate, tom: LocalDate, vedtaksperiodeId: UUID, hendelser: List<Hendelse>) = """{
+    private fun vedtakMedUtbetalingslinjernøkkel(
+        fom: LocalDate,
+        tom: LocalDate,
+        vedtaksperiodeId: UUID,
+        hendelser: List<Hendelse>
+    ) = """{
     "førsteFraværsdag": "$fom",
     "vedtaksperiodeId": "$vedtaksperiodeId",
     "hendelser": ${hendelser.map { "\"${it.hendelseId}\"" }},
@@ -554,3 +547,38 @@ internal class EndToEndTest {
             .filter { it.dayOfWeek !in arrayOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) }.count()
 
 }
+
+fun testDataSource(): DataSource {
+    val embeddedPostgres = EmbeddedPostgres.builder().setPort(56789).start()
+    val hikariConfig = HikariConfig().apply {
+        this.jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
+        maximumPoolSize = 3
+        minimumIdle = 1
+        idleTimeout = 10001
+        connectionTimeout = 1000
+        maxLifetime = 30001
+    }
+    return HikariDataSource(hikariConfig)
+        .apply {
+            Flyway
+                .configure()
+                .dataSource(this)
+                .load().also { it.migrate() }
+        }
+
+}
+
+fun sendtSøknadMessage(sykmelding: Hendelse, søknad: Hendelse) =
+    """{
+            "@event_name": "sendt_søknad_nav",
+            "@id": "${søknad.hendelseId}",
+            "id": "${søknad.dokumentId}",
+            "sykmeldingId": "${sykmelding.dokumentId}"
+        }"""
+
+fun inntektsmeldingMessage(hendelse: Hendelse) =
+    """{
+            "@event_name": "inntektsmelding",
+            "@id": "${hendelse.hendelseId}",
+            "inntektsmeldingId": "${hendelse.dokumentId}"
+        }"""

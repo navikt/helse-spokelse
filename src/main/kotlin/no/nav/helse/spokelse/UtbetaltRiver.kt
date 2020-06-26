@@ -53,7 +53,7 @@ internal class UtbetaltRiver(
     }
 
     private fun JsonNode.toDokumenter() =
-        dokumentDao.finn(map { UUID.fromString(it.asText()) })
+        dokumentDao.finnDokumenter(map { UUID.fromString(it.asText()) })
 
     private fun JsonNode.toOppdrag() = map {
         Vedtak.Oppdrag(

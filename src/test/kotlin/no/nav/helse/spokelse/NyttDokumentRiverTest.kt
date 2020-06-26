@@ -49,7 +49,7 @@ internal class NyttDokumentRiverTest {
         testRapid.sendTestMessage(sendtSøknadMessage(sykmelding, søknad))
         testRapid.sendTestMessage(inntektsmeldingMessage(inntektsmelding))
 
-        val dokumenter = dokumentDao.finn(listOf(sykmelding.hendelseId, søknad.hendelseId, inntektsmelding.hendelseId))
+        val dokumenter = dokumentDao.finnDokumenter(listOf(sykmelding.hendelseId, søknad.hendelseId, inntektsmelding.hendelseId))
         assertEquals(Dokumenter(sykmelding, søknad, inntektsmelding), dokumenter)
     }
 
@@ -64,7 +64,7 @@ internal class NyttDokumentRiverTest {
         testRapid.sendTestMessage(sendtSøknadMessage(sykmelding, søknad))
         testRapid.sendTestMessage(inntektsmeldingMessage(inntektsmelding))
 
-        val dokumenter = dokumentDao.finn(listOf(sykmelding.hendelseId, søknad.hendelseId, inntektsmelding.hendelseId))
+        val dokumenter = dokumentDao.finnDokumenter(listOf(sykmelding.hendelseId, søknad.hendelseId, inntektsmelding.hendelseId))
         assertEquals(Dokumenter(sykmelding, søknad, inntektsmelding), dokumenter)
     }
 

@@ -38,7 +38,7 @@ class OldUtbetalingRiver(
     }
 
     private fun JsonNode.toDokumenter() =
-        dokumentDao.finn(map { UUID.fromString(it.asText()) })
+        dokumentDao.finnDokumenter(map { UUID.fromString(it.asText()) })
 
     private fun JsonMessage.toVedtak(): OldVedtak {
         val utbetalingslinjer =

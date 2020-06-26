@@ -59,3 +59,5 @@ spec:
     value: https://login.microsoftonline.com/966ac572-f5b7-4bbe-aa88-c76419c0f851/v2.0/.well-known/openid-configuration
   - name: REQUIRED_GROUP
     value: f844f535-2174-445c-a0db-b6c55f2e4780
+  - name: sparenaproxy_client_id
+    value: 8e294ba4-f37c-4cb9-871b-cce06f63e0b9
