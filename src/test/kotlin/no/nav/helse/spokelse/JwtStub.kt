@@ -50,7 +50,7 @@ class JwtStub(private val issuer: String, private val wireMockServer: WireMockSe
         }
     ]
 }
-""".trimIndent())
+""")
    )
 
    fun stubbedConfigProvider() = WireMock.get(WireMock.urlPathEqualTo("/config")).willReturn(
@@ -60,6 +60,6 @@ class JwtStub(private val issuer: String, private val wireMockServer: WireMockSe
     "token_endpoint": "${wireMockServer.baseUrl()}/token",
     "issuer": "$issuer"
 }
-""".trimIndent())
+""")
    )
 }

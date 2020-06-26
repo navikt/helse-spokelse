@@ -5,7 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
-import io.ktor.auth.authentication
+import io.ktor.auth.authenticate
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
@@ -54,7 +54,7 @@ internal fun Application.spokelse(env: Environment.Auth, dokumentDao: DokumentDa
         }
     }
     routing {
-        authentication {
+        authenticate {
             get("/dokumenter") {
                 val hendelseIder = call.request.queryParameters.getAll("hendelseId")
                     ?.map { UUID.fromString(it) } ?: emptyList()

@@ -10,7 +10,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.util.KtorExperimentalAPI
 import no.nav.helse.rapids_rivers.inMemoryRapid
 import org.awaitility.Awaitility
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -25,28 +24,17 @@ class ApiTest {
     private val wireMockServer: WireMockServer = WireMockServer(WireMockConfiguration.options().dynamicPort())
     private lateinit var jwtStub: JwtStub
     private lateinit var appBaseUrl: String
-    val objectmapper = jacksonObjectMapper()
-    val dataSource = testDataSource()
+    private val objectmapper = jacksonObjectMapper()
+    private val dataSource = testDataSource()
 
-    val dokumentDao = DokumentDao(dataSource)
+    private val dokumentDao = DokumentDao(dataSource)
 
-    val sykmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Sykmelding)
-    val søknad = Hendelse(UUID.randomUUID(), sykmelding.hendelseId, Dokument.Søknad)
-    val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-
+    private val sykmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Sykmelding)
+    private val søknad = Hendelse(UUID.randomUUID(), sykmelding.hendelseId, Dokument.Søknad)
+    private val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
     @BeforeAll
     fun setupEnv() {
-        //Stub ID provider (for authentication of REST endpoints)
-        wireMockServer.start()
-        Awaitility.await("vent på WireMockServer har startet")
-            .atMost(5, TimeUnit.SECONDS)
-            .until {
-                try { Socket("localhost", wireMockServer.port()).use { it.isConnected } }
-                catch (err: Exception) { false }
-            }
-        jwtStub = JwtStub("Microsoft Azure AD", wireMockServer)
-        WireMock.stubFor(jwtStub.stubbedJwkProvider())
-        WireMock.stubFor(jwtStub.stubbedConfigProvider())
+        setupMockAuth()
 
         val randomPort = randomPort()
         val rapid = inMemoryRapid {
@@ -57,8 +45,8 @@ class ApiTest {
                         Environment.Auth(
                             name = "spokelse",
                             clientId = "client-Id",
-                            validConsumers = emptyList(),
-                            issuer = "nav",
+                            validConsumers = listOf("arena"),
+                            issuer = "Microsoft Azure AD",
                             jwksUri = "${wireMockServer.baseUrl()}/jwks"
                         ), dokumentDao
                     )
@@ -73,6 +61,23 @@ class ApiTest {
 
         rapid.sendToListeners(sendtSøknadMessage(sykmelding, søknad))
         rapid.sendToListeners(inntektsmeldingMessage(inntektsmelding))
+    }
+
+    private fun setupMockAuth() {
+        //Stub ID provider (for authentication of REST endpoints)
+        wireMockServer.start()
+        Awaitility.await("vent på WireMockServer har startet")
+            .atMost(5, TimeUnit.SECONDS)
+            .until {
+                try {
+                    Socket("localhost", wireMockServer.port()).use { it.isConnected }
+                } catch (err: Exception) {
+                    false
+                }
+            }
+        jwtStub = JwtStub("Microsoft Azure AD", wireMockServer)
+        WireMock.stubFor(jwtStub.stubbedJwkProvider())
+        WireMock.stubFor(jwtStub.stubbedConfigProvider())
     }
 
     @Test
@@ -98,8 +103,8 @@ class ApiTest {
 
     private fun String.httpGet(expectedStatus: HttpStatusCode = HttpStatusCode.OK, testBlock: String.() -> Unit = {}) {
         val token = jwtStub.createTokenFor(
-            subject = "arenaproxy_client_id",
-            audience = "spokelse_azure_ad_app_id"
+            subject = "arena",
+            audience = "client-Id"
         )
 
         val connection = appBaseUrl.handleRequest(
@@ -108,7 +113,7 @@ class ApiTest {
                 setRequestProperty(HttpHeaders.Authorization, "Bearer $token")
             })
 
-        Assertions.assertEquals(expectedStatus.value, connection.responseCode)
+        assertEquals(expectedStatus.value, connection.responseCode)
         connection.responseBody.testBlock()
     }
 }
