@@ -12,8 +12,10 @@ internal fun Application.azureAdAppAuthentication(env: Environment.Auth) {
         jwt {
             verifier(env.jwkProvider, env.issuer)
             validate { credentials ->
-                if (env.clientId !in credentials.payload.audience || credentials.payload.subject !in env.validConsumers) {
-                    log.info("${credentials.payload.subject} with audience ${credentials.payload.audience} is not authorized to use this app, denying access")
+                val authorizedParty: String?  = credentials.payload.getClaim("azp").asString()
+
+                if (env.clientId !in credentials.payload.audience || authorizedParty !in env.validConsumers) {
+                    log.info("${credentials.payload.subject} with audience ${credentials.payload.audience} and authorized party $authorizedParty is not authorized to use this app, denying access")
                     return@validate null
                 }
 

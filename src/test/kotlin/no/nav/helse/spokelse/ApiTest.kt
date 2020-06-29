@@ -103,8 +103,9 @@ class ApiTest {
 
     private fun String.httpGet(expectedStatus: HttpStatusCode = HttpStatusCode.OK, testBlock: String.() -> Unit = {}) {
         val token = jwtStub.createTokenFor(
+            audience = "client-Id",
             subject = "arena",
-            audience = "client-Id"
+            authorizedParty = "arena"
         )
 
         val connection = appBaseUrl.handleRequest(
