@@ -28,6 +28,7 @@ class ApiTest {
     private val dataSource = testDataSource()
 
     private val dokumentDao = DokumentDao(dataSource)
+    private val vedtakDao = VedtakDao(dataSource)
 
     private val sykmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Sykmelding)
     private val søknad = Hendelse(UUID.randomUUID(), sykmelding.hendelseId, Dokument.Søknad)
@@ -48,7 +49,7 @@ class ApiTest {
                             validConsumers = listOf("arena"),
                             issuer = "Microsoft Azure AD",
                             jwksUri = "${wireMockServer.baseUrl()}/jwks"
-                        ), dokumentDao
+                        ), dokumentDao, vedtakDao
                     )
                 }
             }

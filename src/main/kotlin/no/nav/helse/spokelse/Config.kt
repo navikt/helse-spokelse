@@ -26,7 +26,7 @@ class Environment(
         auth = auth(
             name = "ourissuer",
             clientId = "/var/run/secrets/nais.io/azure/client_id".readFile(),
-            validConsumers = listOf(raw.getValue("sparenaproxy_client_id")),
+            validConsumers = listOf(raw.getValue("sparenaproxy_client_id"), raw.getValue("fpabakus_client_id")),
             discoveryUrl = raw.getValue("DISCOVERY_URL")
         )
     )

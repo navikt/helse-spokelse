@@ -61,3 +61,5 @@ spec:
     value: 611669fa-de5c-4dc2-a0e8-6041a019992a
   - name: sparenaproxy_client_id
     value: 496407da-c441-4053-a3f4-94ed9e21d32a
+  - name: fpabakus_client_id
+    value: 0fc8e157-984d-46f8-911a-52f2b229fef9
