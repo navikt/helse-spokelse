@@ -63,3 +63,7 @@ spec:
     value: 496407da-c441-4053-a3f4-94ed9e21d32a
   - name: fpabakus_client_id
     value: 0fc8e157-984d-46f8-911a-52f2b229fef9
+  - name: fprisk_client_id
+    value: 6b779173-1246-41db-9f04-da4294a39a6c
+  - name: fpsak_client_id
+    value: 17f6b413-aba3-46be-bdde-793ad7081e28
