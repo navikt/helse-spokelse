@@ -11,11 +11,9 @@ spec:
   liveness:
     path: isalive
     initialDelay: 5
-    timeout: 5
   readiness:
     path: isready
     initialDelay: 5
-    timeout: 5
   resources:
     limits:
       cpu: 500m
