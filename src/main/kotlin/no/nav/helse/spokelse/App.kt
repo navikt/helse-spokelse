@@ -18,6 +18,7 @@ import no.nav.helse.rapids_rivers.RapidApplication
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.system.measureTimeMillis
 
 private val log: Logger = LoggerFactory.getLogger("spokelse")
 private val tjenestekallLog = LoggerFactory.getLogger("tjenestekall")
@@ -71,23 +72,35 @@ internal fun Route.dokumenterApi(dokumentDao: DokumentDao) {
     get("/dokumenter") {
         val hendelseIder = call.request.queryParameters.getAll("hendelseId")
             ?.map { UUID.fromString(it) } ?: emptyList()
-        val dokumenter = dokumentDao.finnHendelser(hendelseIder)
-        call.respond(HttpStatusCode.OK, dokumenter)
+        val time = measureTimeMillis {
+            try {
+                call.respond(HttpStatusCode.OK, dokumentDao.finnHendelser(hendelseIder))
+            } catch (e: Exception) {
+                log.error("Feil ved oppslag av dokumenter", e)
+                tjenestekallLog.error("Feil ved oppslag av dokumenter", e)
+                call.respond(HttpStatusCode.InternalServerError, "Feil ved oppslag av dokumenter")
+            }
+        }
+        tjenestekallLog.info("Hentet dokumenter for hendelser $hendelseIder ($time ms)")
     }
 }
 
 internal fun Route.grunnlagApi(vedtakDAO: VedtakDao) {
     get("/grunnlag") {
         val fødselsnummer = call.request.queryParameters["fodselsnummer"]
-            ?: return@get call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
-
-        tjenestekallLog.info("FP henter vedtak for $fødselsnummer")
-
-        try {
-            call.respond(HttpStatusCode.OK, vedtakDAO.hentVedtakListe(fødselsnummer))
-        } catch (e: Exception) {
-            tjenestekallLog.error("Feil ved henting av vedtak for $fødselsnummer", e)
-            call.respond(HttpStatusCode.InternalServerError, "Feil ved henting av vedtak")
+            ?: run {
+                log.error("/grunnlag Mangler fodselsnummer query param")
+                return@get call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
+            }
+        val time = measureTimeMillis {
+            try {
+                call.respond(HttpStatusCode.OK, vedtakDAO.hentVedtakListe(fødselsnummer))
+            } catch (e: Exception) {
+                log.error("Feil ved henting av vedtak", e)
+                tjenestekallLog.error("Feil ved henting av vedtak for $fødselsnummer", e)
+                call.respond(HttpStatusCode.InternalServerError, "Feil ved henting av vedtak")
+            }
         }
+        tjenestekallLog.info("FP hentet vedtak for $fødselsnummer ($time ms)")
     }
 }
