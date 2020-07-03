@@ -11,6 +11,7 @@ spec:
   liveness:
     path: isalive
     initialDelay: 5
+    timeout: 5
   readiness:
     path: isready
     initialDelay: 5
@@ -19,7 +20,7 @@ spec:
       cpu: 500m
       memory: 512Mi
     requests:
-      cpu: 50m
+      cpu: 250m
       memory: 256Mi
   replicas:
     min: 1
@@ -38,8 +39,6 @@ spec:
         kvPath: /serviceuser/data/dev/srvspokelse
       - mountPath: /var/run/secrets/nais.io/azure
         kvPath: /azuread/data/dev/creds/spokelse
-  ingresses:
-    - https://spokelse.nais.preprod.local
   env:
   - name: KAFKA_BOOTSTRAP_SERVERS
     value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
