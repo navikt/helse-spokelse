@@ -8,6 +8,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.util.KtorExperimentalAPI
+import io.prometheus.client.CollectorRegistry
 import no.nav.helse.rapids_rivers.inMemoryRapid
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -41,6 +42,7 @@ class ApiTest {
         val rapid = inMemoryRapid {
             ktor {
                 port(randomPort)
+                withCollectorRegistry(CollectorRegistry())
                 module {
                     spokelse(
                         Environment.Auth(
