@@ -1,16 +1,16 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val ktorVersion = "1.3.2"
+val ktorVersion = "1.5.1"
 val wireMockVersion = "2.27.1"
 val junitJupiterVersion = "5.6.2"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4.21"
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:1.87c2e60")
+    implementation("com.github.navikt:rapids-and-rivers:1.5e3ca6a")
     implementation("io.ktor:ktor-jackson:$ktorVersion")
     implementation("io.ktor:ktor-auth-jwt:$ktorVersion") {
         exclude(group = "junit")
@@ -41,11 +41,11 @@ repositories {
 
 tasks {
     named<KotlinCompile>("compileKotlin") {
-        kotlinOptions.jvmTarget = "12"
+        kotlinOptions.jvmTarget = "15"
     }
 
     named<KotlinCompile>("compileTestKotlin") {
-        kotlinOptions.jvmTarget = "12"
+        kotlinOptions.jvmTarget = "15"
     }
 
     withType<Test> {

@@ -33,7 +33,7 @@ class OldUtbetalingRiver(
         }.register(this)
     }
 
-    override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
+    override fun onPacket(packet: JsonMessage, context: MessageContext) {
         vedtakDao.save(packet.toVedtak())
     }
 

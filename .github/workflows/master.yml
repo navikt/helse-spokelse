@@ -39,7 +39,7 @@ jobs:
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-fss
-          RESOURCE: deploy/preprod.yml
+          RESOURCE: deploy/dev.yml
 
   deployProd:
     name: Deploy to prod

@@ -28,23 +28,21 @@ spec:
   prometheus:
     enabled: true
     path: /metrics
+  kafka:
+    pool: nav-dev
   webproxy: true
   secureLogs:
     enabled: true
   vault:
     enabled: true
     paths:
-      - mountPath: /var/run/secrets/nais.io/service_user
-        kvPath: /serviceuser/data/dev/srvspokelse
       - mountPath: /var/run/secrets/nais.io/azure
         kvPath: /azuread/data/dev/creds/spokelse
   env:
-  - name: KAFKA_BOOTSTRAP_SERVERS
-    value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
   - name: KAFKA_RAPID_TOPIC
-    value: helse-rapid-v1
+    value: tbd.rapid.v1
   - name: KAFKA_CONSUMER_GROUP_ID
-    value: spokelse-v8
+    value: tbd-spokelse-v1
   - name: KAFKA_RESET_POLICY
     value: earliest
   - name: DATABASE_HOST

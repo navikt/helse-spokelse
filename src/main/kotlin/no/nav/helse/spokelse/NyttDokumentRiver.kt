@@ -1,6 +1,7 @@
 package no.nav.helse.spokelse
 
 import no.nav.helse.rapids_rivers.JsonMessage
+import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
 import org.slf4j.Logger
@@ -18,7 +19,7 @@ internal class NyttDokumentRiver(rapidsConnection: RapidsConnection, private val
         }.register(this)
     }
 
-    override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
+    override fun onPacket(packet: JsonMessage, context: MessageContext) {
         val hendelseId = UUID.fromString(packet["@id"].textValue())
 
         when (packet["@event_name"].textValue()) {
