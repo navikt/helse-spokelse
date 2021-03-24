@@ -34,8 +34,9 @@ spec:
   secureLogs:
     enabled: true
   azure:
-    enabled: true
-    tenant: trygdeetaten.no
+    application:
+      enabled: true
+      tenant: trygdeetaten.no
   accessPolicy:
     inbound:
       rules:

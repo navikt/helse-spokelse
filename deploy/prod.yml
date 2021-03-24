@@ -34,7 +34,8 @@ spec:
   secureLogs:
     enabled: true
   azure:
-    enabled: true
+    application:
+      enabled: true
   accessPolicy:
     inbound:
       rules:
