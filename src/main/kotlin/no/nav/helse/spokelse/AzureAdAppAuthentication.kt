@@ -14,7 +14,7 @@ internal fun Application.azureAdAppAuthentication(env: Environment.Auth) {
             validate { credentials ->
                 val authorizedParty: String?  = credentials.payload.getClaim("azp").asString()
 
-                if (env.clientId !in credentials.payload.audience || authorizedParty !in env.validConsumers) {
+                if (credentials.payload.audience.none { it in env.clientId } || authorizedParty !in env.validConsumers) {
                     log.info("${credentials.payload.subject} with audience ${credentials.payload.audience} and authorized party $authorizedParty is not authorized to use this app, denying access")
                     return@validate null
                 }

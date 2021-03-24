@@ -33,12 +33,23 @@ spec:
   webproxy: true
   secureLogs:
     enabled: true
+  azure:
+    enabled: true
+  accessPolicy:
+    inbound:
+      rules:
+        - application: fpsak
+          namespace: teamforeldrepenger
+        - application: fprisk
+          namespace: teamforeldrepenger
+        - application: fpabakus
+          namespace: default
+        - application: sparenaproxy
+          namespace: default
   vault:
     enabled: true
     paths:
-      - mountPath: /var/run/secrets/nais.io/service_user
-        kvPath: /serviceuser/data/prod/srvspokelse
-      - mountPath: /var/run/secrets/nais.io/azure
+      - mountPath: /var/run/secrets/nais.io/azure_old
         kvPath: /azuread/data/prod/creds/spokelse
   env:
   - name: KAFKA_RAPID_TOPIC
@@ -55,10 +66,6 @@ spec:
     value: spokelse
   - name: DATABASE_VAULT_MOUNT_PATH
     value: postgresql/prod-fss/
-  - name: DISCOVERY_URL
-    value: https://login.microsoftonline.com/62366534-1ec3-4962-8869-9b5535279d0b/v2.0/.well-known/openid-configuration
-  - name: REQUIRED_GROUP
-    value: 611669fa-de5c-4dc2-a0e8-6041a019992a
   - name: sparenaproxy_client_id
     value: 496407da-c441-4053-a3f4-94ed9e21d32a
   - name: fpabakus_client_id
