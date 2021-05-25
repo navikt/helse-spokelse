@@ -47,7 +47,7 @@ class ApiTest {
                     spokelse(
                         Environment.Auth(
                             name = "spokelse",
-                            clientId = listOf("client-Id"),
+                            clientId = "client-Id",
                             issuer = "Microsoft Azure AD",
                             jwksUri = "${wireMockServer.baseUrl()}/jwks"
                         ), dokumentDao, vedtakDao

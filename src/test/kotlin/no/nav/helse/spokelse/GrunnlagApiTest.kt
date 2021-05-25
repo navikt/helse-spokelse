@@ -106,7 +106,7 @@ class GrunnlagApiTest {
                 module {
                     spokelse(auth(
                         name = "issuer",
-                        clientId = listOf("spokelse_azure_ad_app_id"),
+                        clientId = "spokelse_azure_ad_app_id",
                         discoveryUrl = "${wireMockServer.baseUrl()}/config"
                     ), dokumentDao, vedtakDao)
                 }
