@@ -27,7 +27,7 @@ class Environment(
         ),
         auth = auth(
             name = "ourissuer",
-            clientId = listOfNotNull(raw["AZURE_APP_CLIENT_ID"], "/var/run/secrets/nais.io/azure_old/client_id".readFile()),
+            clientId = raw.getValue("AZURE_APP_CLIENT_ID"),
             discoveryUrl = raw.getValue("AZURE_APP_WELL_KNOWN_URL")
         )
     )
@@ -41,7 +41,7 @@ class Environment(
 
     class Auth(
         private val name: String,
-        private val clientId: List<String>,
+        private val clientId: String,
         private val issuer: String,
         jwksUri: String
     ) {
@@ -49,7 +49,7 @@ class Environment(
 
         fun configureVerification(configuration: JWTAuthenticationProvider.Configuration) {
             configuration.verifier(jwkProvider, issuer) {
-                withAudience(*clientId.toTypedArray())
+                withAudience(clientId)
             }
             configuration.validate { credentials -> JWTPrincipal(credentials.payload) }
         }
@@ -57,7 +57,7 @@ class Environment(
         companion object {
             fun auth(
                 name: String,
-                clientId: List<String>,
+                clientId: String,
                 discoveryUrl: String
             ): Auth {
                 val wellKnown = discoveryUrl.getJson()
@@ -83,10 +83,4 @@ class Environment(
 
         }
     }
-}
-
-private fun String.readFile() = try {
-    File(this).readText(Charsets.UTF_8)
-} catch (err: FileNotFoundException) {
-    null
 }
