@@ -4,6 +4,7 @@ import com.auth0.jwk.JwkProvider
 import com.auth0.jwk.JwkProviderBuilder
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.ktor.auth.jwt.*
 import no.nav.helse.spokelse.Environment.Auth.Companion.auth
 import java.io.File
 import java.io.FileNotFoundException
@@ -27,12 +28,6 @@ class Environment(
         auth = auth(
             name = "ourissuer",
             clientId = listOfNotNull(raw["AZURE_APP_CLIENT_ID"], "/var/run/secrets/nais.io/azure_old/client_id".readFile()),
-            validConsumers = listOf(
-                raw.getValue("sparenaproxy_client_id"),
-                raw.getValue("fpabakus_client_id"),
-                raw.getValue("fprisk_client_id"),
-                raw.getValue("fpsak_client_id")
-            ),
             discoveryUrl = raw.getValue("AZURE_APP_WELL_KNOWN_URL")
         )
     )
@@ -45,24 +40,30 @@ class Environment(
     )
 
     class Auth(
-        val name: String,
-        val clientId: List<String>,
-        val validConsumers: List<String>,
-        val issuer: String,
+        private val name: String,
+        private val clientId: List<String>,
+        private val issuer: String,
         jwksUri: String
     ) {
-        val jwkProvider: JwkProvider = JwkProviderBuilder(URL(jwksUri)).build()
+        private val jwkProvider: JwkProvider = JwkProviderBuilder(URL(jwksUri)).build()
+
+        fun configureVerification(configuration: JWTAuthenticationProvider.Configuration) {
+            configuration.verifier(jwkProvider, issuer) {
+                withAudience(*clientId.toTypedArray())
+            }
+            configuration.validate { credentials -> JWTPrincipal(credentials.payload) }
+        }
 
         companion object {
-            fun auth(name: String,
-                     clientId: List<String>,
-                     validConsumers: List<String>,
-                     discoveryUrl: String): Auth {
+            fun auth(
+                name: String,
+                clientId: List<String>,
+                discoveryUrl: String
+            ): Auth {
                 val wellKnown = discoveryUrl.getJson()
                 return Auth(
                     name = name,
                     clientId = clientId,
-                    validConsumers = validConsumers,
                     issuer = wellKnown["issuer"].textValue(),
                     jwksUri = wellKnown["jwks_uri"].textValue()
                 )

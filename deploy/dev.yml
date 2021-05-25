@@ -47,14 +47,9 @@ spec:
         - application: fpabakus
           namespace: default
         - application: sparenaproxy
-          namespace: default
-        - application: sparenaproxy
           namespace: teamsykmelding
   vault:
     enabled: true
-    paths:
-      - mountPath: /var/run/secrets/nais.io/azure_old
-        kvPath: /azuread/data/dev/creds/spokelse
   env:
   - name: KAFKA_RAPID_TOPIC
     value: tbd.rapid.v1
@@ -70,11 +65,3 @@ spec:
     value: spokelse
   - name: DATABASE_VAULT_MOUNT_PATH
     value: postgresql/preprod-fss/
-  - name: sparenaproxy_client_id
-    value: 8e294ba4-f37c-4cb9-871b-cce06f63e0b9
-  - name: fpabakus_client_id
-    value: bad91a5b-d155-4c06-ae7f-40dec7d433eb
-  - name: fprisk_client_id
-    value: c0c74984-1f8a-4a02-bc3f-d4154c8a57d0
-  - name: fpsak_client_id
-    value: 5ff7aed5-6e15-4e48-a502-a9d025e9cd4b
