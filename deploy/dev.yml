@@ -48,6 +48,8 @@ spec:
           namespace: default
         - application: sparenaproxy
           namespace: default
+        - application: sparenaproxy
+          namespace: teamsykmelding
   vault:
     enabled: true
     paths:
