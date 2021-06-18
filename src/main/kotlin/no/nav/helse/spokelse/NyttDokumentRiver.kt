@@ -20,7 +20,6 @@ internal class NyttDokumentRiver(rapidsConnection: RapidsConnection, private val
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
-        if(packet["sykmeldingId"].textValue() == "1610050814kipe02438.1") return
         val hendelseId = UUID.fromString(packet["@id"].textValue())
 
         when (packet["@event_name"].textValue()) {
