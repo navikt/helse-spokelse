@@ -21,7 +21,7 @@ class AnnulleringRiverTest {
 
     @BeforeAll
     fun setup() {
-        AnnulleringRiver(annulleringDao, rapid)
+        AnnulleringRiver(rapid, annulleringDao)
     }
 
     @Test
