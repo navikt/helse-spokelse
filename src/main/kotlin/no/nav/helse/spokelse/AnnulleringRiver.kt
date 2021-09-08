@@ -4,8 +4,8 @@ import no.nav.helse.rapids_rivers.*
 import org.slf4j.LoggerFactory
 
 class AnnulleringRiver(
-    private val annulleringDao: AnnulleringDao,
-    rapidsConnection: RapidsConnection
+    rapidsConnection: RapidsConnection,
+    private val annulleringDao: AnnulleringDao
 ) : River.PacketListener {
     val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
     init {

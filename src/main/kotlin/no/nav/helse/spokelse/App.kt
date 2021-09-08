@@ -38,6 +38,7 @@ fun launchApplication(env: Environment) {
     val dokumentDao = DokumentDao(dataSource)
     val utbetaltDao = UtbetaltDao(dataSource)
     val vedtakDao = VedtakDao(dataSource)
+    val annulleringDao = AnnulleringDao(dataSource)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
         .withKtorModule { spokelse(env.auth, dokumentDao, vedtakDao) }
@@ -47,6 +48,7 @@ fun launchApplication(env: Environment) {
             UtbetaltRiver(this, utbetaltDao, dokumentDao)
             OldUtbetalingRiver(this, vedtakDao, dokumentDao)
             TilUtbetalingBehovRiver(this, dokumentDao)
+            AnnulleringRiver(this, annulleringDao)
             start()
         }
 }
