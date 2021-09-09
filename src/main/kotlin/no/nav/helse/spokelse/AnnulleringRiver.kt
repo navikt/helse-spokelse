@@ -28,13 +28,18 @@ class AnnulleringRiver(
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
         val fagsystemId = packet["fagsystemId"].asText()
+        val fødselsnummer = packet["fødselsnummer"].asText()
+        val orgnummer = packet["organisasjonsnummer"].asText()
         val linjer = packet["utbetalingslinjer"]
         val fom = linjer.minOf { it["fom"].asLocalDate() }
         val tom = linjer.maxOf { it["tom"].asLocalDate() }
         sikkerLogg.info("Inserter annullering for {} via {}",
             keyValue("fagsystemId", fagsystemId),
             keyValue("event_name", packet["@event_name"].asText()))
-        annulleringDao.insertAnnullering(packet["fødselsnummer"].asText(), packet["organisasjonsnummer"].asText(), fagsystemId, fom, tom, "SPREF")
+        if (annulleringDao.insertAnnullering(fødselsnummer, orgnummer, fagsystemId, fom, tom, "SPREF") < 1) {
+            sikkerLogg.info("Annulering for {} ble ikke insertet siden den ble sett som et duplikat",
+                keyValue("fagsystemId", fagsystemId))
+        }
     }
 
     override fun onError(problems: MessageProblems, context: MessageContext) {
