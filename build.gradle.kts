@@ -1,12 +1,10 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 val ktorVersion = "1.5.0"
 val wireMockVersion = "2.27.1"
 val junitJupiterVersion = "5.6.2"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
-    kotlin("jvm") version "1.4.30"
+    kotlin("jvm") version "1.5.30"
 }
 
 dependencies {
@@ -36,16 +34,16 @@ dependencies {
 repositories {
     jcenter()
     maven("https://jitpack.io")
-    maven("http://packages.confluent.io/maven/")
+    maven("https://packages.confluent.io/maven/")
 }
 
 tasks {
     compileKotlin {
-        kotlinOptions.jvmTarget = "15"
+        kotlinOptions.jvmTarget = "16"
     }
 
     compileTestKotlin {
-        kotlinOptions.jvmTarget = "15"
+        kotlinOptions.jvmTarget = "16"
     }
 
     withType<Test> {
