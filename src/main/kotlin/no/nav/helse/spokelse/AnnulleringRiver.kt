@@ -1,5 +1,6 @@
 package no.nav.helse.spokelse
 
+import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.rapids_rivers.*
 import org.slf4j.LoggerFactory
 
@@ -26,10 +27,14 @@ class AnnulleringRiver(
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
+        val fagsystemId = packet["fagsystemId"].asText()
         val linjer = packet["utbetalingslinjer"]
         val fom = linjer.minOf { it["fom"].asLocalDate() }
         val tom = linjer.maxOf { it["tom"].asLocalDate() }
-        annulleringDao.insertAnnullering(packet["fødselsnummer"].asText(), packet["organisasjonsnummer"].asText(), packet["fagsystemId"].asText(), fom, tom, "SPREF")
+        sikkerLogg.info("Inserter annullering for {} via {}",
+            keyValue("fagsystemId", fagsystemId),
+            keyValue("event_name", packet["@event_name"].asText()))
+        annulleringDao.insertAnnullering(packet["fødselsnummer"].asText(), packet["organisasjonsnummer"].asText(), fagsystemId, fom, tom, "SPREF")
     }
 
     override fun onError(problems: MessageProblems, context: MessageContext) {
