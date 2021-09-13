@@ -9,12 +9,12 @@ import io.ktor.auth.authenticate
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
+import io.ktor.request.*
 import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.routing.get
-import io.ktor.routing.routing
+import io.ktor.routing.*
 import io.ktor.util.KtorExperimentalAPI
 import no.nav.helse.rapids_rivers.RapidApplication
+import no.nav.helse.spokelse.VedtakDao.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -66,6 +66,7 @@ internal fun Application.spokelse(env: Environment.Auth, dokumentDao: DokumentDa
         authenticate {
             dokumenterApi(dokumentDao)
             grunnlagApi(vedtakDao)
+            utbetalingerApi(vedtakDao)
         }
     }
 }
@@ -104,5 +105,28 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDao) {
             }
         }
         tjenestekallLog.info("FP hentet vedtak for $fødselsnummer ($time ms)")
+    }
+}
+
+internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
+    post("/utbetalinger") {
+        val fødselsnumre = call.receive<List<String>>()
+
+        fødselsnumre.map { fødselsnummer ->
+            val annulerteFagsystemIder = vedtakDAO.hentAnnuleringerForFødselsnummer(fødselsnummer)
+
+            vedtakDAO.hentUtbetalingerForFødselsnummer(fødselsnummer)
+                .filterNot { it.fagsystemId in annulerteFagsystemIder }
+                .map{
+                    UtbetalingDTO(
+                        fødselsnummer = fødselsnummer,
+                        fom = it.fom,
+                        tom = it.tom,
+                        grad = it.grad,
+                        utbetaltTidspunkt = it.utbetaltTidspunkt,
+                        gjenståendeSykedager = it.gjenståendeSykedager
+                    )
+            }
+        }
     }
 }
