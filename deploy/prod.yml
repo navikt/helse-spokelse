@@ -47,6 +47,8 @@ spec:
           namespace: default
         - application: sparenaproxy
           namespace: teamsykmelding
+        - application: spissnok
+          namespace: tbd
   vault:
     enabled: true
   env:
