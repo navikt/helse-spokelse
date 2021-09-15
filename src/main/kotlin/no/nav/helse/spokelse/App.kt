@@ -124,7 +124,8 @@ internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
                         tom = it.tom,
                         grad = it.grad,
                         utbetaltTidspunkt = it.utbetaltTidspunkt,
-                        gjenståendeSykedager = it.gjenståendeSykedager
+                        gjenståendeSykedager = it.gjenståendeSykedager,
+                        refusjonstype = it.refusjonstype
                     )
             }
         }

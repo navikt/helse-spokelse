@@ -122,7 +122,8 @@ class VedtakDao(private val dataSource: DataSource) {
         val tom: LocalDate,
         val grad: Double,
         val gjenståendeSykedager: Int,
-        val utbetaltTidspunkt: LocalDateTime
+        val utbetaltTidspunkt: LocalDateTime,
+        val refusjonstype: Refusjonstype
     )
 
     data class UtbetalingDTO(
@@ -131,8 +132,22 @@ class VedtakDao(private val dataSource: DataSource) {
         val tom: LocalDate,
         val grad: Double,
         val gjenståendeSykedager: Int,
-        val utbetaltTidspunkt: LocalDateTime
+        val utbetaltTidspunkt: LocalDateTime,
+        val refusjonstype: Refusjonstype
     )
+
+    enum class Refusjonstype(private val fagområde: String) {
+        REFUSJON_TIL_ARBEIDSGIVER("SPREF"),
+        REFUSJON_TIL_PERSON("SP");
+
+        companion object {
+            fun fraFagområde(fagområde: String): Refusjonstype {
+                return values().single {
+                    it.fagområde == fagområde
+                }
+            }
+        }
+    }
 
     fun hentUtbetalingerForFødselsnummer(fødselsnummer: String): List<UtbetalingRad> {
         @Language("PostgreSQL")
@@ -142,7 +157,8 @@ class VedtakDao(private val dataSource: DataSource) {
                tom,
                grad,
                gjenstaende_sykedager,
-               opprettet utbetalt_tidspunkt
+               opprettet utbetalt_tidspunkt,
+               fagomrade
         FROM gamle_utbetalinger
         WHERE fodselsnummer = :fodselsnummer
         UNION ALL
@@ -151,12 +167,14 @@ class VedtakDao(private val dataSource: DataSource) {
                u.tom                    tom,
                u.grad                   grad,
                vo.gjenstående_sykedager gjenstaende_sykedager,
-               vo.opprettet             utbetalt_tidspunkt
+               vo.opprettet             utbetalt_tidspunkt,
+               vo.fagområde             fagomrade
         FROM (
                  SELECT DISTINCT ON (o.fagsystemid) o.fagsystemid,
-                                                  v.gjenstående_sykedager,
-                                                  v.opprettet,
-                                                  o.id AS oppdrag_id
+                                                    v.gjenstående_sykedager,
+                                                    v.opprettet,
+                                                    o.id AS oppdrag_id,
+                                                    o.fagområde
                  FROM vedtak v
                           INNER JOIN oppdrag o ON v.id = o.vedtak_id
                  WHERE v.fodselsnummer = :fodselsnummer
@@ -168,7 +186,8 @@ class VedtakDao(private val dataSource: DataSource) {
                tom                   tom,
                grad                  grad,
                gjenstående_sykedager gjenstaende_sykedager,
-               opprettet             utbetalt_tidspunkt
+               opprettet             utbetalt_tidspunkt,
+               'SPREF'               fagomrade
         FROM (SELECT DISTINCT ON (utbetalingsref) utbetalingsref,
                                                   gjenstående_sykedager,
                                                   opprettet,
@@ -189,7 +208,8 @@ class VedtakDao(private val dataSource: DataSource) {
                     tom = row.localDate("tom"),
                     grad = row.double("grad"),
                     gjenståendeSykedager = row.int("gjenstaende_sykedager"),
-                    utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt")
+                    utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
+                    refusjonstype = Refusjonstype.fraFagområde(row.string("fagomrade"))
                 )
             }.asList)
         }
