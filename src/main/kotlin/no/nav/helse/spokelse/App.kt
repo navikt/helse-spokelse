@@ -2,19 +2,17 @@ package no.nav.helse.spokelse
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import io.ktor.application.Application
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.auth.authenticate
-import io.ktor.features.ContentNegotiation
-import io.ktor.http.HttpStatusCode
-import io.ktor.jackson.jackson
+import io.ktor.application.*
+import io.ktor.auth.*
+import io.ktor.features.*
+import io.ktor.http.*
+import io.ktor.jackson.*
 import io.ktor.request.*
-import io.ktor.response.respond
+import io.ktor.response.*
 import io.ktor.routing.*
-import io.ktor.util.KtorExperimentalAPI
+import io.ktor.util.*
 import no.nav.helse.rapids_rivers.RapidApplication
-import no.nav.helse.spokelse.VedtakDao.*
+import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -115,9 +113,9 @@ internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
         fødselsnumre.map { fødselsnummer ->
             val annulerteFagsystemIder = vedtakDAO.hentAnnuleringerForFødselsnummer(fødselsnummer)
 
-            vedtakDAO.hentUtbetalingerForFødselsnummer(fødselsnummer)
+            call.respond(vedtakDAO.hentUtbetalingerForFødselsnummer(fødselsnummer)
                 .filterNot { it.fagsystemId in annulerteFagsystemIder }
-                .map{
+                .map {
                     UtbetalingDTO(
                         fødselsnummer = fødselsnummer,
                         fom = it.fom,
@@ -127,7 +125,8 @@ internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
                         gjenståendeSykedager = it.gjenståendeSykedager,
                         refusjonstype = it.refusjonstype
                     )
-            }
+                }
+            )
         }
     }
 }
