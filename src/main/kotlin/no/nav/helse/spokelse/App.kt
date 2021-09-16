@@ -110,23 +110,24 @@ internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
     post("/utbetalinger") {
         val fødselsnumre = call.receive<List<String>>()
 
-        fødselsnumre.map { fødselsnummer ->
-            val annulerteFagsystemIder = vedtakDAO.hentAnnuleringerForFødselsnummer(fødselsnummer)
+        call.respond(
+            fødselsnumre.flatMap { fødselsnummer ->
+                val annulerteFagsystemIder = vedtakDAO.hentAnnuleringerForFødselsnummer(fødselsnummer)
 
-            call.respond(vedtakDAO.hentUtbetalingerForFødselsnummer(fødselsnummer)
-                .filterNot { it.fagsystemId in annulerteFagsystemIder }
-                .map {
-                    UtbetalingDTO(
-                        fødselsnummer = fødselsnummer,
-                        fom = it.fom,
-                        tom = it.tom,
-                        grad = it.grad,
-                        utbetaltTidspunkt = it.utbetaltTidspunkt,
-                        gjenståendeSykedager = it.gjenståendeSykedager,
-                        refusjonstype = it.refusjonstype
-                    )
-                }
-            )
-        }
+                vedtakDAO.hentUtbetalingerForFødselsnummer(fødselsnummer)
+                    .filterNot { it.fagsystemId in annulerteFagsystemIder }
+                    .map {
+                        UtbetalingDTO(
+                            fødselsnummer = fødselsnummer,
+                            fom = it.fom,
+                            tom = it.tom,
+                            grad = it.grad,
+                            utbetaltTidspunkt = it.utbetaltTidspunkt,
+                            gjenståendeSykedager = it.gjenståendeSykedager,
+                            refusjonstype = it.refusjonstype
+                        )
+                    }
+            }
+        )
     }
 }
