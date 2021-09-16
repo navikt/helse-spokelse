@@ -2,7 +2,8 @@ Spøkelse [![Actions Status](https://github.com/navikt/helse-sparkel-behov/workf
 =============
 
 En døende app som skal sy sammen kafka meldinger fra sykepenger og meldinger fra infotrygd gjennom facaden.
-Tilbyr samme soap grensesnitt som hentSykepenger i Facade. Denne appen eksisterer bare for å gi eksisterende brukere av facade litt bedre tid på seg før de må gå over til å  spørre med need på kafka
+Tilbyr samme soap grensesnitt som hentSykepenger i Facade. Denne appen eksisterer bare for å gi
+eksisterende brukere av facade litt bedre tid på seg før de må gå over til å  spørre med need på kafka
 
 # Henvendelser
 
