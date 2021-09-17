@@ -121,8 +121,8 @@ class VedtakDao(private val dataSource: DataSource) {
         val fom: LocalDate,
         val tom: LocalDate,
         val grad: Double,
-        val gjenståendeSykedager: Int,
-        val utbetaltTidspunkt: LocalDateTime,
+        val gjenståendeSykedager: Int?,
+        val utbetaltTidspunkt: LocalDateTime?,
         val refusjonstype: Refusjonstype
     )
 
@@ -131,8 +131,8 @@ class VedtakDao(private val dataSource: DataSource) {
         val fom: LocalDate,
         val tom: LocalDate,
         val grad: Double,
-        val gjenståendeSykedager: Int,
-        val utbetaltTidspunkt: LocalDateTime,
+        val gjenståendeSykedager: Int?,
+        val utbetaltTidspunkt: LocalDateTime?,
         val refusjonstype: Refusjonstype
     )
 
@@ -207,8 +207,8 @@ class VedtakDao(private val dataSource: DataSource) {
                     fom = row.localDate("fom"),
                     tom = row.localDate("tom"),
                     grad = row.double("grad"),
-                    gjenståendeSykedager = row.int("gjenstaende_sykedager"),
-                    utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
+                    gjenståendeSykedager = row.intOrNull("gjenstaende_sykedager"),
+                    utbetaltTidspunkt = row.localDateTimeOrNull("utbetalt_tidspunkt"),
                     refusjonstype = Refusjonstype.fraFagområde(row.string("fagomrade"))
                 )
             }.asList)
