@@ -14,7 +14,8 @@ import kotlin.random.Random
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AnnulleringRiverTest {
     private val rapid = TestRapid()
-    private val dataSource = testDataSource()
+    private val embeddedPostgres = setupPostgres()
+    private val dataSource = testDataSource(embeddedPostgres)
     private val annulleringDao = AnnulleringDao(dataSource)
 
     fun fagsystemId() = Base32().encodeToString(Random.Default.nextBytes(32)).take(26)

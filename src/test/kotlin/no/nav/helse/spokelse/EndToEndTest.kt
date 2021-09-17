@@ -9,9 +9,11 @@ import kotliquery.sessionOf
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import org.flywaydb.core.Flyway
 import org.intellij.lang.annotations.Language
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -22,9 +24,11 @@ import kotlin.streams.asSequence
 private const val FNR = "12020052345"
 private const val ORGNUMMER = "987654321"
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class EndToEndTest {
     val testRapid = TestRapid()
-    val dataSource = testDataSource()
+    val embeddedPostgres = setupPostgres()
+    val dataSource = testDataSource(embeddedPostgres)
     val dokumentDao = DokumentDao(dataSource)
     val utbetaltDao = UtbetaltDao(dataSource)
     val vedtakDao = VedtakDao(dataSource)
@@ -56,6 +60,11 @@ internal class EndToEndTest {
                 """
             session.run(queryOf(query).asExecute)
         }
+    }
+
+    @AfterAll
+    fun tearDown() {
+        embeddedPostgres.close()
     }
 
     @Test
@@ -548,8 +557,9 @@ internal class EndToEndTest {
 
 }
 
-fun testDataSource(): DataSource {
-    val embeddedPostgres = EmbeddedPostgres.builder().setPort(56789).start()
+fun setupPostgres() = EmbeddedPostgres.builder().setPort(56789).start()
+
+fun testDataSource(embeddedPostgres: EmbeddedPostgres): DataSource {
     val hikariConfig = HikariConfig().apply {
         this.jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
         maximumPoolSize = 3
@@ -565,7 +575,29 @@ fun testDataSource(): DataSource {
                 .dataSource(this)
                 .load().also { it.migrate() }
         }
+        .also(::createTruncateFunction)
 
+}
+
+private fun createTruncateFunction(dataSource: DataSource) {
+    sessionOf(dataSource).use  {
+        @Language("PostgreSQL")
+        val query = """
+            CREATE OR REPLACE FUNCTION truncate_tables() RETURNS void AS $$
+            DECLARE
+            truncate_statement text;
+            BEGIN
+                SELECT 'TRUNCATE ' || string_agg(format('%I.%I', schemaname, tablename), ',') || ' CASCADE'
+                    INTO truncate_statement
+                FROM pg_tables
+                WHERE schemaname='public'
+                AND tablename not in ('flyway_schema_history');
+                EXECUTE truncate_statement;
+            END;
+            $$ LANGUAGE plpgsql;
+        """
+        it.run(queryOf(query).asExecute)
+    }
 }
 
 fun sendtSøknadMessage(sykmelding: Hendelse, søknad: Hendelse) =
