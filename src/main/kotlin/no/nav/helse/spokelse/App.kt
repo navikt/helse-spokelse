@@ -126,6 +126,16 @@ internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
                             gjenståendeSykedager = it.gjenståendeSykedager,
                             refusjonstype = it.refusjonstype
                         )
+                    }.ifEmpty {
+                        listOf(UtbetalingDTO(
+                            fødselsnummer = fødselsnummer,
+                            fom = null,
+                            tom = null,
+                            grad = 0.0,
+                            gjenståendeSykedager = null,
+                            utbetaltTidspunkt = null,
+                            refusjonstype = null
+                        ))
                     }
             }
         )

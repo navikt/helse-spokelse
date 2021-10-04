@@ -157,7 +157,8 @@ class ApiTest {
 
         val response = hentUtbetalinger(fødselsnummer1, fødselsnummer2)
 
-        assertEquals(1, response.size())
+        assertEquals(2, response.size())
+        assertEquals(1, response.count { it.hasNonNull("refusjonstype") })
     }
 
     @Test
@@ -175,7 +176,8 @@ class ApiTest {
 
         val response = hentUtbetalinger(fødselsnummer1, fødselsnummer2, fødselsnummer3)
 
-        assertEquals(2, response.size())
+        assertEquals(3, response.size())
+        assertEquals(2, response.count { it.hasNonNull("refusjonstype") })
     }
 
     fun hentUtbetalinger(vararg fødselsnumre: String) = runBlocking {

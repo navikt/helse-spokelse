@@ -128,12 +128,12 @@ class VedtakDao(private val dataSource: DataSource) {
 
     data class UtbetalingDTO(
         val fødselsnummer: String,
-        val fom: LocalDate,
-        val tom: LocalDate,
+        val fom: LocalDate?,
+        val tom: LocalDate?,
         val grad: Double,
         val gjenståendeSykedager: Int?,
         val utbetaltTidspunkt: LocalDateTime?,
-        val refusjonstype: Refusjonstype
+        val refusjonstype: Refusjonstype?
     )
 
     enum class Refusjonstype(private val fagområde: String) {
