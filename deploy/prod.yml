@@ -44,7 +44,7 @@ spec:
         - application: fprisk
           namespace: teamforeldrepenger
         - application: fpabakus
-          namespace: default
+          namespace: teamforeldrepenger
         - application: sparenaproxy
           namespace: teamsykmelding
         - application: spissnok
