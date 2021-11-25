@@ -27,57 +27,64 @@ class AnnulleringRiverTest {
 
     @Test
     fun `lagrer annulleringer`() {
-        val fagsystemId = fagsystemId()
-        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", fagsystemId))
+        val arbeidsgiverFagsystemId = fagsystemId()
+        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", arbeidsgiverFagsystemId))
 
-        assertEquals(1, hentAnnulleringerFor(fagsystemId))
+        assertEquals(1, hentAnnulleringerFor(arbeidsgiverFagsystemId, "SPREF"))
     }
 
     @Test
     fun `lagrer annullering fra replay`() {
-        val fagsystemId = fagsystemId()
-        rapid.sendTestMessage(annullering("utbetaling_annullert_replay_for_pensjon", "fnr", "orgnummer", fagsystemId))
+        val arbeidsgiverFagsystemId = fagsystemId()
+        rapid.sendTestMessage(annullering("utbetaling_annullert_replay_for_pensjon", "fnr", "orgnummer", arbeidsgiverFagsystemId))
 
-        assertEquals(1, hentAnnulleringerFor(fagsystemId))
+        assertEquals(1, hentAnnulleringerFor(arbeidsgiverFagsystemId, "SPREF"))
     }
 
     @Test
     fun `lagrer ikke duplikat annullering fra replay`() {
-        val fagsystemId = fagsystemId()
-        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", fagsystemId))
-        rapid.sendTestMessage(annullering("utbetaling_annullert_replay_for_pensjon", "fnr", "orgnummer", fagsystemId))
+        val arbeidsgiverFagsystemId = fagsystemId()
+        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", arbeidsgiverFagsystemId))
+        rapid.sendTestMessage(annullering("utbetaling_annullert_replay_for_pensjon", "fnr", "orgnummer", arbeidsgiverFagsystemId))
 
-        assertEquals(1, hentAnnulleringerFor(fagsystemId))
+        assertEquals(1, hentAnnulleringerFor(arbeidsgiverFagsystemId, "SPREF"))
     }
 
-    fun hentAnnulleringerFor(fagsystemId: String) = sessionOf(dataSource).use { session ->
+    @Test
+    fun `lagrer annullering for delvis refusjon hvor både person og arbeidsgiveroppdrag annulleres`() {
+        val arbeidsgiverFagsystemId = fagsystemId()
+        val personFagsystemId = fagsystemId()
+
+        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", arbeidsgiverFagsystemId, personFagsystemId))
+        assertEquals(1, hentAnnulleringerFor(arbeidsgiverFagsystemId, "SPREF"))
+        assertEquals(1, hentAnnulleringerFor(personFagsystemId, "SP"))
+    }
+
+    @Test
+    fun `lagrer annullering for ingen refusjon hvor hvor kun personoppdrag annulleres`() {
+        val personFagsystemId = fagsystemId()
+
+        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", null, personFagsystemId))
+        assertEquals(1, hentAnnulleringerFor(personFagsystemId, "SP"))
+    }
+
+    fun hentAnnulleringerFor(fagsystemId: String, fagområde: String) = sessionOf(dataSource).use { session ->
         @Language("PostgreSQL")
-        val query = "SELECT count(1) count FROM annullering WHERE fagsystem_id=?;"
-        session.run(queryOf(query, fagsystemId).map {
+        val query = "SELECT count(1) count FROM annullering WHERE fagsystem_id=? AND fagomrade=?;"
+        session.run(queryOf(query, fagsystemId, fagområde).map {
             it.int("count")
         }.asSingle)!!
     }
 
-    fun annullering(eventName: String, fødselsnummer: String, orgnummer: String, fagsystemId: String) = """
-{
-    "fødselsnummer": "$fødselsnummer",
-    "organisasjonsnummer": "$orgnummer",
-    "fagsystemId": "$fagsystemId",
-    "utbetalingslinjer": [
-        {
-            "fom": "2020-07-01",
-            "tom": "2020-07-05",
-            "beløp": 1337,
-            "grad": 100.0
-        },
-        {
-            "fom": "2020-07-06",
-            "tom": "2020-08-09",
-            "beløp": 1337,
-            "grad": 50.0
-        }
-    ],
-    "@event_name": "$eventName"
-}
+    fun annullering(eventName: String, fødselsnummer: String, orgnummer: String, arbeidsgiverFagsystemId: String?, personFagsystemId: String? = null) = """
+    {
+        "fødselsnummer": "$fødselsnummer",
+        "organisasjonsnummer": "$orgnummer",
+        "arbeidsgiverFagsystemId": ${if (arbeidsgiverFagsystemId != null) "\"$arbeidsgiverFagsystemId\"" else null},
+        "personFagsystemId": ${if (personFagsystemId != null) "\"$personFagsystemId\"" else null},
+        "fom": "2020-07-01",
+        "tom": "2020-08-09",
+        "@event_name": "$eventName"
+    }
     """
 }

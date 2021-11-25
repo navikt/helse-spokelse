@@ -3,6 +3,7 @@ package no.nav.helse.spokelse
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.rapids_rivers.*
 import org.slf4j.LoggerFactory
+import java.time.LocalDate
 
 class AnnulleringRiver(
     rapidsConnection: RapidsConnection,
@@ -20,25 +21,53 @@ class AnnulleringRiver(
 
     fun River.setupValidation(eventName: String) = validate {
         it.demandValue("@event_name", eventName)
-        it.requireArray("utbetalingslinjer") {
-            requireKey("fom", "tom")
-        }
-        it.requireKey("fødselsnummer", "organisasjonsnummer", "fagsystemId")
+        it.requireKey("fødselsnummer", "organisasjonsnummer", "fom", "tom")
+        it.interestedIn("arbeidsgiverFagsystemId", "personFagsystemId")
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
-        val fagsystemId = packet["fagsystemId"].asText()
+        val arbeidsgiverFagsystemId = packet["arbeidsgiverFagsystemId"].takeUnless { it.isMissingOrNull() }?.asText()
+        val personFagsystemId = packet["personFagsystemId"].takeUnless { it.isMissingOrNull() }?.asText()
         val fødselsnummer = packet["fødselsnummer"].asText()
         val orgnummer = packet["organisasjonsnummer"].asText()
-        val linjer = packet["utbetalingslinjer"]
-        val fom = linjer.minOf { it["fom"].asLocalDate() }
-        val tom = linjer.maxOf { it["tom"].asLocalDate() }
+        val fom = packet["fom"].asLocalDate()
+        val tom = packet["tom"].asLocalDate()
+        val eventName = packet["@event_name"].asText()
+
+        if (arbeidsgiverFagsystemId != null) {
+            insertAnnullering(
+                fagsystemId = arbeidsgiverFagsystemId,
+                fagområde = "SPREF",
+                fødselsnummer = fødselsnummer,
+                orgnummer = orgnummer,
+                fom = fom,
+                tom = tom,
+                eventName = eventName
+            )
+        }
+        if (personFagsystemId != null) {
+            insertAnnullering(
+                fagsystemId = personFagsystemId,
+                fagområde = "SP",
+                fødselsnummer = fødselsnummer,
+                orgnummer = orgnummer,
+                fom = fom,
+                tom = tom,
+                eventName = eventName
+            )
+        }
+    }
+
+
+    private fun insertAnnullering(fagsystemId: String, fagområde: String, fødselsnummer: String, orgnummer: String, fom: LocalDate, tom:LocalDate, eventName: String) {
         sikkerLogg.info("Inserter annullering for {} via {}",
             keyValue("fagsystemId", fagsystemId),
-            keyValue("event_name", packet["@event_name"].asText()))
-        if (annulleringDao.insertAnnullering(fødselsnummer, orgnummer, fagsystemId, fom, tom, "SPREF") < 1) {
+            keyValue("fagområde", fagområde),
+            keyValue("event_name", eventName))
+        if (annulleringDao.insertAnnullering(fødselsnummer, orgnummer, fagsystemId, fom, tom, fagområde) < 1) {
             sikkerLogg.info("Annulering for {} ble ikke insertet siden den ble sett som et duplikat",
-                keyValue("fagsystemId", fagsystemId))
+                keyValue("fagsystemId", fagsystemId),
+                keyValue("fagområde", fagområde))
         }
     }
 
