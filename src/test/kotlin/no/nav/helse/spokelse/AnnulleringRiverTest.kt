@@ -3,12 +3,14 @@ package no.nav.helse.spokelse
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
+import no.nav.helse.spokelse.Events.annulleringEvent
 import no.nav.helse.spokelse.Events.genererFagsystemId
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.time.LocalDate
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AnnulleringRiverTest {
@@ -16,6 +18,8 @@ class AnnulleringRiverTest {
     private val embeddedPostgres = setupPostgres()
     private val dataSource = testDataSource(embeddedPostgres)
     private val annulleringDao = AnnulleringDao(dataSource)
+    private val fom = LocalDate.parse("2020-07-01")
+    private val tom = LocalDate.parse("2020-08-09")
 
     @BeforeAll
     fun setup() {
@@ -25,7 +29,13 @@ class AnnulleringRiverTest {
     @Test
     fun `lagrer annulleringer`() {
         val arbeidsgiverFagsystemId = genererFagsystemId()
-        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", arbeidsgiverFagsystemId))
+        rapid.sendTestMessage(annulleringEvent(
+            fødselsnummer = "fnr",
+            orgnummer = "orgnummer",
+            arbeidsgiverFagsystemId = arbeidsgiverFagsystemId,
+            fom = fom,
+            tom = tom
+        ))
 
         assertEquals(1, hentAnnulleringerFor(arbeidsgiverFagsystemId, "SPREF"))
     }
@@ -33,7 +43,14 @@ class AnnulleringRiverTest {
     @Test
     fun `lagrer annullering fra replay`() {
         val arbeidsgiverFagsystemId = genererFagsystemId()
-        rapid.sendTestMessage(annullering("utbetaling_annullert_replay_for_pensjon", "fnr", "orgnummer", arbeidsgiverFagsystemId))
+        rapid.sendTestMessage(annulleringEvent(
+            eventName = "utbetaling_annullert_replay_for_pensjon",
+            fødselsnummer = "fnr",
+            orgnummer = "orgnummer",
+            arbeidsgiverFagsystemId = arbeidsgiverFagsystemId,
+            fom = fom,
+            tom = tom
+        ))
 
         assertEquals(1, hentAnnulleringerFor(arbeidsgiverFagsystemId, "SPREF"))
     }
@@ -41,8 +58,21 @@ class AnnulleringRiverTest {
     @Test
     fun `lagrer ikke duplikat annullering fra replay`() {
         val arbeidsgiverFagsystemId = genererFagsystemId()
-        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", arbeidsgiverFagsystemId))
-        rapid.sendTestMessage(annullering("utbetaling_annullert_replay_for_pensjon", "fnr", "orgnummer", arbeidsgiverFagsystemId))
+        rapid.sendTestMessage(annulleringEvent(
+            fødselsnummer = "fnr",
+            orgnummer = "orgnummer",
+            arbeidsgiverFagsystemId = arbeidsgiverFagsystemId,
+            fom = fom,
+            tom = tom
+        ))
+        rapid.sendTestMessage(annulleringEvent(
+            eventName = "utbetaling_annullert_replay_for_pensjon",
+            fødselsnummer = "fnr",
+            orgnummer = "orgnummer",
+            arbeidsgiverFagsystemId = arbeidsgiverFagsystemId,
+            fom = fom,
+            tom = tom
+        ))
 
         assertEquals(1, hentAnnulleringerFor(arbeidsgiverFagsystemId, "SPREF"))
     }
@@ -52,7 +82,14 @@ class AnnulleringRiverTest {
         val arbeidsgiverFagsystemId = genererFagsystemId()
         val personFagsystemId = genererFagsystemId()
 
-        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", arbeidsgiverFagsystemId, personFagsystemId))
+        rapid.sendTestMessage(annulleringEvent(
+            fødselsnummer = "fnr",
+            orgnummer = "orgnummer",
+            arbeidsgiverFagsystemId = arbeidsgiverFagsystemId,
+            personFagsystemId = personFagsystemId,
+            fom = fom,
+            tom = tom
+        ))
         assertEquals(1, hentAnnulleringerFor(arbeidsgiverFagsystemId, "SPREF"))
         assertEquals(1, hentAnnulleringerFor(personFagsystemId, "SP"))
     }
@@ -61,7 +98,15 @@ class AnnulleringRiverTest {
     fun `lagrer annullering for ingen refusjon hvor hvor kun personoppdrag annulleres`() {
         val personFagsystemId = genererFagsystemId()
 
-        rapid.sendTestMessage(annullering("utbetaling_annullert", "fnr", "orgnummer", null, personFagsystemId))
+        rapid.sendTestMessage(annulleringEvent(
+            eventName = "utbetaling_annullert",
+            fødselsnummer = "fnr",
+            orgnummer = "orgnummer",
+            arbeidsgiverFagsystemId = null,
+            personFagsystemId = personFagsystemId,
+            fom = fom,
+            tom = tom
+        ))
         assertEquals(1, hentAnnulleringerFor(personFagsystemId, "SP"))
     }
 
@@ -72,16 +117,4 @@ class AnnulleringRiverTest {
             it.int("count")
         }.asSingle)!!
     }
-
-    fun annullering(eventName: String, fødselsnummer: String, orgnummer: String, arbeidsgiverFagsystemId: String?, personFagsystemId: String? = null) = """
-    {
-        "fødselsnummer": "$fødselsnummer",
-        "organisasjonsnummer": "$orgnummer",
-        "arbeidsgiverFagsystemId": ${if (arbeidsgiverFagsystemId != null) "\"$arbeidsgiverFagsystemId\"" else null},
-        "personFagsystemId": ${if (personFagsystemId != null) "\"$personFagsystemId\"" else null},
-        "fom": "2020-07-01",
-        "tom": "2020-08-09",
-        "@event_name": "$eventName"
-    }
-    """
 }

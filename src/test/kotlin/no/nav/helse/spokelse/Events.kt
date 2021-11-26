@@ -115,6 +115,16 @@ internal object Events {
             "sykmeldingId": "${sykmelding.dokumentId}"
         }"""
 
+
+    @Language("JSON")
+    internal fun sendtSøknadArbeidsgiverEvent(sykmelding: Hendelse, søknad: Hendelse) =
+        """{
+            "@event_name": "sendt_søknad_arbeidsgiver",
+            "@id": "${sykmelding.hendelseId}",
+            "id": "${søknad.dokumentId}",
+            "sykmeldingId": "${sykmelding.dokumentId}"
+        }"""
+
     @Language("JSON")
     internal fun inntektsmeldingEvent(hendelse: Hendelse) =
         """{

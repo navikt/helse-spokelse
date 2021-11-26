@@ -17,6 +17,8 @@ import io.ktor.util.KtorExperimentalAPI
 import no.nav.helse.rapids_rivers.InMemoryRapid
 import no.nav.helse.rapids_rivers.inMemoryRapid
 import no.nav.helse.spokelse.Environment.Auth.Companion.auth
+import no.nav.helse.spokelse.Events.inntektsmeldingEvent
+import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
 import org.awaitility.Awaitility.await
 import org.flywaydb.core.Flyway
 import org.intellij.lang.annotations.Language
@@ -129,8 +131,8 @@ class GrunnlagApiTest {
         val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
         val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
         val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-        rapid.sendToListeners(sendtSøknadMessage(sykmelding, søknad))
-        rapid.sendToListeners(inntektsmeldingMessage(inntektsmelding))
+        rapid.sendToListeners(sendtSøknadNavEvent(sykmelding, søknad))
+        rapid.sendToListeners(inntektsmeldingEvent(inntektsmelding))
         val vedtaksperiodeId = UUID.randomUUID()
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ4"
         val fom = LocalDate.of(2020, 4, 1)
@@ -185,8 +187,8 @@ class GrunnlagApiTest {
         val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
         val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
         val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-        rapid.sendToListeners(sendtSøknadMessage(sykmelding, søknad))
-        rapid.sendToListeners(inntektsmeldingMessage(inntektsmelding))
+        rapid.sendToListeners(sendtSøknadNavEvent(sykmelding, søknad))
+        rapid.sendToListeners(inntektsmeldingEvent(inntektsmelding))
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ5"
         val fom = LocalDate.of(2020, 4, 1)
         val tom = LocalDate.of(2020, 4, 6)
@@ -374,23 +376,6 @@ class GrunnlagApiTest {
     "system_read_count": 0
 }
 """
-
-    @Language("JSON")
-    private fun sendtSøknadMessage(sykmelding: Hendelse, søknad: Hendelse) =
-        """{
-            "@event_name": "sendt_søknad_nav",
-            "@id": "${søknad.hendelseId}",
-            "id": "${søknad.dokumentId}",
-            "sykmeldingId": "${sykmelding.dokumentId}"
-        }"""
-
-    @Language("JSON")
-    private fun inntektsmeldingMessage(hendelse: Hendelse) =
-        """{
-            "@event_name": "inntektsmelding",
-            "@id": "${hendelse.hendelseId}",
-            "inntektsmeldingId": "${hendelse.dokumentId}"
-        }"""
 
     private fun sykedager(fom: LocalDate, tom: LocalDate) =
         fom.datesUntil(tom.plusDays(1)).asSequence()
