@@ -17,7 +17,6 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.rapids_rivers.InMemoryRapid
 import no.nav.helse.rapids_rivers.inMemoryRapid
-import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import org.apache.commons.codec.binary.Base32
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.*

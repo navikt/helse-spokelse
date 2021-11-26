@@ -32,6 +32,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
     testImplementation("com.opentable.components:otj-pg-embedded:0.13.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
+    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
+        exclude(group = "org.eclipse.jetty")
+    }
+    testImplementation("org.skyscreamer:jsonassert:1.5.0")
 }
 
 repositories {
