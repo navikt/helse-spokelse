@@ -17,8 +17,9 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.rapids_rivers.InMemoryRapid
 import no.nav.helse.rapids_rivers.inMemoryRapid
-import no.nav.helse.rapids_rivers.testsupport.TestRapid
-import org.apache.commons.codec.binary.Base32
+import no.nav.helse.spokelse.Events.genererFagsystemId
+import no.nav.helse.spokelse.Events.inntektsmeldingEvent
+import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -27,7 +28,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.random.Random
 
 @KtorExperimentalAPI
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -89,8 +89,8 @@ class ApiTest {
     fun cleanupDatabase() {
         sessionOf(dataSource).use { it.run(queryOf("SELECT truncate_tables()").asExecute) }
 
-        rapid.sendToListeners(sendtSøknadMessage(sykmelding, søknad))
-        rapid.sendToListeners(inntektsmeldingMessage(inntektsmelding))
+        rapid.sendToListeners(sendtSøknadNavEvent(sykmelding, søknad))
+        rapid.sendToListeners(inntektsmeldingEvent(inntektsmelding))
     }
 
     private fun setupMockAuth() {
@@ -191,7 +191,7 @@ class ApiTest {
 
     fun lagreOldVedtak(
         fødselsnummer: String,
-        fagsystemId: String = fagsystemId(),
+        fagsystemId: String = genererFagsystemId(),
         perioder: List<ClosedRange<LocalDate>>
     ) {
         val vedtaksperiodeId = UUID.randomUUID()
@@ -217,8 +217,6 @@ class ApiTest {
         )
         dokumentDao.lagre(vedtaksperiodeId, fagsystemId)
     }
-
-    fun fagsystemId() = Base32().encodeAsString(Random.nextBytes(32)).take(26)
 
     fun createToken() = jwtStub.createTokenFor(
         audience = "client-Id",

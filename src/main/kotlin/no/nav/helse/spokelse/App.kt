@@ -12,6 +12,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.util.*
 import no.nav.helse.rapids_rivers.RapidApplication
+import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -41,14 +42,21 @@ fun launchApplication(env: Environment) {
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
         .withKtorModule { spokelse(env.auth, dokumentDao, vedtakDao) }
         .build()
-        .apply {
-            NyttDokumentRiver(this, dokumentDao)
-            UtbetaltRiver(this, utbetaltDao, dokumentDao)
-            OldUtbetalingRiver(this, vedtakDao, dokumentDao)
-            TilUtbetalingBehovRiver(this, dokumentDao)
-            AnnulleringRiver(this, annulleringDao)
-            start()
-        }
+        .apply { registerRivers(dokumentDao, utbetaltDao, vedtakDao, annulleringDao) }
+        .start()
+}
+
+internal fun RapidsConnection.registerRivers(
+    dokumentDao: DokumentDao,
+    utbetaltDao: UtbetaltDao,
+    vedtakDao: VedtakDao,
+    annulleringDao: AnnulleringDao
+) {
+    NyttDokumentRiver(this, dokumentDao)
+    UtbetaltRiver(this, utbetaltDao, dokumentDao)
+    OldUtbetalingRiver(this, vedtakDao, dokumentDao)
+    TilUtbetalingBehovRiver(this, dokumentDao)
+    AnnulleringRiver(this, annulleringDao)
 }
 
 @KtorExperimentalAPI

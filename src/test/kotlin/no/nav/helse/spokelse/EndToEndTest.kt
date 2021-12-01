@@ -7,6 +7,8 @@ import kotliquery.Row
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
+import no.nav.helse.spokelse.Events.inntektsmeldingEvent
+import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
 import org.flywaydb.core.Flyway
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.AfterAll
@@ -73,8 +75,8 @@ internal class EndToEndTest {
         val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
         val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
         val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-        testRapid.sendTestMessage(sendtSøknadMessage(sykmelding, søknad))
-        testRapid.sendTestMessage(inntektsmeldingMessage(inntektsmelding))
+        testRapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
+        testRapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
 
         val hendelseId = UUID.randomUUID()
         testRapid.sendTestMessage(
@@ -117,7 +119,7 @@ internal class EndToEndTest {
         val søknadHendelseId = UUID.randomUUID()
         val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
         val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
-        testRapid.sendTestMessage(sendtSøknadMessage(sykmelding, søknad))
+        testRapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
 
         val hendelseId = UUID.randomUUID()
         testRapid.sendTestMessage(
@@ -181,8 +183,8 @@ internal class EndToEndTest {
         val gammeltVedtakSykmelding = Hendelse(UUID.randomUUID(), gammeltVedtakSøknadHendelseId, Dokument.Sykmelding)
         val gammeltVedtakSøknad = Hendelse(UUID.randomUUID(), gammeltVedtakSøknadHendelseId, Dokument.Søknad)
         val gammeltVedtakInntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-        testRapid.sendTestMessage(sendtSøknadMessage(gammeltVedtakSykmelding, gammeltVedtakSøknad))
-        testRapid.sendTestMessage(inntektsmeldingMessage(gammeltVedtakInntektsmelding))
+        testRapid.sendTestMessage(sendtSøknadNavEvent(gammeltVedtakSykmelding, gammeltVedtakSøknad))
+        testRapid.sendTestMessage(inntektsmeldingEvent(gammeltVedtakInntektsmelding))
         val gammeltVedtakVedtaksperiodeId = UUID.randomUUID()
         val gammeltVedtakFagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ4"
         testRapid.sendTestMessage(
@@ -206,8 +208,8 @@ internal class EndToEndTest {
         val nyttVedtakSykmelding = Hendelse(UUID.randomUUID(), nyttVedtakSøknadHendelseId, Dokument.Sykmelding)
         val nyttVedtakSøknad = Hendelse(UUID.randomUUID(), nyttVedtakSøknadHendelseId, Dokument.Søknad)
         val nyttVedtakInntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-        testRapid.sendTestMessage(sendtSøknadMessage(nyttVedtakSykmelding, nyttVedtakSøknad))
-        testRapid.sendTestMessage(inntektsmeldingMessage(nyttVedtakInntektsmelding))
+        testRapid.sendTestMessage(sendtSøknadNavEvent(nyttVedtakSykmelding, nyttVedtakSøknad))
+        testRapid.sendTestMessage(inntektsmeldingEvent(nyttVedtakInntektsmelding))
         val nyttVedtakHendelseId = UUID.randomUUID()
         testRapid.sendTestMessage(
             utbetalingMessage(
@@ -338,8 +340,8 @@ internal class EndToEndTest {
         val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
         val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
         val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-        testRapid.sendTestMessage(sendtSøknadMessage(sykmelding, søknad))
-        testRapid.sendTestMessage(inntektsmeldingMessage(inntektsmelding))
+        testRapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
+        testRapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
         val vedtaksperiodeId = UUID.randomUUID()
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ4"
         testRapid.sendTestMessage(
@@ -599,18 +601,3 @@ private fun createTruncateFunction(dataSource: DataSource) {
         it.run(queryOf(query).asExecute)
     }
 }
-
-fun sendtSøknadMessage(sykmelding: Hendelse, søknad: Hendelse) =
-    """{
-            "@event_name": "sendt_søknad_nav",
-            "@id": "${søknad.hendelseId}",
-            "id": "${søknad.dokumentId}",
-            "sykmeldingId": "${sykmelding.dokumentId}"
-        }"""
-
-fun inntektsmeldingMessage(hendelse: Hendelse) =
-    """{
-            "@event_name": "inntektsmelding",
-            "@id": "${hendelse.hendelseId}",
-            "inntektsmeldingId": "${hendelse.dokumentId}"
-        }"""
