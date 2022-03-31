@@ -10,13 +10,15 @@ import io.ktor.client.engine.apache.*
 import io.ktor.client.features.json.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.server.cio.*
+import io.ktor.server.engine.*
 import io.ktor.util.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.runBlocking
 import kotliquery.queryOf
 import kotliquery.sessionOf
-import no.nav.helse.rapids_rivers.InMemoryRapid
-import no.nav.helse.rapids_rivers.inMemoryRapid
+import no.nav.helse.rapids_rivers.KtorBuilder
+import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.Events.genererFagsystemId
 import no.nav.helse.spokelse.Events.inntektsmeldingEvent
 import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
@@ -28,69 +30,69 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
+import javax.sql.DataSource
 
-@KtorExperimentalAPI
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ApiTest {
     private val wireMockServer: WireMockServer = WireMockServer(WireMockConfiguration.options().dynamicPort())
     private lateinit var jwtStub: JwtStub
     private lateinit var appBaseUrl: String
     private val objectmapper = jacksonObjectMapper()
-    private val embeddedPostgres = setupPostgres()
-    private val dataSource = testDataSource(embeddedPostgres)
-
-    private val dokumentDao = DokumentDao(dataSource)
-    private val vedtakDao = VedtakDao(dataSource)
 
     private val sykmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Sykmelding)
     private val søknad = Hendelse(UUID.randomUUID(), sykmelding.hendelseId, Dokument.Søknad)
     private val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-    private lateinit var rapid: InMemoryRapid
+    private lateinit var rapid: TestRapid
+    private lateinit var server: ApplicationEngine
+    private lateinit var dataSource: DataSource
 
+    private lateinit var dokumentDao: DokumentDao
+    private lateinit var vedtakDao: VedtakDao
     private val client = HttpClient(Apache) {
         install(JsonFeature)
+    }
+
+    @AfterEach
+    fun resetSchema() {
+        PgDb.reset()
     }
 
     @BeforeAll
     fun setupEnv() {
         setupMockAuth()
+        PgDb.start()
+
+        dataSource = PgDb.connection()
+        dokumentDao = DokumentDao(dataSource)
+        vedtakDao = VedtakDao(dataSource)
 
         val randomPort = randomPort()
-        rapid = inMemoryRapid {
-            ktor {
-                port(randomPort)
-                withCollectorRegistry(CollectorRegistry())
-                module {
-                    spokelse(
-                        Environment.Auth(
-                            name = "spokelse",
-                            clientId = "client-Id",
-                            issuer = "Microsoft Azure AD",
-                            jwksUri = "${wireMockServer.baseUrl()}/jwks"
-                        ), dokumentDao, vedtakDao
-                    )
-                }
-            }
-        }.apply {
-            start()
+        rapid = TestRapid().apply {
             NyttDokumentRiver(this, dokumentDao)
         }
+        server = KtorBuilder()
+            .port(randomPort)
+            .withCollectorRegistry(CollectorRegistry())
+            .module {
+                spokelse(
+                    Environment.Auth(
+                        name = "spokelse",
+                        clientId = "client-Id",
+                        issuer = "Microsoft Azure AD",
+                        jwksUri = "${wireMockServer.baseUrl()}/jwks"
+                    ), dokumentDao, vedtakDao
+                )
+            }
+            .build(CIO)
+        server.start()
 
         appBaseUrl = "http://localhost:$randomPort"
     }
 
-
-    @AfterAll
-    fun tearDown() {
-        embeddedPostgres.close()
-    }
-
     @BeforeEach
     fun cleanupDatabase() {
-        sessionOf(dataSource).use { it.run(queryOf("SELECT truncate_tables()").asExecute) }
-
-        rapid.sendToListeners(sendtSøknadNavEvent(sykmelding, søknad))
-        rapid.sendToListeners(inntektsmeldingEvent(inntektsmelding))
+        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
+        rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
     }
 
     private fun setupMockAuth() {

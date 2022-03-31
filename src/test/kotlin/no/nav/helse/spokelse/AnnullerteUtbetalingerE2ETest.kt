@@ -14,11 +14,6 @@ import java.time.LocalDateTime
 
 internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
 
-    @BeforeEach
-    fun setup() {
-        reset()
-    }
-
     @Test
     fun `Annullering av utbetaling med full refusjon`() {
         val fødselsnummer = "12345678912"

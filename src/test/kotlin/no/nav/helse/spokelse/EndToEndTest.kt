@@ -1,8 +1,5 @@
 package no.nav.helse.spokelse
 
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import kotliquery.Row
 import kotliquery.queryOf
 import kotliquery.sessionOf
@@ -11,11 +8,8 @@ import no.nav.helse.spokelse.Events.inntektsmeldingEvent
 import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
 import org.flywaydb.core.Flyway
 import org.intellij.lang.annotations.Language
-import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -28,45 +22,35 @@ private const val ORGNUMMER = "987654321"
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class EndToEndTest {
-    val testRapid = TestRapid()
-    val embeddedPostgres = setupPostgres()
-    val dataSource = testDataSource(embeddedPostgres)
-    val dokumentDao = DokumentDao(dataSource)
-    val utbetaltDao = UtbetaltDao(dataSource)
-    val vedtakDao = VedtakDao(dataSource)
+    private val testRapid = TestRapid()
+    private lateinit var dataSource: DataSource
 
-    init {
+    private lateinit var dokumentDao: DokumentDao
+    private lateinit var utbetaltDao: UtbetaltDao
+    private lateinit var vedtakDao: VedtakDao
+
+    @AfterEach
+    fun resetSchema() {
+        PgDb.reset()
+    }
+
+    @BeforeAll
+    fun setupEnv() {
+        PgDb.start()
+
+        dataSource = PgDb.connection()
+        dokumentDao = DokumentDao(dataSource)
+        utbetaltDao = UtbetaltDao(dataSource)
+        vedtakDao = VedtakDao(dataSource)
+
         NyttDokumentRiver(testRapid, dokumentDao)
         UtbetaltRiver(testRapid, utbetaltDao, dokumentDao)
         OldUtbetalingRiver(testRapid, vedtakDao, dokumentDao)
-
-        Flyway.configure()
-            .dataSource(dataSource)
-            .load()
-            .migrate()
     }
 
     @BeforeEach
     fun setup() {
         testRapid.reset()
-        sessionOf(dataSource).use { session ->
-            @Language("PostgreSQL")
-            val query = """
-                DELETE FROM utbetaling;
-                DELETE FROM oppdrag;
-                DELETE FROM vedtak;
-                DELETE FROM hendelse;
-                DELETE FROM old_utbetaling;
-                DELETE FROM old_vedtak;
-                DELETE FROM vedtak_utbetalingsref;
-                """
-            session.run(queryOf(query).asExecute)
-        }
-    }
-
-    @AfterAll
-    fun tearDown() {
-        embeddedPostgres.close()
     }
 
     @Test
@@ -281,7 +265,7 @@ internal class EndToEndTest {
                     sisteUtbetalingsdag = row.localDate("siste_utbetalingsdag"),
                     sum = row.int("sum"),
                     maksgrad = row.double("maksgrad"),
-                    utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
+                    utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt").withNano(0),
                     orgnummer = row.string("orgnummer"),
                     forbrukteSykedager = row.int("forbrukte_sykedager"),
                     gjenståendeSykedager = row.intOrNull("gjenstående_sykedager"),
@@ -302,7 +286,7 @@ internal class EndToEndTest {
                 sisteUtbetalingsdag = LocalDate.of(2020, 6, 20),
                 sum = 12879,
                 maksgrad = 100.0,
-                utbetaltTidspunkt = LocalDateTime.of(2020, 6, 10, 10, 46, 46, 7000000),
+                utbetaltTidspunkt = LocalDateTime.of(2020, 6, 10, 10, 46, 46, 0),
                 orgnummer = ORGNUMMER,
                 forbrukteSykedager = 9,
                 gjenståendeSykedager = null,
@@ -322,7 +306,7 @@ internal class EndToEndTest {
                 sisteUtbetalingsdag = LocalDate.of(2020, 7, 8),
                 sum = 8586,
                 maksgrad = 100.0,
-                utbetaltTidspunkt = LocalDateTime.of(2020, 5, 4, 11, 27, 13, 521000000),
+                utbetaltTidspunkt = LocalDateTime.of(2020, 5, 4, 11, 27, 13, 0),
                 orgnummer = ORGNUMMER,
                 forbrukteSykedager = 6,
                 gjenståendeSykedager = 242,
@@ -557,47 +541,4 @@ internal class EndToEndTest {
         fom.datesUntil(tom.plusDays(1)).asSequence()
             .filter { it.dayOfWeek !in arrayOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) }.count()
 
-}
-
-fun setupPostgres() = EmbeddedPostgres.builder().setPort(56789).start()
-
-fun testDataSource(embeddedPostgres: EmbeddedPostgres): DataSource {
-    val hikariConfig = HikariConfig().apply {
-        this.jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
-        maximumPoolSize = 3
-        minimumIdle = 1
-        idleTimeout = 10001
-        connectionTimeout = 1000
-        maxLifetime = 30001
-    }
-    return HikariDataSource(hikariConfig)
-        .apply {
-            Flyway
-                .configure()
-                .dataSource(this)
-                .load().also { it.migrate() }
-        }
-        .also(::createTruncateFunction)
-
-}
-
-private fun createTruncateFunction(dataSource: DataSource) {
-    sessionOf(dataSource).use  {
-        @Language("PostgreSQL")
-        val query = """
-            CREATE OR REPLACE FUNCTION truncate_tables() RETURNS void AS $$
-            DECLARE
-            truncate_statement text;
-            BEGIN
-                SELECT 'TRUNCATE ' || string_agg(format('%I.%I', schemaname, tablename), ',') || ' CASCADE'
-                    INTO truncate_statement
-                FROM pg_tables
-                WHERE schemaname='public'
-                AND tablename not in ('flyway_schema_history');
-                EXECUTE truncate_statement;
-            END;
-            $$ LANGUAGE plpgsql;
-        """
-        it.run(queryOf(query).asExecute)
-    }
 }

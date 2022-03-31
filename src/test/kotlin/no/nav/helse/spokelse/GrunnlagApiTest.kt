@@ -7,21 +7,20 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import io.ktor.util.KtorExperimentalAPI
-import no.nav.helse.rapids_rivers.InMemoryRapid
-import no.nav.helse.rapids_rivers.inMemoryRapid
+import io.ktor.server.cio.*
+import io.ktor.server.engine.*
+import io.prometheus.client.CollectorRegistry
+import no.nav.helse.rapids_rivers.KtorBuilder
+import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.Environment.Auth.Companion.auth
 import no.nav.helse.spokelse.Events.inntektsmeldingEvent
 import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
 import org.awaitility.Awaitility.await
-import org.flywaydb.core.Flyway
 import org.intellij.lang.annotations.Language
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -36,14 +35,12 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
+import javax.sql.DataSource
 import kotlin.streams.asSequence
 
-@KtorExperimentalAPI
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class GrunnlagApiTest {
-    private lateinit var embeddedPostgres: EmbeddedPostgres
-    private lateinit var hikariConfig: HikariConfig
-    private lateinit var dataSource: HikariDataSource
+    private lateinit var dataSource: DataSource
 
     private val wireMockServer: WireMockServer = WireMockServer(WireMockConfiguration.options().dynamicPort())
     private lateinit var jwtStub: JwtStub
@@ -51,7 +48,8 @@ class GrunnlagApiTest {
     private lateinit var dokumentDao: DokumentDao
     private lateinit var vedtakDao: VedtakDao
     private lateinit var utbetaltDao: UtbetaltDao
-    private lateinit var rapid: InMemoryRapid
+    private lateinit var rapid: TestRapid
+    private lateinit var server: ApplicationEngine
 
     private lateinit var appBaseUrl: String
 
@@ -60,25 +58,15 @@ class GrunnlagApiTest {
         disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     }
 
+    @AfterEach
+    fun resetSchema() {
+        PgDb.reset()
+    }
+
     @BeforeAll
     fun setup() {
-        embeddedPostgres = EmbeddedPostgres.builder().start()
-
-        hikariConfig = HikariConfig().apply {
-            this.jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
-            maximumPoolSize = 3
-            minimumIdle = 1
-            idleTimeout = 10001
-            connectionTimeout = 1000
-            maxLifetime = 30001
-        }
-
-        dataSource = HikariDataSource(hikariConfig)
-
-        Flyway.configure()
-            .dataSource(dataSource)
-            .load()
-            .migrate()
+        PgDb.start()
+        dataSource = PgDb.connection()
 
         dokumentDao = DokumentDao(dataSource)
         vedtakDao = VedtakDao(dataSource)
@@ -102,24 +90,24 @@ class GrunnlagApiTest {
         val randomPort = ServerSocket(0).use { it.localPort }
         appBaseUrl = "http://localhost:$randomPort"
 
-        rapid = inMemoryRapid {
-            ktor {
-                port(randomPort)
-                module {
-                    spokelse(auth(
-                        name = "issuer",
-                        clientId = "spokelse_azure_ad_app_id",
-                        discoveryUrl = "${wireMockServer.baseUrl()}/config"
-                    ), dokumentDao, vedtakDao)
-                }
+        rapid = TestRapid().apply {
+            NyttDokumentRiver(this, dokumentDao)
+            TilUtbetalingBehovRiver(this, dokumentDao)
+            OldUtbetalingRiver(this, vedtakDao, dokumentDao)
+            UtbetaltRiver(this, utbetaltDao, dokumentDao)
+        }
+        server = KtorBuilder()
+            .port(randomPort)
+            .withCollectorRegistry(CollectorRegistry())
+            .module {
+                spokelse(auth(
+                    name = "issuer",
+                    clientId = "spokelse_azure_ad_app_id",
+                    discoveryUrl = "${wireMockServer.baseUrl()}/config"
+                ), dokumentDao, vedtakDao)
             }
-        }.apply { start() }
-
-
-        NyttDokumentRiver(rapid, dokumentDao)
-        TilUtbetalingBehovRiver(rapid, dokumentDao)
-        OldUtbetalingRiver(rapid, vedtakDao, dokumentDao)
-        UtbetaltRiver(rapid, utbetaltDao, dokumentDao)
+            .build(CIO)
+        server.start()
     }
 
     @Test
@@ -131,15 +119,15 @@ class GrunnlagApiTest {
         val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
         val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
         val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-        rapid.sendToListeners(sendtSøknadNavEvent(sykmelding, søknad))
-        rapid.sendToListeners(inntektsmeldingEvent(inntektsmelding))
+        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
+        rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
         val vedtaksperiodeId = UUID.randomUUID()
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ4"
         val fom = LocalDate.of(2020, 4, 1)
         val tom = LocalDate.of(2020, 4, 6)
         val grad = 50.0
         val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
-        rapid.sendToListeners(
+        rapid.sendTestMessage(
             utbetalingBehov(
                 fnr,
                 orgnummer,
@@ -150,7 +138,7 @@ class GrunnlagApiTest {
                 grad
             )
         )
-        rapid.sendToListeners(
+        rapid.sendTestMessage(
             vedtakMedUtbetalingslinjernøkkel(
                 fnr,
                 orgnummer,
@@ -187,14 +175,14 @@ class GrunnlagApiTest {
         val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
         val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
         val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
-        rapid.sendToListeners(sendtSøknadNavEvent(sykmelding, søknad))
-        rapid.sendToListeners(inntektsmeldingEvent(inntektsmelding))
+        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
+        rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ5"
         val fom = LocalDate.of(2020, 4, 1)
         val tom = LocalDate.of(2020, 4, 6)
         val grad = 70.0
         val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
-        rapid.sendToListeners(
+        rapid.sendTestMessage(
             utbetalingMessage(
                 fnr,
                 orgnummer,

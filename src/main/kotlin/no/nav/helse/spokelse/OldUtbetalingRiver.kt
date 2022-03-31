@@ -76,7 +76,7 @@ class OldUtbetalingRiver(
         fom.datesUntil(tom.plusDays(1))
             .asSequence()
             .filterNot { it.dayOfWeek in arrayOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) }
-            .sumBy { beløp }
+            .sumOf { beløp }
 }
 
 

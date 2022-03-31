@@ -6,23 +6,36 @@ import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.Events.annulleringEvent
 import no.nav.helse.spokelse.Events.genererFagsystemId
 import org.intellij.lang.annotations.Language
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.LocalDate
+import javax.sql.DataSource
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AnnulleringRiverTest {
     private val rapid = TestRapid()
-    private val embeddedPostgres = setupPostgres()
-    private val dataSource = testDataSource(embeddedPostgres)
-    private val annulleringDao = AnnulleringDao(dataSource)
     private val fom = LocalDate.parse("2020-07-01")
     private val tom = LocalDate.parse("2020-08-09")
 
+    private lateinit var dataSource: DataSource
+    private lateinit var annulleringDao: AnnulleringDao
+
+    @AfterEach
+    fun resetSchema() {
+        PgDb.reset()
+        rapid.reset()
+    }
+
     @BeforeAll
-    fun setup() {
+    fun setupEnv() {
+        PgDb.start()
+
+        dataSource = PgDb.connection()
+        annulleringDao = AnnulleringDao(dataSource)
+
         AnnulleringRiver(rapid, annulleringDao)
     }
 

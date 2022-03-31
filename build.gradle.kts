@@ -1,14 +1,15 @@
-val ktorVersion = "1.5.0"
+val ktorVersion = "1.6.7"
 val wireMockVersion = "2.27.1"
-val junitJupiterVersion = "5.6.2"
+val junitJupiterVersion = "5.8.2"
+val testcontainersVersion = "1.16.3"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
-    kotlin("jvm") version "1.5.30"
+    kotlin("jvm") version "1.6.10"
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:1.5e3ca6a")
+    implementation("com.github.navikt:rapids-and-rivers:2022.03.31-08.48.8c5e8a64800c")
     implementation("io.ktor:ktor-jackson:$ktorVersion")
     implementation("io.ktor:ktor-auth-jwt:$ktorVersion") {
         exclude(group = "junit")
@@ -17,20 +18,22 @@ dependencies {
     implementation("io.ktor:ktor-client-apache:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
 
-    implementation("com.zaxxer:HikariCP:3.4.5")
-    implementation("no.nav:vault-jdbc:1.3.7")
-    implementation("org.flywaydb:flyway-core:6.5.0")
-    implementation("com.github.seratch:kotliquery:1.3.1")
+    implementation("com.zaxxer:HikariCP:5.0.1")
+    implementation("no.nav:vault-jdbc:1.3.9")
+    implementation("org.flywaydb:flyway-core:8.5.5")
+    implementation("com.github.seratch:kotliquery:1.7.0")
 
-    testImplementation("io.mockk:mockk:1.10.0")
+    testImplementation("io.mockk:mockk:1.12.3")
     testImplementation("com.github.tomakehurst:wiremock:$wireMockVersion") {
         exclude(group = "junit")
     }
-    testImplementation("no.nav:kafka-embedded-env:2.4.0")
-    testImplementation("org.awaitility:awaitility:4.0.3")
+    testImplementation("com.github.navikt:kafka-embedded-env:kafka310-SNAPSHOT")
+    testImplementation("org.awaitility:awaitility:4.1.1")
+    testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+    testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
+    testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
-    testImplementation("com.opentable.components:otj-pg-embedded:0.13.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
         exclude(group = "org.eclipse.jetty")
@@ -46,11 +49,11 @@ repositories {
 
 tasks {
     compileKotlin {
-        kotlinOptions.jvmTarget = "16"
+        kotlinOptions.jvmTarget = "17"
     }
 
     compileTestKotlin {
-        kotlinOptions.jvmTarget = "16"
+        kotlinOptions.jvmTarget = "17"
     }
 
     withType<Test> {

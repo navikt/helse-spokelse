@@ -1,40 +1,35 @@
 package no.nav.helse.spokelse
 
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
-import org.flywaydb.core.Flyway
 import org.intellij.lang.annotations.Language
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.util.*
+import javax.sql.DataSource
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class TilUtbetalingBehovRiverTest {
     val testRapid = TestRapid()
-    val embeddedPostgres = EmbeddedPostgres.builder().setPort(56789).start()
-    val hikariConfig = HikariConfig().apply {
-        this.jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
-        maximumPoolSize = 3
-        minimumIdle = 1
-        idleTimeout = 10001
-        connectionTimeout = 1000
-        maxLifetime = 30001
+    private lateinit var dataSource: DataSource
+    private lateinit var dokumentDao: DokumentDao
+    private lateinit var vedtakDao: VedtakDao
+
+    @AfterEach
+    fun resetSchema() {
+        PgDb.reset()
     }
-    val dataSource = HikariDataSource(hikariConfig)
-    val dokumentDao = DokumentDao(dataSource)
 
-    init {
+    @BeforeAll
+    fun setupEnv() {
+        PgDb.start()
+
+        dataSource = PgDb.connection()
+        dokumentDao = DokumentDao(dataSource)
+
         TilUtbetalingBehovRiver(testRapid, dokumentDao)
-
-        Flyway.configure()
-            .dataSource(dataSource)
-            .load()
-            .migrate()
     }
 
     @BeforeEach

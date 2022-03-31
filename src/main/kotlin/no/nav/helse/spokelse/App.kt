@@ -22,13 +22,11 @@ import kotlin.system.measureTimeMillis
 private val log: Logger = LoggerFactory.getLogger("spokelse")
 private val tjenestekallLog = LoggerFactory.getLogger("tjenestekall")
 
-@KtorExperimentalAPI
 fun main() {
     val env = Environment(System.getenv())
     launchApplication(env)
 }
 
-@KtorExperimentalAPI
 fun launchApplication(env: Environment) {
     val dataSource = DataSourceBuilder(env.db)
         .apply(DataSourceBuilder::migrate)
@@ -59,7 +57,6 @@ internal fun RapidsConnection.registerRivers(
     AnnulleringRiver(this, annulleringDao)
 }
 
-@KtorExperimentalAPI
 internal fun Application.spokelse(env: Environment.Auth, dokumentDao: DokumentDao, vedtakDao: VedtakDao) {
     azureAdAppAuthentication(env)
     install(ContentNegotiation) {

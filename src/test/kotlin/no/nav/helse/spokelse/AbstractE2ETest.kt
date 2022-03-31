@@ -3,7 +3,6 @@ package no.nav.helse.spokelse
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.http.*
@@ -14,14 +13,14 @@ import org.flywaydb.core.Flyway
 import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.TestInstance
 import org.skyscreamer.jsonassert.JSONAssert
 import java.util.*
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal abstract class AbstractE2ETest {
-    private val dokumentDao = DokumentDao(dataSource)
-    private val utbetaltDao = UtbetaltDao(dataSource)
-    private val vedtakDao = VedtakDao(dataSource)
-    private val annulleringDao = AnnulleringDao(dataSource)
     private val auth = Environment.Auth.auth(
         name = "issuer",
         clientId = "spokelse_azure_ad_app_id",
@@ -33,14 +32,31 @@ internal abstract class AbstractE2ETest {
         audience = "spokelse_azure_ad_app_id"
     ).let { "Bearer $it" }
 
-    protected val rapid = TestRapid().apply {
-        registerRivers(dokumentDao, utbetaltDao, vedtakDao, annulleringDao)
+    private lateinit var dataSource: DataSource
+    private lateinit var dokumentDao: DokumentDao
+    private lateinit var utbetaltDao: UtbetaltDao
+    private lateinit var vedtakDao: VedtakDao
+    private lateinit var annulleringDao: AnnulleringDao
+    protected lateinit var rapid: TestRapid
+
+    @BeforeAll
+    fun setup() {
+        PgDb.start()
+        dataSource = PgDb.connection()
+        dokumentDao = DokumentDao(dataSource)
+        utbetaltDao = UtbetaltDao(dataSource)
+        vedtakDao = VedtakDao(dataSource)
+        annulleringDao = AnnulleringDao(dataSource)
+
+        rapid = TestRapid().apply {
+            registerRivers(dokumentDao, utbetaltDao, vedtakDao, annulleringDao)
+        }
     }
 
+    @BeforeEach
     protected fun reset() {
         rapid.reset()
-        dataSource.cleanDatabase()
-        dataSource.migrateDatabase()
+        PgDb.reset()
     }
 
     protected fun assertApiRequest(
@@ -82,8 +98,6 @@ internal abstract class AbstractE2ETest {
     }
 
     internal companion object {
-        private val embeddedPostgres = setupPostgres()
-        private val dataSource = testDataSource(embeddedPostgres)
         private var jwtStub: JwtStub
         private val wireMockServer = WireMockServer(WireMockConfiguration.options().dynamicPort()).apply { start() }
 
@@ -93,37 +107,8 @@ internal abstract class AbstractE2ETest {
             WireMock.stubFor(jwtStub.stubbedConfigProvider())
 
             Runtime.getRuntime().addShutdownHook(Thread {
-                embeddedPostgres.close()
                 wireMockServer.stop()
             })
-        }
-
-        private fun setupPostgres() = EmbeddedPostgres.builder().setPort(56789).start()
-
-        private fun testDataSource(embeddedPostgres: EmbeddedPostgres): DataSource {
-            val hikariConfig = HikariConfig().apply {
-                this.jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
-                maximumPoolSize = 3
-                minimumIdle = 1
-                idleTimeout = 10001
-                connectionTimeout = 1000
-                maxLifetime = 30001
-            }
-            return HikariDataSource(hikariConfig).apply { migrateDatabase() }
-        }
-
-        private fun DataSource.migrateDatabase() {
-            Flyway
-                .configure()
-                .dataSource(this)
-                .load().also { it.migrate() }
-        }
-
-        private fun DataSource.cleanDatabase() {
-            Flyway
-                .configure()
-                .dataSource(this)
-                .load().also { it.clean() }
         }
     }
 }
