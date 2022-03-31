@@ -24,7 +24,7 @@ dependencies {
     implementation("com.github.seratch:kotliquery:1.7.0")
 
     testImplementation("io.mockk:mockk:1.12.3")
-    testImplementation("com.github.tomakehurst:wiremock:$wireMockVersion") {
+    testImplementation("com.github.tomakehurst:wiremock-jre8:$wireMockVersion") {
         exclude(group = "junit")
     }
     testImplementation("com.github.navikt:kafka-embedded-env:kafka310-SNAPSHOT")
@@ -42,9 +42,9 @@ dependencies {
 }
 
 repositories {
-    jcenter()
     maven("https://jitpack.io")
     maven("https://packages.confluent.io/maven/")
+    mavenCentral()
 }
 
 tasks {
