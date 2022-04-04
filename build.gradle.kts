@@ -42,9 +42,9 @@ dependencies {
 }
 
 repositories {
-    maven("https://jitpack.io")
-    maven("https://packages.confluent.io/maven/")
     mavenCentral()
+    maven("https://packages.confluent.io/maven/")
+    maven("https://jitpack.io")
 }
 
 tasks {
