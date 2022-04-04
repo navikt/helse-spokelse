@@ -90,7 +90,7 @@ internal object PgDb {
         }
 
         override fun connection(db: PgDb): DataSource {
-            return db.dataSource!!
+            return db.dataSource
         }
 
         override fun reset(db: PgDb) {
