@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: create image tag
-      run: echo "IMAGE=docker.pkg.github.com/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+      run: echo "IMAGE=ghcr.io/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
     - uses: actions/checkout@v2
     - uses: actions/setup-java@v2
       with:
@@ -23,7 +23,7 @@ jobs:
       run: docker build . --pull -t ${IMAGE}
     - name: push docker image
       run: |
-        docker login --username "$GITHUB_REPOSITORY" -p ${{ secrets.GITHUB_TOKEN }} https://docker.pkg.github.com
+        docker login --username "$GITHUB_REPOSITORY" -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
         docker push ${IMAGE}
 
   deployDev:
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create image tag
-        run: echo "IMAGE=docker.pkg.github.com/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+        run: echo "IMAGE=ghcr.io/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
       - uses: actions/checkout@v1
       - uses: nais/deploy/actions/deploy@v1
         env:
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create image tag
-        run: echo "IMAGE=docker.pkg.github.com/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+        run: echo "IMAGE=ghcr.io/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
       - uses: actions/checkout@v1
       - uses: nais/deploy/actions/deploy@v1
         env:
