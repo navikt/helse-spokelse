@@ -27,7 +27,7 @@ dependencies {
     testImplementation("com.github.tomakehurst:wiremock-jre8:$wireMockVersion") {
         exclude(group = "junit")
     }
-    testImplementation("com.github.navikt:kafka-embedded-env:kafka310-SNAPSHOT")
+    testImplementation("no.nav:kafka-embedded-env:3.1.4")
     testImplementation("org.awaitility:awaitility:4.1.1")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
