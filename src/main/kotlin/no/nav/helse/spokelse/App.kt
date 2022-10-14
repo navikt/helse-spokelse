@@ -102,7 +102,10 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDao) {
             }
         val time = measureTimeMillis {
             try {
-                call.respond(HttpStatusCode.OK, vedtakDAO.hentVedtakListe(fødselsnummer))
+                val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer)
+                if (vedtak.isEmpty()) tjenestekallLog.info("Fant ingen vedtak for $fødselsnummer")
+                else tjenestekallLog.info("Fant ${vedtak.size} vedtak for $fødselsnummer hvorav siste vedtatt ${vedtak.maxOf { it.vedtattTidspunkt }}")
+                call.respond(HttpStatusCode.OK, vedtak)
             } catch (e: Exception) {
                 log.error("Feil ved henting av vedtak", e)
                 tjenestekallLog.error("Feil ved henting av vedtak for $fødselsnummer", e)
