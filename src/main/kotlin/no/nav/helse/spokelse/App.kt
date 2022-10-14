@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.application.*
 import io.ktor.auth.*
+import io.ktor.auth.jwt.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.jackson.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
-import io.ktor.util.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
@@ -76,6 +76,7 @@ internal fun Application.spokelse(env: Environment.Auth, dokumentDao: DokumentDa
 
 internal fun Route.dokumenterApi(dokumentDao: DokumentDao) {
     get("/dokumenter") {
+        call.logRequest()
         val hendelseIder = call.request.queryParameters.getAll("hendelseId")
             ?.map { UUID.fromString(it) } ?: emptyList()
         val time = measureTimeMillis {
@@ -93,6 +94,7 @@ internal fun Route.dokumenterApi(dokumentDao: DokumentDao) {
 
 internal fun Route.grunnlagApi(vedtakDAO: VedtakDao) {
     get("/grunnlag") {
+        call.logRequest()
         val fødselsnummer = call.request.queryParameters["fodselsnummer"]
             ?: run {
                 log.error("/grunnlag Mangler fodselsnummer query param")
@@ -113,6 +115,7 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDao) {
 
 internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
     post("/utbetalinger") {
+        call.logRequest()
         val fødselsnumre = call.receive<List<String>>()
 
         call.respond(
@@ -146,3 +149,13 @@ internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
         )
     }
 }
+
+private fun ApplicationCall.applicationId() = try {
+    val jwt = (authentication.principal!! as JWTPrincipal)
+    jwt.getClaim("azp", String::class) ?: jwt.getClaim("appid", String::class) ?: "n/a (fant ikke)"
+} catch (ex: Exception) {
+    tjenestekallLog.error("Klarte ikke å utlede Application ID", ex)
+    "n/a (feil)"
+}
+
+private fun ApplicationCall.logRequest() = tjenestekallLog.info("Mottok request mot ${request.path()} fra ${applicationId()}")
