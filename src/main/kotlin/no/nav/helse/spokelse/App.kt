@@ -16,11 +16,13 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 import java.util.*
 import kotlin.system.measureTimeMillis
 
 private val log: Logger = LoggerFactory.getLogger("spokelse")
 private val tjenestekallLog = LoggerFactory.getLogger("tjenestekall")
+private val sisteKjenning = LocalDateTime.parse("2022-03-16T21:53:18")
 
 fun main() {
     val env = Environment(System.getenv())
@@ -103,8 +105,9 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDao) {
         val time = measureTimeMillis {
             try {
                 val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer)
-                if (vedtak.isEmpty()) tjenestekallLog.info("Fant ingen vedtak for $fødselsnummer")
-                else tjenestekallLog.info("Fant ${vedtak.size} vedtak for $fødselsnummer hvorav siste vedtatt ${vedtak.maxOf { it.vedtattTidspunkt }}")
+                vedtak.filter { it.vedtattTidspunkt > sisteKjenning }.takeUnless { it.isEmpty() }?.let {
+                    tjenestekallLog.info("Fant ${it.size} vedtak for $fødselsnummer vedtatt etter $sisteKjenning")
+                }
                 call.respond(HttpStatusCode.OK, vedtak)
             } catch (e: Exception) {
                 log.error("Feil ved henting av vedtak", e)
