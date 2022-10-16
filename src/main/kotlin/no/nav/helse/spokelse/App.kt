@@ -123,25 +123,24 @@ internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
     post("/utbetalinger") {
         call.logRequest()
         val fødselsnumre = call.receive<List<String>>()
+        val utbetalinger = fødselsnumre.flatMap { fødselsnummer ->
+            val annulerteFagsystemIder = vedtakDAO.hentAnnuleringerForFødselsnummer(fødselsnummer)
 
-        call.respond(
-            fødselsnumre.flatMap { fødselsnummer ->
-                val annulerteFagsystemIder = vedtakDAO.hentAnnuleringerForFødselsnummer(fødselsnummer)
-
-                vedtakDAO.hentUtbetalingerForFødselsnummer(fødselsnummer)
-                    .filterNot { it.fagsystemId in annulerteFagsystemIder }
-                    .map {
+            vedtakDAO.hentUtbetalingerForFødselsnummer(fødselsnummer)
+                .filterNot { it.fagsystemId in annulerteFagsystemIder }
+                .map {
+                    UtbetalingDTO(
+                        fødselsnummer = fødselsnummer,
+                        fom = it.fom,
+                        tom = it.tom,
+                        grad = it.grad,
+                        utbetaltTidspunkt = it.utbetaltTidspunkt,
+                        gjenståendeSykedager = it.gjenståendeSykedager,
+                        refusjonstype = it.refusjonstype
+                    )
+                }.ifEmpty {
+                    listOf(
                         UtbetalingDTO(
-                            fødselsnummer = fødselsnummer,
-                            fom = it.fom,
-                            tom = it.tom,
-                            grad = it.grad,
-                            utbetaltTidspunkt = it.utbetaltTidspunkt,
-                            gjenståendeSykedager = it.gjenståendeSykedager,
-                            refusjonstype = it.refusjonstype
-                        )
-                    }.ifEmpty {
-                        listOf(UtbetalingDTO(
                             fødselsnummer = fødselsnummer,
                             fom = null,
                             tom = null,
@@ -149,10 +148,14 @@ internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
                             gjenståendeSykedager = null,
                             utbetaltTidspunkt = null,
                             refusjonstype = null
-                        ))
-                    }
-            }
-        )
+                        )
+                    )
+                }
+        }
+        utbetalinger.filter { it.utbetaltTidspunkt?.isAfter(sisteKjenning) ?: false }.takeUnless { it.isEmpty() }?.let {
+            tjenestekallLog.info("Fant ${it.size} utbetalinger utbetalt etter $sisteKjenning")
+        }
+        call.respond(utbetalinger)
     }
 }
 
