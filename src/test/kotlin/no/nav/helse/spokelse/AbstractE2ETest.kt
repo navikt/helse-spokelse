@@ -6,6 +6,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -34,7 +35,8 @@ internal abstract class AbstractE2ETest {
     protected lateinit var dokumentDao: DokumentDao
     protected lateinit var utbetaltDao: UtbetaltDao
     protected lateinit var vedtakDao: VedtakDao
-    protected lateinit var annulleringDao: AnnulleringDao
+    private lateinit var annulleringDao: AnnulleringDao
+    protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
     protected lateinit var rapid: TestRapid
 
     @BeforeAll
@@ -45,6 +47,7 @@ internal abstract class AbstractE2ETest {
         utbetaltDao = UtbetaltDao(dataSource)
         vedtakDao = VedtakDao(dataSource)
         annulleringDao = AnnulleringDao(dataSource)
+        tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
 
         rapid = TestRapid().apply {
             registerRivers(dokumentDao, annulleringDao)
