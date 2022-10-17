@@ -17,7 +17,6 @@ import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
-import java.util.*
 import kotlin.system.measureTimeMillis
 
 private val log: Logger = LoggerFactory.getLogger("spokelse")
@@ -35,31 +34,25 @@ fun launchApplication(env: Environment) {
         .getDataSource()
 
     val dokumentDao = DokumentDao(dataSource)
-    val utbetaltDao = UtbetaltDao(dataSource)
     val vedtakDao = VedtakDao(dataSource)
     val annulleringDao = AnnulleringDao(dataSource)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
-        .withKtorModule { spokelse(env.auth, dokumentDao, vedtakDao) }
+        .withKtorModule { spokelse(env.auth, vedtakDao) }
         .build()
-        .apply { registerRivers(dokumentDao, utbetaltDao, vedtakDao, annulleringDao) }
+        .apply { registerRivers(dokumentDao, annulleringDao) }
         .start()
 }
 
 internal fun RapidsConnection.registerRivers(
     dokumentDao: DokumentDao,
-    utbetaltDao: UtbetaltDao,
-    vedtakDao: VedtakDao,
     annulleringDao: AnnulleringDao
 ) {
     NyttDokumentRiver(this, dokumentDao)
-    UtbetaltRiver(this, utbetaltDao, dokumentDao)
-    OldUtbetalingRiver(this, vedtakDao, dokumentDao)
-    TilUtbetalingBehovRiver(this, dokumentDao)
     AnnulleringRiver(this, annulleringDao)
 }
 
-internal fun Application.spokelse(env: Environment.Auth, dokumentDao: DokumentDao, vedtakDao: VedtakDao) {
+internal fun Application.spokelse(env: Environment.Auth, vedtakDao: VedtakDao) {
     azureAdAppAuthentication(env)
     install(ContentNegotiation) {
         jackson {
@@ -69,28 +62,9 @@ internal fun Application.spokelse(env: Environment.Auth, dokumentDao: DokumentDa
     }
     routing {
         authenticate {
-            dokumenterApi(dokumentDao)
             grunnlagApi(vedtakDao)
             utbetalingerApi(vedtakDao)
         }
-    }
-}
-
-internal fun Route.dokumenterApi(dokumentDao: DokumentDao) {
-    get("/dokumenter") {
-        call.logRequest()
-        val hendelseIder = call.request.queryParameters.getAll("hendelseId")
-            ?.map { UUID.fromString(it) } ?: emptyList()
-        val time = measureTimeMillis {
-            try {
-                call.respond(HttpStatusCode.OK, dokumentDao.finnHendelser(hendelseIder))
-            } catch (e: Exception) {
-                log.error("Feil ved oppslag av dokumenter", e)
-                tjenestekallLog.error("Feil ved oppslag av dokumenter", e)
-                call.respond(HttpStatusCode.InternalServerError, "Feil ved oppslag av dokumenter")
-            }
-        }
-        tjenestekallLog.info("Hentet dokumenter for hendelser $hendelseIder ($time ms)")
     }
 }
 

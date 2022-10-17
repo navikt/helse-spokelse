@@ -1,16 +1,14 @@
 package no.nav.helse.spokelse
 
 import no.nav.helse.spokelse.Events.annulleringEvent
-import no.nav.helse.spokelse.Events.formater
 import no.nav.helse.spokelse.Events.genererFagsystemId
 import no.nav.helse.spokelse.Events.inntektsmeldingEvent
 import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
-import no.nav.helse.spokelse.Events.utbetaltEvent
 import org.intellij.lang.annotations.Language
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.*
 
 internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
 
@@ -19,7 +17,7 @@ internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
         val fødselsnummer = "12345678912"
         val orgnummer = "985748784"
         val arbeidsgiverFagsystemId = genererFagsystemId()
-        val tidspunkt = LocalDateTime.now()
+        val tidspunkt = LocalDateTime.parse("2022-10-17T11:30:05")
         val fom = LocalDate.parse("2021-01-01")
         val tom = LocalDate.parse("2021-02-15")
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
@@ -33,23 +31,23 @@ internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
 
         rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
         rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
-        rapid.sendTestMessage(
-            utbetaltEvent(
-                fødselsnummer = fødselsnummer,
-                orgnummer = orgnummer,
-                grad = 70.0,
-                fom = fom,
-                tom = tom,
-                hendelser = listOf(sykmelding, søknad, inntektsmelding),
-                arbeidsgiverFagsystemId = arbeidsgiverFagsystemId,
-                personFagsystemId = null,
-                tidspunkt = tidspunkt
-            )
-        )
+
+        utbetaltDao.opprett(Vedtak(
+            hendelseId = UUID.randomUUID(),
+            fødselsnummer = fødselsnummer,
+            orgnummer = orgnummer,
+            dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+            oppdrag = listOf(oppdrag(fødselsnummer, arbeidsgiverFagsystemId, "SPREF", fom, tom)),
+            fom = fom,
+            tom = tom,
+            forbrukteSykedager = 32,
+            gjenståendeSykedager = 216,
+            opprettet = tidspunkt
+        ))
 
         @Language("JSON")
         val forventetFørAnnullering = """
-        [{"fødselsnummer":"12345678912","fom":"2021-01-01","tom":"2021-02-15","grad":70.0,"gjenståendeSykedager":216,"utbetaltTidspunkt":"${tidspunkt.formater()}","refusjonstype":"REFUSJON_TIL_ARBEIDSGIVER"}]
+        [{"fødselsnummer":"12345678912","fom":"2021-01-01","tom":"2021-02-15","grad":70.0,"gjenståendeSykedager":216,"utbetaltTidspunkt":"$tidspunkt","refusjonstype":"REFUSJON_TIL_ARBEIDSGIVER"}]
         """
 
         assertApiRequest(
@@ -82,7 +80,7 @@ internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
         val fødselsnummer = "12345678912"
         val orgnummer = "985748784"
         val personFagsystemId = genererFagsystemId()
-        val tidspunkt = LocalDateTime.now()
+        val tidspunkt = LocalDateTime.parse("2022-10-17T11:16:38")
         val fom = LocalDate.parse("2021-01-01")
         val tom = LocalDate.parse("2021-02-15")
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
@@ -96,23 +94,22 @@ internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
 
         rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
         rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
-        rapid.sendTestMessage(
-            utbetaltEvent(
-                fødselsnummer = fødselsnummer,
-                orgnummer = orgnummer,
-                grad = 70.0,
-                fom = fom,
-                tom = tom,
-                hendelser = listOf(sykmelding, søknad, inntektsmelding),
-                arbeidsgiverFagsystemId = null,
-                personFagsystemId = personFagsystemId,
-                tidspunkt = tidspunkt
-            )
-        )
+        utbetaltDao.opprett(Vedtak(
+            hendelseId = UUID.randomUUID(),
+            fødselsnummer = fødselsnummer,
+            orgnummer = orgnummer,
+            dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+            oppdrag = listOf(oppdrag(fødselsnummer, personFagsystemId, "SP", fom, tom)),
+            fom = fom,
+            tom = tom,
+            forbrukteSykedager = 32,
+            gjenståendeSykedager = 216,
+            opprettet = tidspunkt
+        ))
 
         @Language("JSON")
         val forventetFørAnnullering = """
-        [{"fødselsnummer":"12345678912","fom":"2021-01-01","tom":"2021-02-15","grad":70.0,"gjenståendeSykedager":216,"utbetaltTidspunkt":"${tidspunkt.formater()}","refusjonstype":"REFUSJON_TIL_PERSON"}]
+        [{"fødselsnummer":"12345678912","fom":"2021-01-01","tom":"2021-02-15","grad":70.0,"gjenståendeSykedager":216,"utbetaltTidspunkt":"$tidspunkt","refusjonstype":"REFUSJON_TIL_PERSON"}]
         """
 
         assertApiRequest(
@@ -147,7 +144,7 @@ internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
         val orgnummer = "985748784"
         val personFagsystemId = genererFagsystemId()
         val arbeidsgiverFagsystemId = genererFagsystemId()
-        val tidspunkt = LocalDateTime.now()
+        val tidspunkt = LocalDateTime.parse("2022-10-17T11:43:47")
         val fom = LocalDate.parse("2021-01-01")
         val tom = LocalDate.parse("2021-02-15")
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
@@ -161,25 +158,29 @@ internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
 
         rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
         rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
-        rapid.sendTestMessage(
-            utbetaltEvent(
+        utbetaltDao.opprett(
+            Vedtak(
+                hendelseId = UUID.randomUUID(),
                 fødselsnummer = fødselsnummer,
                 orgnummer = orgnummer,
-                grad = 70.0,
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+                oppdrag = listOf(
+                    oppdrag(fødselsnummer, arbeidsgiverFagsystemId, "SPREF", fom, tom),
+                    oppdrag(fødselsnummer, personFagsystemId, "SP", fom, tom)
+                ),
                 fom = fom,
                 tom = tom,
-                hendelser = listOf(sykmelding, søknad, inntektsmelding),
-                arbeidsgiverFagsystemId = arbeidsgiverFagsystemId,
-                personFagsystemId = personFagsystemId,
-                tidspunkt = tidspunkt
+                forbrukteSykedager = 32,
+                gjenståendeSykedager = 216,
+                opprettet = tidspunkt
             )
         )
 
         @Language("JSON")
         val forventetFørAnnullering = """
         [
-          {"fødselsnummer":"12345678912","fom":"2021-01-01","tom":"2021-02-15","grad":70.0,"gjenståendeSykedager":216,"utbetaltTidspunkt":"${tidspunkt.formater()}","refusjonstype":"REFUSJON_TIL_ARBEIDSGIVER"},
-          {"fødselsnummer":"12345678912","fom":"2021-01-01","tom":"2021-02-15","grad":70.0,"gjenståendeSykedager":216,"utbetaltTidspunkt":"${tidspunkt.formater()}","refusjonstype":"REFUSJON_TIL_PERSON"}
+          {"fødselsnummer":"12345678912","fom":"2021-01-01","tom":"2021-02-15","grad":70.0,"gjenståendeSykedager":216,"utbetaltTidspunkt":"$tidspunkt","refusjonstype":"REFUSJON_TIL_ARBEIDSGIVER"},
+          {"fødselsnummer":"12345678912","fom":"2021-01-01","tom":"2021-02-15","grad":70.0,"gjenståendeSykedager":216,"utbetaltTidspunkt":"$tidspunkt","refusjonstype":"REFUSJON_TIL_PERSON"}
         ]
         """
 

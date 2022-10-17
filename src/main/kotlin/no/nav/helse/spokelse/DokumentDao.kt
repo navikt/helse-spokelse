@@ -6,6 +6,7 @@ import org.intellij.lang.annotations.Language
 import java.util.*
 import javax.sql.DataSource
 
+@Deprecated("Dokument-API'et er angivelig ikke i bruk lenger. Kan fjernes så fort dette er 100%")
 class DokumentDao(val datasource: DataSource) {
     fun opprett(hendelse: Hendelse) {
         @Language("PostgreSQL")
@@ -19,8 +20,6 @@ class DokumentDao(val datasource: DataSource) {
             )
         }
     }
-
-    fun finnHendelser(hendelseIder: List<UUID>): List<Hendelse> = finn(hendelseIder)
 
     fun finnDokumenter(hendelseIder: List<UUID>) = finn(hendelseIder)
         .let { hendelser ->

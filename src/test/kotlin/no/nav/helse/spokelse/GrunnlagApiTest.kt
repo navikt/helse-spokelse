@@ -1,124 +1,20 @@
 package no.nav.helse.spokelse
 
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.cio.*
-import io.ktor.server.engine.*
-import io.prometheus.client.CollectorRegistry
-import no.nav.helse.rapids_rivers.KtorBuilder
-import no.nav.helse.rapids_rivers.testsupport.TestRapid
-import no.nav.helse.spokelse.Environment.Auth.Companion.auth
 import no.nav.helse.spokelse.Events.inntektsmeldingEvent
 import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
-import org.awaitility.Awaitility.await
 import org.intellij.lang.annotations.Language
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
-import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.ServerSocket
-import java.net.Socket
-import java.net.URL
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import java.util.concurrent.TimeUnit
-import javax.sql.DataSource
-import kotlin.streams.asSequence
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class GrunnlagApiTest {
-    private lateinit var dataSource: DataSource
-
-    private val wireMockServer: WireMockServer = WireMockServer(WireMockConfiguration.options().dynamicPort())
-    private lateinit var jwtStub: JwtStub
-
-    private lateinit var dokumentDao: DokumentDao
-    private lateinit var vedtakDao: VedtakDao
-    private lateinit var utbetaltDao: UtbetaltDao
-    private lateinit var rapid: TestRapid
-    private lateinit var server: ApplicationEngine
-
-    private lateinit var appBaseUrl: String
-
-    private val objectMapper = jacksonObjectMapper().apply {
-        registerModule(JavaTimeModule())
-        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-    }
-
-    @AfterEach
-    fun resetSchema() {
-        PgDb.reset()
-    }
-
-    @BeforeAll
-    fun setup() {
-        PgDb.start()
-        dataSource = PgDb.connection()
-
-        dokumentDao = DokumentDao(dataSource)
-        vedtakDao = VedtakDao(dataSource)
-        utbetaltDao = UtbetaltDao(dataSource)
-
-        //Stub ID provider (for authentication of REST endpoints)
-        wireMockServer.start()
-        await("vent på WireMockServer har startet")
-            .atMost(5, TimeUnit.SECONDS)
-            .until {
-                try {
-                    Socket("localhost", wireMockServer.port()).use { it.isConnected }
-                } catch (err: Exception) {
-                    false
-                }
-            }
-        jwtStub = JwtStub("Microsoft Azure AD", wireMockServer)
-        WireMock.stubFor(jwtStub.stubbedJwkProvider())
-        WireMock.stubFor(jwtStub.stubbedConfigProvider())
-
-        val randomPort = ServerSocket(0).use { it.localPort }
-        appBaseUrl = "http://localhost:$randomPort"
-
-        rapid = TestRapid().apply {
-            NyttDokumentRiver(this, dokumentDao)
-            TilUtbetalingBehovRiver(this, dokumentDao)
-            OldUtbetalingRiver(this, vedtakDao, dokumentDao)
-            UtbetaltRiver(this, utbetaltDao, dokumentDao)
-        }
-        server = KtorBuilder()
-            .port(randomPort)
-            .withCollectorRegistry(CollectorRegistry())
-            .module {
-                spokelse(auth(
-                    name = "issuer",
-                    clientId = "spokelse_azure_ad_app_id",
-                    discoveryUrl = "${wireMockServer.baseUrl()}/config"
-                ), dokumentDao, vedtakDao)
-            }
-            .build(CIO)
-        server.start()
-    }
+internal class GrunnlagApiTest : AbstractE2ETest() {
 
     @Test
     fun `skriver gammelt vedtak til db`() {
         val fnr = "01010145678"
         val orgnummer = "123456789"
-
-        val søknadHendelseId = UUID.randomUUID()
-        val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
-        val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
-        val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
+        val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
         rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
         rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
         val vedtaksperiodeId = UUID.randomUUID()
@@ -127,290 +23,120 @@ class GrunnlagApiTest {
         val tom = LocalDate.of(2020, 4, 6)
         val grad = 50.0
         val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
-        rapid.sendTestMessage(
-            utbetalingBehov(
-                fnr,
-                orgnummer,
-                vedtaksperiodeId,
-                fagsystemId,
-                fom,
-                tom,
-                grad
-            )
-        )
-        rapid.sendTestMessage(
-            vedtakMedUtbetalingslinjernøkkel(
-                fnr,
-                orgnummer,
-                fom,
-                tom,
-                grad,
-                vedtaksperiodeId,
-                vedtattTidspunkt,
-                listOf(sykmelding, søknad, inntektsmelding)
+        dokumentDao.lagre(vedtaksperiodeId, fagsystemId)
+        vedtakDao.save(
+            OldVedtak(
+                vedtaksperiodeId = vedtaksperiodeId,
+                fødselsnummer = fnr,
+                orgnummer = orgnummer,
+                opprettet = vedtattTidspunkt,
+                utbetalinger = listOf(
+                    OldUtbetaling(
+                        fom = fom,
+                        tom = tom,
+                        grad = grad,
+                        dagsats = 123,
+                        beløp = 321,
+                        totalbeløp = 456
+                    )
+                ),
+                forbrukteSykedager = 1,
+                gjenståendeSykedager = 2,
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding)
             )
         )
 
-        await().atMost(5, TimeUnit.SECONDS).untilAsserted {
-            "/grunnlag?fodselsnummer=$fnr".httpGet {
-                objectMapper.readValue<List<FpVedtak>>(this).apply {
-                    assertEquals(1, size)
+        @Language("JSON")
+        val forventetFørAnnullering = """
+        [{"vedtaksreferanse":"VNDG2PFPMNB4FKMC4ORASZ2JJ4","utbetalinger":[{"fom":"2020-04-01","tom":"2020-04-06","grad":50.0}],"vedtattTidspunkt":"2020-04-11T10:00:00"}]
+        """
 
-                    assertEquals(fagsystemId, this[0].vedtaksreferanse)
-                    assertEquals(vedtattTidspunkt, this[0].vedtattTidspunkt)
-                    assertEquals(fom, this[0].utbetalinger[0].fom)
-                    assertEquals(tom, this[0].utbetalinger[0].tom)
-                    assertEquals(grad, this[0].utbetalinger[0].grad)
-                }
-            }
-        }
+        assertApiRequest(
+            path = "grunnlag?fodselsnummer=$fnr",
+            httpMethod = "GET",
+            forventetResponseBody = forventetFørAnnullering
+        )
     }
 
     @Test
     fun `skriver vedtak til db`() {
         val fnr = "01010145679"
         val orgnummer = "123456789"
-
-        val søknadHendelseId = UUID.randomUUID()
-        val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
-        val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
-        val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
+        val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
         rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
         rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ5"
         val fom = LocalDate.of(2020, 4, 1)
         val tom = LocalDate.of(2020, 4, 6)
-        val grad = 70.0
         val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
-        rapid.sendTestMessage(
-            utbetalingMessage(
-                fnr,
-                orgnummer,
-                fagsystemId,
-                fom,
-                tom,
-                grad,
-                vedtattTidspunkt,
-                listOf(sykmelding, søknad, inntektsmelding)
-            )
+
+        utbetaltDao.opprett(Vedtak(
+            hendelseId = UUID.randomUUID(),
+            fødselsnummer = fnr,
+            orgnummer = orgnummer,
+            dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+            oppdrag = listOf(oppdrag(fnr, fagsystemId, "SPREF", fom, tom)),
+            fom = fom,
+            tom = tom,
+            forbrukteSykedager = 32,
+            gjenståendeSykedager = 216,
+            opprettet = vedtattTidspunkt
+        ))
+
+        @Language("JSON")
+        val forventetFørAnnullering = """
+        [{"vedtaksreferanse":"VNDG2PFPMNB4FKMC4ORASZ2JJ5","utbetalinger":[{"fom":"2020-04-01","tom":"2020-04-06","grad":70.0}],"vedtattTidspunkt":"2020-04-11T10:00:00"}]
+        """
+
+        assertApiRequest(
+            path = "grunnlag?fodselsnummer=$fnr",
+            httpMethod = "GET",
+            forventetResponseBody = forventetFørAnnullering
         )
+    }
 
-        await().atMost(5, TimeUnit.SECONDS).untilAsserted {
-            "/grunnlag?fodselsnummer=$fnr".httpGet {
-                objectMapper.readValue<List<FpVedtak>>(this).apply {
-                    assertEquals(1, size)
+    @Test
+    fun `skriver vedtak til db uten inntektsmelding`() {
+        val fnr = "01010145679"
+        val orgnummer = "123456789"
+        val (sykmelding, søknad, _) = nyeDokumenter()
+        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
+        val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ6"
+        val fom = LocalDate.of(2020, 4, 1)
+        val tom = LocalDate.of(2020, 4, 6)
+        val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
 
-                    assertEquals(fagsystemId, this[0].vedtaksreferanse)
-                    assertEquals(vedtattTidspunkt, this[0].vedtattTidspunkt)
-                    assertEquals(fom, this[0].utbetalinger[0].fom)
-                    assertEquals(tom, this[0].utbetalinger[0].tom)
-                    assertEquals(grad, this[0].utbetalinger[0].grad)
-                }
-            }
-        }
+        utbetaltDao.opprett(Vedtak(
+            hendelseId = UUID.randomUUID(),
+            fødselsnummer = fnr,
+            orgnummer = orgnummer,
+            dokumenter = Dokumenter(sykmelding, søknad, null),
+            oppdrag = listOf(oppdrag(fnr, fagsystemId, "SPREF", fom, tom)),
+            fom = fom,
+            tom = tom,
+            forbrukteSykedager = 32,
+            gjenståendeSykedager = 216,
+            opprettet = vedtattTidspunkt
+        ))
+
+        @Language("JSON")
+        val forventetFørAnnullering = """
+        [{"vedtaksreferanse":"VNDG2PFPMNB4FKMC4ORASZ2JJ6","utbetalinger":[{"fom":"2020-04-01","tom":"2020-04-06","grad":70.0}],"vedtattTidspunkt":"2020-04-11T10:00:00"}]
+        """
+
+        assertApiRequest(
+            path = "grunnlag?fodselsnummer=$fnr",
+            httpMethod = "GET",
+            forventetResponseBody = forventetFørAnnullering
+        )
     }
 
     @Test
     fun `kall til grunnlag uten fnr gir 400`() {
-        await().atMost(5, TimeUnit.SECONDS).untilAsserted {
-            "/grunnlag".httpGet(HttpStatusCode.BadRequest)
-        }
-    }
-
-    @Language("JSON")
-    private fun utbetalingMessage(
-        fnr: String,
-        orgnummer: String,
-        fagsystemId: String,
-        fom: LocalDate,
-        tom: LocalDate,
-        grad: Double,
-        vedtattTidspunkt: LocalDateTime,
-        hendelser: List<Hendelse>
-    ) = """{
-    "aktørId": "aktørId",
-    "fødselsnummer": "$fnr",
-    "organisasjonsnummer": "$orgnummer",
-    "hendelser": ${hendelser.map { "\"${it.hendelseId}\"" }},
-    "utbetalt": [
-        {
-            "mottaker": "$orgnummer",
-            "fagområde": "SPREF",
-            "fagsystemId": "$fagsystemId",
-            "førsteSykepengedag": "",
-            "totalbeløp": 8586,
-            "utbetalingslinjer": [
-                {
-                    "fom": "$fom",
-                    "tom": "$tom",
-                    "dagsats": 1431,
-                    "beløp": 1431,
-                    "grad": $grad,
-                    "sykedager": ${sykedager(fom, tom)}
-                }
-            ]
-        },
-        {
-            "mottaker": "$fnr",
-            "fagområde": "SP",
-            "fagsystemId": "353OZWEIBBAYZPKU6WYKTC54SE",
-            "totalbeløp": 0,
-            "utbetalingslinjer": []
-        }
-    ],
-    "fom": "$fom",
-    "tom": "$tom",
-    "forbrukteSykedager": ${sykedager(fom, tom)},
-    "gjenståendeSykedager": ${248 - sykedager(fom, tom)},
-    "opprettet": "$vedtattTidspunkt",
-    "system_read_count": 0,
-    "@event_name": "utbetalt",
-    "@id": "cf28fbba-562e-4841-b366-be1456fdccef",
-    "@opprettet": "$vedtattTidspunkt",
-    "@forårsaket_av": {
-        "event_name": "behov",
-        "id": "cf28fbba-562e-4841-b366-be1456fdccee",
-        "opprettet": "2020-05-04T11:26:47.088455"
-    }
-}
-"""
-
-
-    @Language("JSON")
-    private fun vedtakMedUtbetalingslinjernøkkel(
-        fnr: String,
-        orgnummer: String,
-        fom: LocalDate,
-        tom: LocalDate,
-        grad: Double,
-        vedtaksperiodeId: UUID,
-        vedtattTidspunkt: LocalDateTime,
-        hendelser: List<Hendelse>
-    ) = """{
-    "førsteFraværsdag": "$fom",
-    "vedtaksperiodeId": "$vedtaksperiodeId",
-    "hendelser": ${hendelser.map { "\"${it.hendelseId}\"" }},
-    "utbetalingslinjer": [
-        {
-            "fom": "$fom",
-            "tom": "$tom",
-            "dagsats": 1431,
-            "beløp": 1431,
-            "grad": $grad,
-            "enDelAvPerioden": true,
-            "mottaker": "987654321",
-            "konto": "SPREF"
-        }
-    ],
-    "forbrukteSykedager": ${sykedager(fom, tom)},
-    "gjenståendeSykedager": null,
-    "opprettet": "2020-06-10T10:46:36.979478",
-    "system_read_count": 0,
-    "@event_name": "utbetalt",
-    "@id": "3bcefb15-8fb0-4b9b-99d7-547c0c295820",
-    "@opprettet": "$vedtattTidspunkt",
-    "@forårsaket_av": {
-        "event_name": "behov",
-        "id": "75e4718f-ae59-4701-a09c-001630bcbd1a",
-        "opprettet": "2020-06-10T10:46:37.275083"
-    },
-    "aktørId": "42",
-    "fødselsnummer": "$fnr",
-    "organisasjonsnummer": "$orgnummer"
-}"""
-
-    @Language("JSON")
-    private fun utbetalingBehov(fnr: String, orgnummer: String, vedtaksperiodeId: UUID, fagsystemId: String, fom: LocalDate, tom: LocalDate, grad: Double) = """{
-    "@event_name": "behov",
-    "@opprettet": "2020-06-10T10:02:21.069247",
-    "@id": "65d0df95-2b8f-4ac7-8d73-e0b41f575330",
-    "@behov": [
-        "Utbetaling"
-    ],
-    "@forårsaket_av": {
-        "event_name": "behov",
-        "id": "7eb871b1-8a40-49a6-8f9d-c9da3e3c6d73",
-        "opprettet": "2020-06-10T09:59:45.873566"
-    },
-    "aktørId": "42",
-    "fødselsnummer": "$fnr",
-    "organisasjonsnummer": "$orgnummer",
-    "vedtaksperiodeId": "$vedtaksperiodeId",
-    "tilstand": "TIL_UTBETALING",
-    "mottaker": "$orgnummer",
-    "fagområde": "SPREF",
-    "linjer": [
-        {
-            "fom": "$fom",
-            "tom": "$tom",
-            "dagsats": 1431,
-            "lønn": 1431,
-            "grad": $grad,
-            "refFagsystemId": null,
-            "delytelseId": 1,
-            "datoStatusFom": null,
-            "statuskode": null,
-            "refDelytelseId": null,
-            "endringskode": "NY",
-            "klassekode": "SPREFAG-IOP"
-        }
-    ],
-    "fagsystemId": "$fagsystemId",
-    "endringskode": "NY",
-    "sisteArbeidsgiverdag": null,
-    "nettoBeløp": 8586,
-    "saksbehandler": "en_saksbehandler",
-    "maksdato": "2019-01-01",
-    "system_read_count": 0
-}
-"""
-
-    private fun sykedager(fom: LocalDate, tom: LocalDate) =
-        fom.datesUntil(tom.plusDays(1)).asSequence()
-            .filter { it.dayOfWeek !in arrayOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) }.count()
-
-    private fun String.httpGet(expectedStatus: HttpStatusCode = HttpStatusCode.OK, testBlock: String.() -> Unit = {}) {
-        val token = jwtStub.createTokenFor(
-            subject = "fp_object_id",
-            authorizedParty = "fp_object_id",
-            audience = "spokelse_azure_ad_app_id"
+        assertApiRequest(
+            path = "grunnlag",
+            httpMethod = "GET",
+            forventetHttpStatus = 400
         )
-
-        val connection = appBaseUrl.handleRequest(HttpMethod.Get, this,
-            builder = {
-                setRequestProperty(HttpHeaders.Authorization, "Bearer $token")
-            })
-
-        assertEquals(expectedStatus.value, connection.responseCode)
-        connection.responseBody.testBlock()
     }
-
-    private fun String.handleRequest(
-        method: HttpMethod,
-        path: String,
-        builder: HttpURLConnection.() -> Unit = {}
-    ): HttpURLConnection {
-        val url = URL("$this$path")
-        val con = url.openConnection() as HttpURLConnection
-        con.requestMethod = method.value
-
-        con.builder()
-
-        con.connectTimeout = 1000
-        con.readTimeout = 5000
-        con.readTimeout = 120000
-
-        return con
-    }
-
-    private val HttpURLConnection.responseBody: String
-        get() {
-            val stream: InputStream? = if (responseCode in 200..299) {
-                inputStream
-            } else {
-                errorStream
-            }
-
-            return stream?.use { it.bufferedReader().readText() } ?: ""
-        }
 }

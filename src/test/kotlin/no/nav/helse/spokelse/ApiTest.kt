@@ -1,7 +1,6 @@
 package no.nav.helse.spokelse
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
@@ -12,11 +11,8 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
-import io.ktor.util.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.runBlocking
-import kotliquery.queryOf
-import kotliquery.sessionOf
 import no.nav.helse.rapids_rivers.KtorBuilder
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.Events.genererFagsystemId
@@ -37,7 +33,6 @@ class ApiTest {
     private val wireMockServer: WireMockServer = WireMockServer(WireMockConfiguration.options().dynamicPort())
     private lateinit var jwtStub: JwtStub
     private lateinit var appBaseUrl: String
-    private val objectmapper = jacksonObjectMapper()
 
     private val sykmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Sykmelding)
     private val søknad = Hendelse(UUID.randomUUID(), sykmelding.hendelseId, Dokument.Søknad)
@@ -80,7 +75,7 @@ class ApiTest {
                         clientId = "client-Id",
                         issuer = "Microsoft Azure AD",
                         jwksUri = "${wireMockServer.baseUrl()}/jwks"
-                    ), dokumentDao, vedtakDao
+                    ), vedtakDao
                 )
             }
             .build(CIO)
@@ -110,29 +105,6 @@ class ApiTest {
         jwtStub = JwtStub("Microsoft Azure AD", wireMockServer)
         WireMock.stubFor(jwtStub.stubbedJwkProvider())
         WireMock.stubFor(jwtStub.stubbedConfigProvider())
-    }
-
-    @Test
-    fun `tom respons uten params`() {
-        "/dokumenter".httpGet(HttpStatusCode.OK) {
-            assertEquals(this, "[]")
-        }
-    }
-
-    @Test
-    fun `finner dokumenter for en hendelseId`() {
-        "/dokumenter?hendelseId=${sykmelding.hendelseId}".httpGet(HttpStatusCode.OK) {
-            assertEquals(objectmapper.writeValueAsString(listOf(sykmelding, søknad)), this)
-        }
-    }
-
-    @Test
-    fun `finner dokumenter for flere hendelseIder`() {
-        "/dokumenter?hendelseId=${sykmelding.hendelseId}&hendelseId=${inntektsmelding.hendelseId}&hendelseId=${søknad.hendelseId}".httpGet(
-            HttpStatusCode.OK
-        ) {
-            assertEquals(objectmapper.writeValueAsString(listOf(sykmelding, søknad, inntektsmelding)), this)
-        }
     }
 
     @Test
@@ -225,17 +197,4 @@ class ApiTest {
         subject = "arena",
         authorizedParty = "arena"
     )
-
-    private fun String.httpGet(expectedStatus: HttpStatusCode = HttpStatusCode.OK, testBlock: String.() -> Unit = {}) {
-        val token = createToken()
-
-        val connection = appBaseUrl.handleRequest(
-            HttpMethod.Get, this,
-            builder = {
-                setRequestProperty(HttpHeaders.Authorization, "Bearer $token")
-            })
-
-        assertEquals(expectedStatus.value, connection.responseCode)
-        connection.responseBody.testBlock()
-    }
 }

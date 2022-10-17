@@ -45,8 +45,6 @@ spec:
           namespace: teamforeldrepenger
         - application: fpabakus
           namespace: teamforeldrepenger
-        - application: sparenaproxy
-          namespace: teamsykmelding
         - application: spissnok
           namespace: tbd
   vault:

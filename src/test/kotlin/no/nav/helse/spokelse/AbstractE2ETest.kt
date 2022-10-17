@@ -3,21 +3,19 @@ package no.nav.helse.spokelse
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import org.awaitility.Awaitility
-import org.flywaydb.core.Flyway
-import java.util.concurrent.TimeUnit
-import javax.sql.DataSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.skyscreamer.jsonassert.JSONAssert
+import java.time.LocalDate
 import java.util.*
+import java.util.concurrent.TimeUnit
+import javax.sql.DataSource
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal abstract class AbstractE2ETest {
@@ -32,11 +30,11 @@ internal abstract class AbstractE2ETest {
         audience = "spokelse_azure_ad_app_id"
     ).let { "Bearer $it" }
 
-    private lateinit var dataSource: DataSource
-    private lateinit var dokumentDao: DokumentDao
-    private lateinit var utbetaltDao: UtbetaltDao
-    private lateinit var vedtakDao: VedtakDao
-    private lateinit var annulleringDao: AnnulleringDao
+    protected lateinit var dataSource: DataSource
+    protected lateinit var dokumentDao: DokumentDao
+    protected lateinit var utbetaltDao: UtbetaltDao
+    protected lateinit var vedtakDao: VedtakDao
+    protected lateinit var annulleringDao: AnnulleringDao
     protected lateinit var rapid: TestRapid
 
     @BeforeAll
@@ -49,7 +47,7 @@ internal abstract class AbstractE2ETest {
         annulleringDao = AnnulleringDao(dataSource)
 
         rapid = TestRapid().apply {
-            registerRivers(dokumentDao, utbetaltDao, vedtakDao, annulleringDao)
+            registerRivers(dokumentDao, annulleringDao)
         }
     }
 
@@ -64,12 +62,12 @@ internal abstract class AbstractE2ETest {
         httpMethod: String = "GET",
         requestBody: String? = null,
         forventetHttpStatus: Int = 200,
-        forventetResponseBody: String,
+        forventetResponseBody: String? = null,
         timeout: Int = 5,
         authorized: Boolean = true
     ) {
         withTestApplication({
-            spokelse(auth, dokumentDao, vedtakDao)
+            spokelse(auth, vedtakDao)
         }) {
             Awaitility.await().atMost(timeout.toLong(), TimeUnit.SECONDS).untilAsserted {
                 handleRequest(HttpMethod.parse(httpMethod.uppercase()), "/$path") {
@@ -83,7 +81,9 @@ internal abstract class AbstractE2ETest {
                     }
                 }.apply {
                     assertEquals(HttpStatusCode.fromValue(forventetHttpStatus), response.status())
-                    JSONAssert.assertEquals(forventetResponseBody, response.content!!, true)
+                    forventetResponseBody?.let {
+                        JSONAssert.assertEquals(it, response.content!!, true)
+                    }
                 }
             }
         }
@@ -110,5 +110,21 @@ internal abstract class AbstractE2ETest {
                 wireMockServer.stop()
             })
         }
+        internal fun oppdrag(fødselsnummer: String, fagsystemId: String, fagområde: String, fom: LocalDate, tom: LocalDate) = Vedtak.Oppdrag(
+            mottaker = fødselsnummer,
+            fagområde = fagområde,
+            fagsystemId = fagsystemId,
+            totalbeløp = 0,
+            utbetalingslinjer = listOf(
+                Vedtak.Oppdrag.Utbetalingslinje(
+                    fom = fom,
+                    tom = tom,
+                    dagsats = 123,
+                    beløp = 321,
+                    grad = 70.0,
+                    sykedager = 248
+                )
+            ),
+        )
     }
 }
