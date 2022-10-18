@@ -5,7 +5,6 @@ import kotliquery.TransactionalSession
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
 internal class TbdUtbetalingDao(
@@ -22,11 +21,11 @@ internal class TbdUtbetalingDao(
     internal fun lagreUtbetaling(meldingId: Long, utbetaling: Utbetaling) {
         sessionOf(dataSource).use { session ->
             session.transaction { transactionalSession ->
-                // Sletter alle gamle utbetalingslinjer, erstatter med nye
+                // Sletter eventuell eksisterende utbetaling (og tilhørende utbetalingslinjer)
                 transactionalSession.execute(queryOf(slettUtbetaling, mapOf("korrelasjonsId" to utbetaling.korrelasjonsId)))
 
-                // Oppdaterer eller oppretter utbetaling
-                transactionalSession.oppdaterEllerOpprettUtbetaling(meldingId, utbetaling)
+                // Oppretter utbetalingen på ny
+                transactionalSession.opprettUtbetaling(meldingId, utbetaling)
 
                 // Legger til nye utbetalingslinjer
                 utbetaling.arbeidsgiverOppdrag?.let { transactionalSession.leggTilUtbetalingslinjer(utbetaling, meldingId, it) }
@@ -66,11 +65,6 @@ internal class TbdUtbetalingDao(
         }
     }
 
-    private fun TransactionalSession.oppdaterEllerOpprettUtbetaling(meldingId: Long, utbetaling: Utbetaling) {
-        sikkerlogg.info("Legger til ny utbetaling")
-        opprettUtbetaling(meldingId, utbetaling)
-    }
-
     private fun TransactionalSession.opprettUtbetaling(meldingId: Long, utbetaling: Utbetaling) {
         val parameters = mapOf<String, Any?>(
             "personFagsystemId" to utbetaling.personOppdrag?.fagsystemId,
@@ -85,7 +79,6 @@ internal class TbdUtbetalingDao(
     }
 
     private companion object {
-        private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
 
         @Language("PostgreSQL")
         val leggTilMelding = "INSERT INTO tbdUtbetaling_Melding(melding, tidspunkt) VALUES (:melding::json, :tidspunkt)"

@@ -234,6 +234,51 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
 
     @Test
     fun `Legger til ferie i utbetalingen`() {
+        val meldingId = tbdUtbetalingDao.lagreMelding(Melding("{}"))
+        val fødselsnummer = "12345678910"
+        val korrelasjon = UUID.randomUUID()
+        val førstegangsbehandlingUtbetaling = Utbetaling(
+            fødselsnummer = fødselsnummer,
+            korrelasjonsId = korrelasjon,
+            gjenståendeSykedager = 50,
+            personOppdrag = Oppdrag(
+                fagsystemId = "person",
+                utbetalingslinjer = listOf(
+                    Utbetalingslinje(
+                        fom = LocalDate.parse("2018-01-01"),
+                        tom = LocalDate.parse("2018-01-31"),
+                        grad = 50.7
+                    )
+                )
+            ),
+            arbeidsgiverOppdrag = null
+        )
+        tbdUtbetalingDao.lagreUtbetaling(meldingId, førstegangsbehandlingUtbetaling)
+        assertEquals(listOf(førstegangsbehandlingUtbetaling), tbdUtbetalingDao.hentUtbetalinger(fødselsnummer))
 
+        val revurderingUtbetaling = Utbetaling(
+            fødselsnummer = fødselsnummer,
+            korrelasjonsId = korrelasjon,
+            gjenståendeSykedager = 50,
+            personOppdrag = Oppdrag(
+                fagsystemId = "person",
+                utbetalingslinjer = listOf(
+                    Utbetalingslinje(
+                        fom = LocalDate.parse("2018-01-01"),
+                        tom = LocalDate.parse("2018-01-14"),
+                        grad = 50.7
+                    ),
+                    Utbetalingslinje(
+                        fom = LocalDate.parse("2018-01-16"),
+                        tom = LocalDate.parse("2018-01-31"),
+                        grad = 50.7
+                    )
+                )
+            ),
+            arbeidsgiverOppdrag = null
+        )
+
+        tbdUtbetalingDao.lagreUtbetaling(meldingId, revurderingUtbetaling)
+        assertEquals(listOf(revurderingUtbetaling), tbdUtbetalingDao.hentUtbetalinger(fødselsnummer))
     }
 }
