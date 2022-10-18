@@ -7,7 +7,13 @@ import java.util.UUID
 internal data class Oppdrag(
     internal val fagsystemId: String,
     internal val utbetalingslinjer: List<Utbetalingslinje>
-)
+) {
+    init {
+        require(utbetalingslinjer.isNotEmpty()) {
+            "Må være minst en utbetalingslinje for å lage ett oppdrag"
+        }
+    }
+}
 
 internal data class Utbetaling(
     internal val fødselsnummer: String,

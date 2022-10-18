@@ -36,13 +36,32 @@ internal class TbdUtbetalingDao(
 
     internal fun hentUtbetalinger(fødselsnummer: String): List<Utbetaling> {
         return sessionOf(dataSource).use { session ->
-            session.run(queryOf(hentUtbetalinger, mapOf("fodselsnummer" to fødselsnummer)).map { row -> Utbetaling(
-                fødselsnummer = fødselsnummer,
-                korrelasjonsId = row.uuid("korrelasjonsId"),
-                gjenståendeSykedager = row.int("gjenstaaendeSykedager"),
-                arbeidsgiverOppdrag = row.stringOrNull("arbeidsgiverFagsystemId")?.let { fagsystemId -> Oppdrag(fagsystemId, session.hentUtbetalingslinjer(fagsystemId)) },
-                personOppdrag = row.stringOrNull("personFagsystemId")?.let { fagsystemId -> Oppdrag(fagsystemId, session.hentUtbetalingslinjer(fagsystemId)) }
-            )}.asList)
+            session.run(queryOf(hentUtbetalinger, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
+
+                val arbeidsgiverFagystemId = row.stringOrNull("arbeidsgiverFagsystemId")
+                val arbeidsgiverUtbetalingslinjer = arbeidsgiverFagystemId?.let { session.hentUtbetalingslinjer(it) } ?: emptyList()
+                val personFagsystemId = row.stringOrNull("personFagsystemId")
+                val personUtbetalingslinjer = personFagsystemId?.let { session.hentUtbetalingslinjer(it) } ?: emptyList()
+
+                if (arbeidsgiverUtbetalingslinjer.isEmpty() && personUtbetalingslinjer.isEmpty()) null
+
+                else Utbetaling(
+                    fødselsnummer = fødselsnummer,
+                    korrelasjonsId = row.uuid("korrelasjonsId"),
+                    gjenståendeSykedager = row.int("gjenstaaendeSykedager"),
+                    arbeidsgiverOppdrag = arbeidsgiverUtbetalingslinjer.takeUnless { it.isEmpty() }?.let { Oppdrag(arbeidsgiverFagystemId!!, it) },
+                    personOppdrag = personUtbetalingslinjer.takeUnless { it.isEmpty() }?.let { Oppdrag(personFagsystemId!!, it) }
+                )
+            }.asList)
+        }
+    }
+
+    internal fun annuller(meldingId: Long, annullering: Annullering) {
+        // TODO: Legge til meldingId på utbetaling?
+        sessionOf(dataSource).use { session ->
+            listOfNotNull(annullering.arbeidsgiverFagsystemId, annullering.personFagsystemId).forEach { fagsystemId ->
+                session.run(queryOf(slettUtbetalingslinjer, mapOf("fagsystemId" to fagsystemId)).asUpdate)
+            }
         }
     }
 
@@ -109,6 +128,12 @@ internal class TbdUtbetalingDao(
         val hentUtbetalingslinjer = """
             SELECT *
             FROM tbdUtbetaling_Utbetalingslinje
+            WHERE fagsystemId = :fagsystemId
+        """
+
+        @Language("PostgreSQL")
+        val slettUtbetalingslinjer = """
+            DELETE FROM tbdUtbetaling_Utbetalingslinje
             WHERE fagsystemId = :fagsystemId
         """
     }
