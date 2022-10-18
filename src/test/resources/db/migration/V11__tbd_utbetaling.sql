@@ -5,7 +5,7 @@ CREATE TABLE tbdUtbetaling_Melding(
 );
 
 CREATE TABLE tbdUtbetaling_Utbetaling(
-    id                          SERIAL PRIMARY KEY,
+    korrelasjonsId              UUID NOT NULL PRIMARY KEY,
     kilde                       INTEGER NOT NULL REFERENCES tbdUtbetaling_Melding (id),
     fodselsnummer               VARCHAR(11) NOT NULL,
     gjenstaaendeSykedager       INT NOT NULL,
@@ -18,5 +18,6 @@ CREATE TABLE tbdUtbetaling_Utbetalingslinje(
     fagsystemId                 VARCHAR NOT NULL,
     fom                         DATE NOT NULL,
     tom                         DATE NOT NULL,
-    grad                        DECIMAL NOT NULL
+    grad                        DECIMAL NOT NULL,
+    utbetaling                  UUID NOT NULL REFERENCES tbdUtbetaling_Utbetaling(korrelasjonsId) ON DELETE CASCADE
 );
