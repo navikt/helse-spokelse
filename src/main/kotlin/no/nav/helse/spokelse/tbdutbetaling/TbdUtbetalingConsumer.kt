@@ -16,6 +16,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.security.auth.SecurityProtocol
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.time.Duration
@@ -27,7 +28,7 @@ import java.util.*
 internal class TbdUtbetalingConsumer private constructor(
     env: Map<String, String>,
     private val tbdUtbetalingDao: TbdUtbetalingDao): Runnable, AutoCloseable, RapidsConnection.StatusListener {
-    private val kafkaConsumer = KafkaConsumer<String, String>(consumerProperties(env)).apply {
+    private val kafkaConsumer = KafkaConsumer(consumerProperties(env), StringDeserializer(), StringDeserializer()).apply {
         subscribe(listOf(topic))
     }
     private var konsumerer = true
