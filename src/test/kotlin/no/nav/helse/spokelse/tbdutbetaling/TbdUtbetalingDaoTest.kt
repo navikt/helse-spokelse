@@ -5,9 +5,7 @@ import kotliquery.sessionOf
 import no.nav.helse.spokelse.AbstractE2ETest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.Month
+import java.time.*
 import java.util.*
 
 internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
@@ -172,7 +170,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger("99999999999"))
     }
 
-    private fun nyMeldingId() = tbdUtbetalingDao.lagreMelding(Melding("{}", LocalDateTime.now()))
+    private fun nyMeldingId() = tbdUtbetalingDao.lagreMelding(Melding("{}", Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDateTime()))
     private fun lagreFullRefusjon(
         korrelasjonsId: UUID = UUID.randomUUID(),
         fagsystemId: String = ArbeidsgiverFagsystemId,
