@@ -74,7 +74,6 @@ internal class TbdUtbetalingConsumer(
     private fun håndterUtbetalingUtenUtbetaling(json: JsonNode, meldingSendt: LocalDateTime) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         json.logg(meldingId)
-        tbdUtbetalingDao.annuller(meldingId, json.annullering())
     }
 
     private companion object {
