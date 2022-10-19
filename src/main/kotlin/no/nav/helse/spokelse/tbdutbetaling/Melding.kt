@@ -5,6 +5,6 @@ import java.time.LocalDateTime
 
 internal class Melding(private val melding: String) {
     internal constructor(packet: JsonMessage): this(packet.toString())
-    internal val tidspunkt: LocalDateTime = LocalDateTime.now() // TODO: hmm
+    internal val sendt: LocalDateTime = LocalDateTime.now() // TODO: hmm
     override fun toString() = melding
 }

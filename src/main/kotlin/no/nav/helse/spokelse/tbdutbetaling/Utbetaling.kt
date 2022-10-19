@@ -2,6 +2,7 @@ package no.nav.helse.spokelse.tbdutbetaling
 
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje.Companion.utbetalingslinjerOrNull
+import java.time.LocalDateTime
 import java.util.UUID
 
 internal data class Oppdrag(
@@ -20,7 +21,8 @@ internal data class Utbetaling(
     internal val korrelasjonsId: UUID,
     internal val gjenståendeSykedager: Int,
     internal val arbeidsgiverOppdrag: Oppdrag?,
-    internal val personOppdrag: Oppdrag?
+    internal val personOppdrag: Oppdrag?,
+    internal val sistUtbetalt: LocalDateTime
 ) {
     init {
         require(arbeidsgiverOppdrag != null || personOppdrag != null) {
@@ -49,7 +51,8 @@ internal data class Utbetaling(
                 korrelasjonsId = korrelasjonsId,
                 gjenståendeSykedager = gjenståendeSykedager,
                 arbeidsgiverOppdrag = arbeidsgiverOppdrag,
-                personOppdrag = personOppdrag
+                personOppdrag = personOppdrag,
+                sistUtbetalt = LocalDateTime.now()
             )
         }
     }

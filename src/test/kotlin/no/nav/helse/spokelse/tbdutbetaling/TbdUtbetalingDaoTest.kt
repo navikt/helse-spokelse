@@ -6,6 +6,7 @@ import no.nav.helse.spokelse.AbstractE2ETest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Month
 import java.util.*
 
@@ -188,7 +189,8 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
             arbeidsgiverOppdrag = Oppdrag(
                 fagsystemId = fagsystemId,
                 utbetalingslinjer = utbetalingslinjer
-            )
+            ),
+            sistUtbetalt = LocalDateTime.now()
         )
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling
@@ -209,7 +211,8 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
                 fagsystemId = fagsystemId,
                 utbetalingslinjer = utbetalingslinjer
             ),
-            arbeidsgiverOppdrag = null
+            arbeidsgiverOppdrag = null,
+            sistUtbetalt = LocalDateTime.now()
         )
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling
@@ -237,7 +240,8 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
             arbeidsgiverOppdrag = Oppdrag(
                 fagsystemId = arbeidsgiverFagsystemId,
                 utbetalingslinjer = arbeidsgiverUtbetalingslinjer
-            )
+            ),
+            sistUtbetalt = LocalDateTime.now()
         )
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling

@@ -12,7 +12,7 @@ internal class TbdUtbetalingDao(
 ) {
     internal fun lagreMelding(melding: Melding): Long {
         return sessionOf(dataSource = dataSource, returnGeneratedKey = true).use { session ->
-            requireNotNull(session.run(queryOf(leggTilMelding, mapOf("melding" to "$melding", "tidspunkt" to melding.tidspunkt)).asUpdateAndReturnGeneratedKey)) {
+            requireNotNull(session.run(queryOf(leggTilMelding, mapOf("melding" to "$melding", "sendt" to melding.sendt)).asUpdateAndReturnGeneratedKey)) {
                 "Klart ikke å lagre melding"
             }
         }
@@ -50,7 +50,8 @@ internal class TbdUtbetalingDao(
                     korrelasjonsId = row.uuid("korrelasjonsId"),
                     gjenståendeSykedager = row.int("gjenstaaendeSykedager"),
                     arbeidsgiverOppdrag = arbeidsgiverUtbetalingslinjer.takeUnless { it.isEmpty() }?.let { Oppdrag(arbeidsgiverFagystemId!!, it) },
-                    personOppdrag = personUtbetalingslinjer.takeUnless { it.isEmpty() }?.let { Oppdrag(personFagsystemId!!, it) }
+                    personOppdrag = personUtbetalingslinjer.takeUnless { it.isEmpty() }?.let { Oppdrag(personFagsystemId!!, it) },
+                    sistUtbetalt = row.localDateTime("sistUtbetalt")
                 )
             }.asList)
         }
@@ -107,7 +108,8 @@ internal class TbdUtbetalingDao(
             "arbeidsgiverFagsystemId" to utbetaling.arbeidsgiverOppdrag?.fagsystemId,
             "meldingId" to meldingId,
             "gjenstaaendeSykedager" to utbetaling.gjenståendeSykedager,
-            "fodselsnummer" to utbetaling.fødselsnummer
+            "fodselsnummer" to utbetaling.fødselsnummer,
+            "sistUtbetalt" to utbetaling.sistUtbetalt
         )
 
         run(queryOf(opprettUtbetaling, parameters).asUpdate)
@@ -116,15 +118,15 @@ internal class TbdUtbetalingDao(
     private companion object {
 
         @Language("PostgreSQL")
-        val leggTilMelding = "INSERT INTO tbdUtbetaling_Melding(melding, tidspunkt) VALUES (:melding::json, :tidspunkt)"
+        val leggTilMelding = "INSERT INTO tbdUtbetaling_Melding(melding, sendt) VALUES (:melding::json, :sendt)"
 
         @Language("PostgreSQL")
         val slettUtbetaling = "DELETE FROM tbdUtbetaling_Utbetaling WHERE korrelasjonsId = :korrelasjonsId"
 
         @Language("PostgreSQL")
         val opprettUtbetaling = """
-            INSERT INTO tbdUtbetaling_Utbetaling(kilde, gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, fodselsnummer, korrelasjonsId)
-            VALUES (:meldingId, :gjenstaaendeSykedager, :arbeidsgiverFagsystemId, :personFagsystemId, :fodselsnummer, :korrelasjonsId)
+            INSERT INTO tbdUtbetaling_Utbetaling(kilde, gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, fodselsnummer, korrelasjonsId, sistUtbetalt)
+            VALUES (:meldingId, :gjenstaaendeSykedager, :arbeidsgiverFagsystemId, :personFagsystemId, :fodselsnummer, :korrelasjonsId, :sistUtbetalt)
         """
 
         @Language("PostgreSQL")
@@ -135,7 +137,7 @@ internal class TbdUtbetalingDao(
 
         @Language("PostgreSQL")
         val hentUtbetalinger = """
-            SELECT gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, korrelasjonsId
+            SELECT gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, korrelasjonsId, sistUtbetalt
             FROM tbdUtbetaling_Utbetaling
             WHERE fodselsnummer = :fodselsnummer
             AND (arbeidsgiverAnnuleringskilde IS NULL OR personAnnuleringskilde IS NULL)
