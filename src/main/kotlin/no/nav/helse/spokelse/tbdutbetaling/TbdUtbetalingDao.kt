@@ -57,10 +57,26 @@ internal class TbdUtbetalingDao(
     }
 
     internal fun annuller(meldingId: Long, annullering: Annullering) {
-        // TODO: Legge til meldingId på utbetaling?
         sessionOf(dataSource).use { session ->
-            listOfNotNull(annullering.arbeidsgiverFagsystemId, annullering.personFagsystemId).forEach { fagsystemId ->
-                session.run(queryOf(slettUtbetalingslinjer, mapOf("fagsystemId" to fagsystemId)).asUpdate)
+            session.transaction { transactionalSession ->
+                annullering.arbeidsgiverFagsystemId?.let { arbeidsgiverFagsystemId ->
+                    transactionalSession.run(queryOf(slettUtbetalingslinjer, mapOf(
+                        "fagsystemId" to arbeidsgiverFagsystemId
+                    )).asUpdate)
+                    transactionalSession.run(queryOf(arbeidsgiverUtbetalingAnnullert, mapOf(
+                        "fagsystemId" to arbeidsgiverFagsystemId,
+                        "meldingId" to meldingId
+                    )).asUpdate)
+                }
+                annullering.personFagsystemId?.let { personFagsystemId ->
+                    transactionalSession.run(queryOf(slettUtbetalingslinjer, mapOf(
+                        "fagsystemId" to personFagsystemId
+                    )).asUpdate)
+                    transactionalSession.run(queryOf(personUtbetalingAnnullert, mapOf(
+                        "fagsystemId" to personFagsystemId,
+                        "meldingId" to meldingId
+                    )).asUpdate)
+                }
             }
         }
     }
@@ -122,6 +138,7 @@ internal class TbdUtbetalingDao(
             SELECT gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, korrelasjonsId
             FROM tbdUtbetaling_Utbetaling
             WHERE fodselsnummer = :fodselsnummer
+            AND (arbeidsgiverAnnuleringskilde IS NULL OR personAnnuleringskilde IS NULL)
         """
 
         @Language("PostgreSQL")
@@ -135,6 +152,20 @@ internal class TbdUtbetalingDao(
         val slettUtbetalingslinjer = """
             DELETE FROM tbdUtbetaling_Utbetalingslinje
             WHERE fagsystemId = :fagsystemId
+        """
+
+        @Language("PostgreSQL")
+        val arbeidsgiverUtbetalingAnnullert = """
+            UPDATE tbdUtbetaling_Utbetaling
+            SET arbeidsgiverAnnuleringskilde = :meldingId
+            WHERE arbeidsgiverFagsystemId = :fagsystemId
+        """
+
+        @Language("PostgreSQL")
+        val personUtbetalingAnnullert = """
+            UPDATE tbdUtbetaling_Utbetaling
+            SET personAnnuleringskilde   = :meldingId
+            WHERE personFagsystemId = :fagsystemId
         """
     }
 }

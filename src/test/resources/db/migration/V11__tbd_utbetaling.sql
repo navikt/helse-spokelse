@@ -5,12 +5,14 @@ CREATE TABLE tbdUtbetaling_Melding(
 );
 
 CREATE TABLE tbdUtbetaling_Utbetaling(
-    korrelasjonsId              UUID NOT NULL PRIMARY KEY,
-    kilde                       INTEGER NOT NULL REFERENCES tbdUtbetaling_Melding (id),
-    fodselsnummer               VARCHAR(11) NOT NULL,
-    gjenstaaendeSykedager       INT NOT NULL,
-    arbeidsgiverFagsystemId     VARCHAR,
-    personFagsystemId           VARCHAR
+    korrelasjonsId               UUID NOT NULL PRIMARY KEY,
+    kilde                        INTEGER NOT NULL REFERENCES tbdUtbetaling_Melding (id),
+    personAnnuleringskilde       INTEGER REFERENCES tbdUtbetaling_Melding (id),
+    arbeidsgiverAnnuleringskilde INTEGER REFERENCES tbdUtbetaling_Melding (id),
+    fodselsnummer                VARCHAR(11) NOT NULL,
+    gjenstaaendeSykedager        INT NOT NULL,
+    arbeidsgiverFagsystemId      VARCHAR,
+    personFagsystemId            VARCHAR
 );
 
 CREATE TABLE tbdUtbetaling_Utbetalingslinje(

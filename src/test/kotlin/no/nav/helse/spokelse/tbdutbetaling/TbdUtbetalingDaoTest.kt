@@ -1,5 +1,7 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
+import kotliquery.queryOf
+import kotliquery.sessionOf
 import no.nav.helse.spokelse.AbstractE2ETest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -110,31 +112,42 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     @Test
     fun `annullerer utbetaling til arbeidsgiver ved full refusjon`() {
         lagreFullRefusjon()
-        tbdUtbetalingDao.annuller(nyMeldingId(), Annullering(ArbeidsgiverFagsystemId, null))
+        val annuleringsMeldingId = nyMeldingId()
+        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(ArbeidsgiverFagsystemId, null))
+        assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
     @Test
     fun `annullerer utbetaling til person ved ingen refusjon`() {
         lagreNullRefusjon()
-        tbdUtbetalingDao.annuller(nyMeldingId(), Annullering(null, PersonFagsystemId))
+        val annuleringsMeldingId = nyMeldingId()
+        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(null, PersonFagsystemId))
+        assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
     @Test
     fun `annullerer utbetaling til arbeidsgiver ved delvis refusjon`() {
         val utbetaling = lagreDelvisRefusjon()
-        tbdUtbetalingDao.annuller(nyMeldingId(), Annullering(ArbeidsgiverFagsystemId, null))
+        val annuleringsMeldingId = nyMeldingId()
+        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(ArbeidsgiverFagsystemId, null))
+        assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(listOf(utbetaling.copy(arbeidsgiverOppdrag = null)), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
     @Test
     fun `annullerer utbetaling til person ved delvis refusjon`() {
         val utbetaling = lagreDelvisRefusjon()
-        tbdUtbetalingDao.annuller(nyMeldingId(), Annullering(null, PersonFagsystemId))
+        val annuleringsMeldingId = nyMeldingId()
+        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(null, PersonFagsystemId))
+        assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(listOf(utbetaling.copy(personOppdrag = null)), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
     @Test
     fun `annullerer utbetaling til person og arbeidsgiver ved delvis refusjon`() {
         lagreDelvisRefusjon()
-        tbdUtbetalingDao.annuller(nyMeldingId(), Annullering(ArbeidsgiverFagsystemId, PersonFagsystemId))
+        val annuleringsMeldingId = nyMeldingId()
+        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(ArbeidsgiverFagsystemId, PersonFagsystemId))
+        assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
+        assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
 
@@ -229,6 +242,19 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling
     }
+
+    private fun personAnnuleringskilde(personFagsystemId: String) =
+        "SELECT personAnnuleringskilde FROM tbdUtbetaling_Utbetaling WHERE personFagsystemId='$personFagsystemId'".let { sql ->
+            sessionOf(dataSource).use { session ->
+                session.run(queryOf(sql).map { it.long("personAnnuleringskilde") }.asList).singleOrNull()
+            }
+        }
+    private fun arbeidsgiverAnnuleringskilde(arbeidsgiverFagsystemId: String) =
+        "SELECT arbeidsgiverAnnuleringskilde FROM tbdUtbetaling_Utbetaling WHERE arbeidsgiverFagsystemId='$arbeidsgiverFagsystemId'".let { sql ->
+            sessionOf(dataSource).use { session ->
+                session.run(queryOf(sql).map { it.long("arbeidsgiverAnnuleringskilde") }.asList).singleOrNull()
+            }
+        }
 
     private companion object {
         private const val Fødselsnummer = "12345678911"
