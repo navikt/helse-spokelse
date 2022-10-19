@@ -3,6 +3,7 @@ package no.nav.helse.spokelse.tbdutbetaling
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.logstash.logback.argument.StructuredArguments.keyValue
+import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erAnnullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
@@ -23,15 +24,16 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
 
-internal class TbdUtbetalingConsumer(
+internal class TbdUtbetalingConsumer private constructor(
     env: Map<String, String>,
-    private val tbdUtbetalingDao: TbdUtbetalingDao): Runnable, AutoCloseable {
+    private val tbdUtbetalingDao: TbdUtbetalingDao): Runnable, AutoCloseable, RapidsConnection.StatusListener {
     private val kafkaConsumer = KafkaConsumer<String, String>(consumerProperties(env)).apply {
         subscribe(listOf(topic))
     }
     private var konsumerer = true
 
     override fun run() {
+        sikkerlogg.info("Starter konsumering av $topic")
         try {
             while (konsumerer) {
                 val records = kafkaConsumer.poll(Duration.ofMillis(100))
@@ -59,6 +61,8 @@ internal class TbdUtbetalingConsumer(
         konsumerer = false
     }
 
+    override fun onShutdown(rapidsConnection: RapidsConnection) = close()
+
     private fun håndterUtbetaling(json: JsonNode, meldingSendt: LocalDateTime) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         json.logg(meldingId)
@@ -76,7 +80,12 @@ internal class TbdUtbetalingConsumer(
         json.logg(meldingId)
     }
 
-    private companion object {
+    internal companion object {
+        internal fun tbdUtbetalingConsumerOrNull(env: Map<String, String>, tbdUtbetalingDao: TbdUtbetalingDao): TbdUtbetalingConsumer? {
+            return if (env.getOrDefault("NAIS_CLUSTER_NAME", "n/a") == "dev-fss") TbdUtbetalingConsumer(env, tbdUtbetalingDao)
+            else null
+        }
+
         private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
         private fun JsonNode.logg(meldingId: Long) = sikkerlogg.info("Håndterer {}, {}, {}, {}",
             keyValue("event", event),

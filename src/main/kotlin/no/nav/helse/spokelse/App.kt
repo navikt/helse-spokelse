@@ -14,6 +14,8 @@ import io.ktor.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer.Companion.tbdUtbetalingConsumerOrNull
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
@@ -36,11 +38,15 @@ fun launchApplication(env: Environment) {
     val dokumentDao = DokumentDao(dataSource)
     val vedtakDao = VedtakDao(dataSource)
     val annulleringDao = AnnulleringDao(dataSource)
+    val tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
         .withKtorModule { spokelse(env.auth, vedtakDao) }
         .build()
-        .apply { registerRivers(dokumentDao, annulleringDao) }
+        .apply {
+            registerRivers(dokumentDao, annulleringDao)
+            tbdUtbetalingConsumerOrNull(env.raw, tbdUtbetalingDao)?.let { register(it) }
+        }
         .start()
 }
 
