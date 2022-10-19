@@ -170,7 +170,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger("99999999999"))
     }
 
-    private fun nyMeldingId() = tbdUtbetalingDao.lagreMelding(Melding("{}", Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDateTime()))
+    private fun nyMeldingId() = tbdUtbetalingDao.lagreMelding(Melding("{}", nå()))
     private fun lagreFullRefusjon(
         korrelasjonsId: UUID = UUID.randomUUID(),
         fagsystemId: String = ArbeidsgiverFagsystemId,
@@ -188,7 +188,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
                 fagsystemId = fagsystemId,
                 utbetalingslinjer = utbetalingslinjer
             ),
-            sistUtbetalt = LocalDateTime.now()
+            sistUtbetalt = nå()
         )
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling
@@ -210,7 +210,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
                 utbetalingslinjer = utbetalingslinjer
             ),
             arbeidsgiverOppdrag = null,
-            sistUtbetalt = LocalDateTime.now()
+            sistUtbetalt = nå()
         )
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling
@@ -239,7 +239,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
                 fagsystemId = arbeidsgiverFagsystemId,
                 utbetalingslinjer = arbeidsgiverUtbetalingslinjer
             ),
-            sistUtbetalt = LocalDateTime.now()
+            sistUtbetalt = nå()
         )
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling
@@ -259,6 +259,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         }
 
     private companion object {
+        private fun nå() = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDateTime()
         private const val Fødselsnummer = "12345678911"
         private const val ArbeidsgiverFagsystemId = "arbeid"
         private const val PersonFagsystemId = "person"
