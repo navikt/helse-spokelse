@@ -24,3 +24,6 @@ CREATE TABLE tbdUtbetaling_Utbetalingslinje(
     grad                        DECIMAL NOT NULL,
     utbetaling                  UUID NOT NULL REFERENCES tbdUtbetaling_Utbetaling(korrelasjonsId) ON DELETE CASCADE
 );
+
+CREATE INDEX tbdUtbetaling_Utbetaling_fodselsnummer_idx ON tbdUtbetaling_Utbetaling (fodselsnummer);
+CREATE INDEX tbdUtbetaling_Utbetalingslinje_fagsystemId_idx ON tbdUtbetaling_Utbetalingslinje (fagsystemId);
