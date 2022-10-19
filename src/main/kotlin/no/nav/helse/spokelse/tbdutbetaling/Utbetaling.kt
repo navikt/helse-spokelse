@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.isMissingOrNull
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje.Companion.utbetalingslinje
 import java.time.LocalDateTime
 import java.util.*
@@ -42,7 +43,6 @@ internal data class Utbetaling(
             require(erUtbetaling) { "Kan ikke mappe event $event til utbetaling" }
             val arbeidsgiverOppdrag = oppdrag("arbeidsgiverOppdrag")
             val personOppdrag = oppdrag("personOppdrag")
-            val fødselsnummer = get("fødselsnummer").asText()
             val korrelasjonsId = UUID.fromString(get("korrelasjonsId").asText())
             val gjenståendeSykedager = get("gjenståendeSykedager").asInt()
             return Utbetaling(

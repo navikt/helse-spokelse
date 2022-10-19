@@ -1,7 +1,9 @@
 CREATE TABLE tbdUtbetaling_Melding(
     id                          SERIAL PRIMARY KEY,
     melding                     JSONB NOT NULL,
-    sendt                       TIMESTAMP NOT NULL
+    sendt                       TIMESTAMP NOT NULL,
+    type                        VARCHAR NOT NULL,
+    fodselsnummer               VARCHAR(11) NOT NULL
 );
 
 CREATE TABLE tbdUtbetaling_Utbetaling(
@@ -27,3 +29,4 @@ CREATE TABLE tbdUtbetaling_Utbetalingslinje(
 
 CREATE INDEX tbdUtbetaling_Utbetaling_fodselsnummer_idx ON tbdUtbetaling_Utbetaling (fodselsnummer);
 CREATE INDEX tbdUtbetaling_Utbetalingslinje_fagsystemId_idx ON tbdUtbetaling_Utbetalingslinje (fagsystemId);
+CREATE INDEX tbdUtbetaling_Melding_fodselsnummer_idx ON tbdUtbetaling_Melding (fodselsnummer);

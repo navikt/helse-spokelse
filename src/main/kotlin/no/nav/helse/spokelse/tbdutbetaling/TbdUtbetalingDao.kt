@@ -12,7 +12,13 @@ internal class TbdUtbetalingDao(
 ) {
     internal fun lagreMelding(melding: Melding): Long {
         return sessionOf(dataSource = dataSource, returnGeneratedKey = true).use { session ->
-            requireNotNull(session.run(queryOf(leggTilMelding, mapOf("melding" to "$melding", "sendt" to melding.meldingSendt)).asUpdateAndReturnGeneratedKey)) {
+            val parameters = mapOf(
+                "melding" to "$melding",
+                "sendt" to melding.meldingSendt,
+                "type" to melding.type,
+                "fodselsnummer" to melding.fødselsnummer
+            )
+            requireNotNull(session.run(queryOf(leggTilMelding, parameters).asUpdateAndReturnGeneratedKey)) {
                 "Klart ikke å lagre melding"
             }
         }
@@ -118,7 +124,7 @@ internal class TbdUtbetalingDao(
     private companion object {
 
         @Language("PostgreSQL")
-        val leggTilMelding = "INSERT INTO tbdUtbetaling_Melding(melding, sendt) VALUES (:melding::json, :sendt)"
+        val leggTilMelding = "INSERT INTO tbdUtbetaling_Melding(melding, sendt, type, fodselsnummer) VALUES (:melding::json, :sendt, :type, :fodselsnummer)"
 
         @Language("PostgreSQL")
         val slettUtbetaling = "DELETE FROM tbdUtbetaling_Utbetaling WHERE korrelasjonsId = :korrelasjonsId"
