@@ -18,7 +18,7 @@ jobs:
         java-version: '17.x'
         cache: 'gradle'
     - name: test and build
-      run: ./gradlew test build
+      run: ./gradlew test build -i
     - name: build docker image
       run: docker build . --pull -t ${IMAGE}
     - name: push docker image
