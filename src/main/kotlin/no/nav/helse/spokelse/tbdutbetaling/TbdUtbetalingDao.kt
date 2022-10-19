@@ -12,7 +12,7 @@ internal class TbdUtbetalingDao(
 ) {
     internal fun lagreMelding(melding: Melding): Long {
         return sessionOf(dataSource = dataSource, returnGeneratedKey = true).use { session ->
-            requireNotNull(session.run(queryOf(leggTilMelding, mapOf("melding" to "$melding", "sendt" to melding.sendt)).asUpdateAndReturnGeneratedKey)) {
+            requireNotNull(session.run(queryOf(leggTilMelding, mapOf("melding" to "$melding", "sendt" to melding.meldingSendt)).asUpdateAndReturnGeneratedKey)) {
                 "Klart ikke å lagre melding"
             }
         }

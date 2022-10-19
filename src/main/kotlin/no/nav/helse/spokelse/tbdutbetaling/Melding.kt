@@ -1,10 +1,13 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import no.nav.helse.rapids_rivers.JsonMessage
+import com.fasterxml.jackson.databind.JsonNode
 import java.time.LocalDateTime
 
-internal class Melding(private val melding: String) {
-    internal constructor(packet: JsonMessage): this(packet.toString())
-    internal val sendt: LocalDateTime = LocalDateTime.now() // TODO: hmm
+internal class Melding(private val melding: String, internal val meldingSendt: LocalDateTime) {
+    internal constructor(jsonNode: JsonNode, meldingSendt: LocalDateTime): this(jsonNode.toString(), meldingSendt)
     override fun toString() = melding
+
+    internal companion object {
+        internal fun JsonNode.melding(meldingSendt: LocalDateTime) = Melding(this, meldingSendt)
+    }
 }

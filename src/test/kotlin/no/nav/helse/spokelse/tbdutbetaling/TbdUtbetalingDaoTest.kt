@@ -172,7 +172,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger("99999999999"))
     }
 
-    private fun nyMeldingId() = tbdUtbetalingDao.lagreMelding(Melding("{}"))
+    private fun nyMeldingId() = tbdUtbetalingDao.lagreMelding(Melding("{}", LocalDateTime.now()))
     private fun lagreFullRefusjon(
         korrelasjonsId: UUID = UUID.randomUUID(),
         fagsystemId: String = ArbeidsgiverFagsystemId,

@@ -1,9 +1,10 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import no.nav.helse.rapids_rivers.JsonMessage
-import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje.Companion.utbetalingslinjerOrNull
+import com.fasterxml.jackson.databind.JsonNode
+import no.nav.helse.rapids_rivers.asLocalDate
+import no.nav.helse.rapids_rivers.isMissingOrNull
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 internal data class Oppdrag(
     internal val fagsystemId: String,
@@ -31,28 +32,27 @@ internal data class Utbetaling(
     }
 
     internal companion object {
-        internal fun JsonMessage.utbetaling(): Utbetaling {
-            val arbeidsgiverOppdrag = utbetalingslinjerOrNull("arbeidsgiverOppdrag.utbetalingslinjer")?.let { utbetalingslinjer -> Oppdrag(
-                fagsystemId = get("arbeidsgiverOppdrag.fagsystemId").asText(),
-                utbetalingslinjer = utbetalingslinjer
+        private fun JsonNode.oppdrag(path:String) = path(path).takeUnless { it.isMissingOrNull() || it.path("utbetalingslinjer").isEmpty }?.let { Oppdrag(
+            fagsystemId = it.path("fagsystemId").asText(),
+            utbetalingslinjer = it.path("utbetalingslinjer").map { linje -> Utbetalingslinje(
+                fom = linje.path("fom").asLocalDate(),
+                tom = linje.path("tom").asLocalDate(),
+                grad = linje.path("grad").asDouble()
             )}
-
-            val personOppdrag = utbetalingslinjerOrNull("personOppdrag.utbetalingslinjer")?.let { utbetalingslinjer -> Oppdrag(
-                fagsystemId = get("personOppdrag.fagsystemId").asText(),
-                utbetalingslinjer = utbetalingslinjer
-            )}
-
+        )}
+        internal fun JsonNode.utbetaling(sistUtbetalt: LocalDateTime): Utbetaling {
+            val arbeidsgiverOppdrag = oppdrag("arbeidsgiverOppdrag")
+            val personOppdrag = oppdrag("personOppdrag")
             val fødselsnummer = get("fødselsnummer").asText()
             val korrelasjonsId = UUID.fromString(get("korrelasjonsId").asText())
             val gjenståendeSykedager = get("gjenståendeSykedager").asInt()
-
             return Utbetaling(
                 fødselsnummer = fødselsnummer,
                 korrelasjonsId = korrelasjonsId,
                 gjenståendeSykedager = gjenståendeSykedager,
                 arbeidsgiverOppdrag = arbeidsgiverOppdrag,
                 personOppdrag = personOppdrag,
-                sistUtbetalt = LocalDateTime.now()
+                sistUtbetalt = sistUtbetalt
             )
         }
     }
