@@ -83,7 +83,9 @@ internal class TbdUtbetalingConsumer private constructor(
 
     internal companion object {
         internal fun tbdUtbetalingConsumerOrNull(env: Map<String, String>, tbdUtbetalingDao: TbdUtbetalingDao): TbdUtbetalingConsumer? {
-            return if (env.getOrDefault("NAIS_CLUSTER_NAME", "n/a") == "dev-fss") TbdUtbetalingConsumer(env, tbdUtbetalingDao)
+            return if (env.getOrDefault("NAIS_CLUSTER_NAME", "n/a") == "dev-fss") {
+                TbdUtbetalingConsumer(env, tbdUtbetalingDao).also { Thread(it).start() }
+            }
             else null
         }
 
