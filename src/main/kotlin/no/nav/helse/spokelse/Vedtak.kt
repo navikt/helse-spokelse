@@ -54,13 +54,13 @@ data class Vedtak(
     }
 }
 
-class FpVedtak(
+data class FpVedtak(
     val vedtaksreferanse: String,
     val utbetalinger: List<Utbetalingsperiode>,
     val vedtattTidspunkt: LocalDateTime
 )
 
-class Utbetalingsperiode(
+data class Utbetalingsperiode(
     val fom: LocalDate,
     val tom: LocalDate,
     val grad: Double

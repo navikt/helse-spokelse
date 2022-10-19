@@ -2,6 +2,12 @@ package no.nav.helse.spokelse.tbdutbetaling
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.isMissingOrNull
+import no.nav.helse.spokelse.FpVedtak
+import no.nav.helse.spokelse.Utbetalingsperiode
+import no.nav.helse.spokelse.VedtakDao.Refusjonstype
+import no.nav.helse.spokelse.VedtakDao.Refusjonstype.REFUSJON_TIL_ARBEIDSGIVER
+import no.nav.helse.spokelse.VedtakDao.Refusjonstype.REFUSJON_TIL_PERSON
+import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
@@ -34,6 +40,25 @@ internal data class Utbetaling(
         }
     }
 
+    private fun Oppdrag?.somFpVedtak() = this?.let { oppdrag -> FpVedtak(
+        vedtaksreferanse = oppdrag.fagsystemId,
+        utbetalinger = oppdrag.utbetalingslinjer.map { Utbetalingsperiode(it.fom, it.tom, it.grad) },
+        vedtattTidspunkt = sistUtbetalt
+    )}
+    private fun somFpVedtak() = listOfNotNull(arbeidsgiverOppdrag.somFpVedtak(), personOppdrag.somFpVedtak())
+
+    private fun Oppdrag?.somUtbetalingDTO(refusjonstype: Refusjonstype) = this?.let { oppdrag -> oppdrag.utbetalingslinjer.map { linje -> UtbetalingDTO(
+        fødselsnummer = fødselsnummer,
+        fom = linje.fom,
+        tom = linje.tom,
+        grad = linje.grad,
+        gjenståendeSykedager = gjenståendeSykedager,
+        utbetaltTidspunkt = sistUtbetalt,
+        refusjonstype = refusjonstype
+    )}} ?: emptyList()
+
+    private fun somUtbetalingDTO() = arbeidsgiverOppdrag.somUtbetalingDTO(REFUSJON_TIL_ARBEIDSGIVER) + personOppdrag.somUtbetalingDTO(REFUSJON_TIL_PERSON)
+
     internal companion object {
         private fun JsonNode.oppdrag(path:String) = path(path).takeUnless { it.isMissingOrNull() || it.path("utbetalingslinjer").isEmpty }?.let { Oppdrag(
             fagsystemId = it.path("fagsystemId").asText(),
@@ -54,5 +79,7 @@ internal data class Utbetaling(
                 sistUtbetalt = sistUtbetalt
             )
         }
+        internal fun List<Utbetaling>.somFpVedtak() = map { it.somFpVedtak() }.flatten()
+        internal fun List<Utbetaling>.somUtbetalingDTO() = map { it.somUtbetalingDTO() }.flatten()
     }
 }
