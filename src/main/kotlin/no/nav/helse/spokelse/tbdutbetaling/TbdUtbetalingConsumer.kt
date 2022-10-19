@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erAnnullering
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetalingUtenUtbetaling
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.melding
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.utbetaling
 import org.apache.kafka.clients.CommonClientConfigs
@@ -81,11 +85,6 @@ internal class TbdUtbetalingConsumer(
             keyValue("korrelasjonsId", path("korrelasjonsId").asText()),
             keyValue("meldingId", "$meldingId")
         )
-
-        private val JsonNode.event get() = path("event").asText()
-        private val JsonNode.erUtbetaling get() = event == "utbetaling_utbetalt"
-        private val JsonNode.erAnnullering get() = event == "utbetaling_annullert"
-        private val JsonNode.erUtbetalingUtenUtbetaling get() = event == "utbetaling_uten_utbetaling"
 
         private fun Long.somLocalDateTime() = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDateTime()
 

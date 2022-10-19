@@ -1,8 +1,10 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
 import com.fasterxml.jackson.databind.JsonNode
-import no.nav.helse.rapids_rivers.asLocalDate
 import no.nav.helse.rapids_rivers.isMissingOrNull
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
+import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje.Companion.utbetalingslinje
 import java.time.LocalDateTime
 import java.util.*
 
@@ -34,13 +36,10 @@ internal data class Utbetaling(
     internal companion object {
         private fun JsonNode.oppdrag(path:String) = path(path).takeUnless { it.isMissingOrNull() || it.path("utbetalingslinjer").isEmpty }?.let { Oppdrag(
             fagsystemId = it.path("fagsystemId").asText(),
-            utbetalingslinjer = it.path("utbetalingslinjer").map { linje -> Utbetalingslinje(
-                fom = linje.path("fom").asLocalDate(),
-                tom = linje.path("tom").asLocalDate(),
-                grad = linje.path("grad").asDouble()
-            )}
+            utbetalingslinjer = it.path("utbetalingslinjer").map { linje -> linje.utbetalingslinje() }
         )}
         internal fun JsonNode.utbetaling(sistUtbetalt: LocalDateTime): Utbetaling {
+            require(erUtbetaling) { "Kan ikke mappe event $event til utbetaling" }
             val arbeidsgiverOppdrag = oppdrag("arbeidsgiverOppdrag")
             val personOppdrag = oppdrag("personOppdrag")
             val fødselsnummer = get("fødselsnummer").asText()
