@@ -25,7 +25,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
 
-internal class TbdUtbetalingConsumer private constructor(
+internal class TbdUtbetalingConsumer(
     env: Map<String, String>,
     private val tbdUtbetalingDao: TbdUtbetalingDao): Runnable, AutoCloseable, RapidsConnection.StatusListener {
     private val kafkaConsumer = KafkaConsumer(consumerProperties(env), StringDeserializer(), StringDeserializer()).apply {
@@ -62,6 +62,10 @@ internal class TbdUtbetalingConsumer private constructor(
         konsumerer = false
     }
 
+    override fun onReady(rapidsConnection: RapidsConnection) {
+        Thread(this).start()
+    }
+
     override fun onShutdown(rapidsConnection: RapidsConnection) = close()
 
     private fun håndterUtbetaling(json: JsonNode, meldingSendt: LocalDateTime) {
@@ -82,12 +86,6 @@ internal class TbdUtbetalingConsumer private constructor(
     }
 
     internal companion object {
-        internal fun tbdUtbetalingConsumerOrNull(env: Map<String, String>, tbdUtbetalingDao: TbdUtbetalingDao): TbdUtbetalingConsumer? {
-            return if (env.getOrDefault("NAIS_CLUSTER_NAME", "n/a") == "dev-fss") {
-                TbdUtbetalingConsumer(env, tbdUtbetalingDao).also { Thread(it).start() }
-            }
-            else null
-        }
 
         private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
         private fun JsonNode.logg(meldingId: Long) = sikkerlogg.info("Håndterer {}, {}, {}, {}",
