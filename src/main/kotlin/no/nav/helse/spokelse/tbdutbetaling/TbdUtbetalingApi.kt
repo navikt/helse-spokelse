@@ -12,7 +12,9 @@ internal class TbdUtbtalingApi(
     private val erDev = env.getOrDefault("NAIS_CLUSTER_NAME","n/a") == "dev-fss"
     private val brukUtbetalingerEtter = LocalDateTime.parse("2022-03-16T21:53:18")
 
-    private fun utbetalinger(fødselsnummer: String) = tbdUtbetalingDao.hentUtbetalinger(fødselsnummer).filter { it.sistUtbetalt > brukUtbetalingerEtter }
+    private fun utbetalinger(fødselsnummer: String) = tbdUtbetalingDao.hentUtbetalinger(fødselsnummer).filter { it.sistUtbetalt > brukUtbetalingerEtter }.also {
+        sikkerlogg.info("Fant ${it.size} utbetalinger for $fødselsnummer fra tbd.utbetaling.")
+    }
 
     fun hentFpVedtak(fødselsnummer: String) = hentFailsafe(fødselsnummer) { it.somFpVedtak() }
     fun hentUtbetalingDTO(fødselsnumre: List<String>) = fødselsnumre.map { fødselsnummer -> hentFailsafe(fødselsnummer) { it.somUtbetalingDTO()} }.flatten()
