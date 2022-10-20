@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.util.*
 
-internal class TilUtbetalingBehovRiverTest : AbstractE2ETest() {
+internal class UtbetalingsreferanseTest : AbstractE2ETest() {
 
     @Test
     fun `skriver dokumenter til hendelse`() {
