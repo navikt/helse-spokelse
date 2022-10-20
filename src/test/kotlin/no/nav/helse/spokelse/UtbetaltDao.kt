@@ -6,20 +6,8 @@ import kotliquery.sessionOf
 import org.intellij.lang.annotations.Language
 import javax.sql.DataSource
 
-data class Dokumenter(
-    val sykmelding: Hendelse,
-    val søknad: Hendelse,
-    val inntektsmelding: Hendelse?
-) {
-    init {
-        require(sykmelding.type == Dokument.Sykmelding)
-        require(søknad.type == Dokument.Søknad)
-        inntektsmelding?.also { require(it.type == Dokument.Inntektsmelding) }
-    }
-}
-
-class UtbetaltDao(val datasource: DataSource) {
-    fun opprett(vedtak: Vedtak) {
+internal class UtbetaltDao(val datasource: DataSource) {
+    internal fun opprett(vedtak: Vedtak) {
         sessionOf(datasource, true).use { session ->
             session.transaction {
                 it.opprett(vedtak)
