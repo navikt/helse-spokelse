@@ -47,7 +47,7 @@ internal class TbdUtbetalingConsumer(
                     val meldingSendt = record.timestamp().somLocalDateTime()
                     when {
                         json.erUtbetaling -> håndterUtbetaling(json, meldingSendt)
-                        json.erAnnullering -> håndteAnnulering(json, meldingSendt)
+                        json.erAnnullering -> håndteAnnullering(json, meldingSendt)
                         json.erUtbetalingUtenUtbetaling -> håndterUtbetalingUtenUtbetaling(json, meldingSendt)
                         else -> {
                             sikkerlogg.warn("Uventet event '${json.event}' på $topic. Lagres ikke i spøkelse\n\n$json‘")
@@ -83,7 +83,7 @@ internal class TbdUtbetalingConsumer(
         tbdUtbetalingDao.lagreUtbetaling(meldingId, json.utbetaling(meldingSendt))
     }
 
-    private fun håndteAnnulering(json: JsonNode, meldingSendt: LocalDateTime) {
+    private fun håndteAnnullering(json: JsonNode, meldingSendt: LocalDateTime) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         json.logg(meldingId)
         tbdUtbetalingDao.annuller(meldingId, json.annullering())
