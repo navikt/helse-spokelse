@@ -15,6 +15,7 @@ import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.config.SslConfigs
+import org.apache.kafka.common.errors.WakeupException
 import org.apache.kafka.common.security.auth.SecurityProtocol
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
@@ -24,20 +25,23 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal class TbdUtbetalingConsumer(
-    env: Map<String, String>,
-    private val tbdUtbetalingDao: TbdUtbetalingDao): Runnable, AutoCloseable, RapidsConnection.StatusListener {
-    private val kafkaConsumer = KafkaConsumer(consumerProperties(env), StringDeserializer(), StringDeserializer()).apply {
-        subscribe(listOf(topic))
-    }
-    private var konsumerer = true
+        env: Map<String, String>,
+        private val tbdUtbetalingDao: TbdUtbetalingDao
+    ): Runnable, RapidsConnection.StatusListener {
+
+    private val kafkaConsumer = KafkaConsumer(consumerProperties(env), StringDeserializer(), StringDeserializer())
+    private val konsumerer = AtomicBoolean(false)
 
     override fun run() {
         sikkerlogg.info("Starter konsumering av $topic")
         try {
-            while (konsumerer) {
-                val records = kafkaConsumer.poll(Duration.ofMillis(100))
+            kafkaConsumer.subscribe(listOf(topic))
+
+            while (konsumerer.get()) {
+                val records = kafkaConsumer.poll(Duration.ofSeconds(1))
                 records.forEach { record ->
                     val json = jackson.readTree(record.value())
                     val meldingSendt = record.timestamp().somLocalDateTime()
@@ -51,22 +55,27 @@ internal class TbdUtbetalingConsumer(
                     }
                 }
             }
+        } catch (wakeupException: WakeupException) {
+            if (konsumerer.get()) throw wakeupException
         } catch (exception: Exception) {
             sikkerlogg.error("Feil ved håndtering av melding på $topic", exception)
         } finally {
-            close()
+            sikkerlogg.info("Stopper konsumering av $topic")
+            kafkaConsumer.close()
         }
     }
 
-    override fun close() {
-        konsumerer = false
-    }
-
     override fun onReady(rapidsConnection: RapidsConnection) {
+        if (konsumerer.get()) return
+        konsumerer.set(true)
         Thread(this).start()
     }
 
-    override fun onShutdown(rapidsConnection: RapidsConnection) = close()
+    override fun onShutdown(rapidsConnection: RapidsConnection) {
+        if (!konsumerer.get()) return
+        konsumerer.set(false)
+        kafkaConsumer.wakeup()
+    }
 
     private fun håndterUtbetaling(json: JsonNode, meldingSendt: LocalDateTime) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
