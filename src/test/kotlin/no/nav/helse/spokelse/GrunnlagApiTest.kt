@@ -24,7 +24,7 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         val grad = 50.0
         val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
         dokumentDao.lagre(vedtaksperiodeId, fagsystemId)
-        vedtakDao.save(
+        lagreVedtakDao.save(
             OldVedtak(
                 vedtaksperiodeId = vedtaksperiodeId,
                 fødselsnummer = fnr,

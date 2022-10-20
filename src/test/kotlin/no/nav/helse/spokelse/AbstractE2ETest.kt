@@ -35,7 +35,8 @@ internal abstract class AbstractE2ETest {
     protected lateinit var dataSource: DataSource
     protected lateinit var dokumentDao: DokumentDao
     protected lateinit var utbetaltDao: UtbetaltDao
-    protected lateinit var vedtakDao: VedtakDao
+    protected lateinit var vedtakDao: HentVedtakDao
+    protected lateinit var lagreVedtakDao: LagreVedtakDao
     private lateinit var annulleringDao: AnnulleringDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
     protected lateinit var rapid: TestRapid
@@ -46,7 +47,8 @@ internal abstract class AbstractE2ETest {
         dataSource = PgDb.connection()
         dokumentDao = DokumentDao(dataSource)
         utbetaltDao = UtbetaltDao(dataSource)
-        vedtakDao = VedtakDao(dataSource)
+        vedtakDao = HentVedtakDao(dataSource)
+        lagreVedtakDao = LagreVedtakDao(dataSource)
         annulleringDao = AnnulleringDao(dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
 

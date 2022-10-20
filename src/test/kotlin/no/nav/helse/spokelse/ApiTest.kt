@@ -44,7 +44,8 @@ class ApiTest {
     private lateinit var dataSource: DataSource
 
     private lateinit var dokumentDao: DokumentDao
-    private lateinit var vedtakDao: VedtakDao
+    private lateinit var vedtakDao: HentVedtakDao
+    private lateinit var lagreVedtakDao: LagreVedtakDao
     private lateinit var tbdUtbetalingDao: TbdUtbetalingDao
     private val client = HttpClient(Apache) {
         install(JsonFeature)
@@ -62,7 +63,8 @@ class ApiTest {
 
         dataSource = PgDb.connection()
         dokumentDao = DokumentDao(dataSource)
-        vedtakDao = VedtakDao(dataSource)
+        vedtakDao = HentVedtakDao(dataSource)
+        lagreVedtakDao = LagreVedtakDao(dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
 
         val randomPort = randomPort()
@@ -174,7 +176,7 @@ class ApiTest {
     ) {
         val vedtaksperiodeId = UUID.randomUUID()
         val orgnummer = "98765432"
-        vedtakDao.save(
+        lagreVedtakDao.save(
             OldVedtak(
                 vedtaksperiodeId, fødselsnummer, orgnummer, perioder.map {
                     OldUtbetaling(

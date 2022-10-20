@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.isMissingOrNull
 import no.nav.helse.spokelse.FpVedtak
 import no.nav.helse.spokelse.Utbetalingsperiode
-import no.nav.helse.spokelse.VedtakDao.Refusjonstype
-import no.nav.helse.spokelse.VedtakDao.Refusjonstype.REFUSJON_TIL_ARBEIDSGIVER
-import no.nav.helse.spokelse.VedtakDao.Refusjonstype.REFUSJON_TIL_PERSON
-import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
+import no.nav.helse.spokelse.HentVedtakDao.Refusjonstype
+import no.nav.helse.spokelse.HentVedtakDao.Refusjonstype.REFUSJON_TIL_ARBEIDSGIVER
+import no.nav.helse.spokelse.HentVedtakDao.Refusjonstype.REFUSJON_TIL_PERSON
+import no.nav.helse.spokelse.HentVedtakDao.UtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer

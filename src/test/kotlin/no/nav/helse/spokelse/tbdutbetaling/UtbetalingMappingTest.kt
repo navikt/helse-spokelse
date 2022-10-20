@@ -3,9 +3,9 @@ package no.nav.helse.spokelse.tbdutbetaling
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.FpVedtak
 import no.nav.helse.spokelse.Utbetalingsperiode
-import no.nav.helse.spokelse.VedtakDao.Refusjonstype.REFUSJON_TIL_ARBEIDSGIVER
-import no.nav.helse.spokelse.VedtakDao.Refusjonstype.REFUSJON_TIL_PERSON
-import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
+import no.nav.helse.spokelse.HentVedtakDao.Refusjonstype.REFUSJON_TIL_ARBEIDSGIVER
+import no.nav.helse.spokelse.HentVedtakDao.Refusjonstype.REFUSJON_TIL_PERSON
+import no.nav.helse.spokelse.HentVedtakDao.UtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somFpVedtak
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somUtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.utbetaling

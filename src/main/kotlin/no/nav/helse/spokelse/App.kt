@@ -13,7 +13,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
-import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
+import no.nav.helse.spokelse.HentVedtakDao.UtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
@@ -37,7 +37,7 @@ fun launchApplication(env: Environment) {
         .getDataSource()
 
     val dokumentDao = DokumentDao(dataSource)
-    val vedtakDao = VedtakDao(dataSource)
+    val vedtakDao = HentVedtakDao(dataSource)
     val annulleringDao = AnnulleringDao(dataSource)
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
 
@@ -61,7 +61,7 @@ internal fun RapidsConnection.registerRivers(
     AnnulleringRiver(this, annulleringDao)
 }
 
-internal fun Application.spokelse(env: Environment.Auth, vedtakDao: VedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
+internal fun Application.spokelse(env: Environment.Auth, vedtakDao: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
     azureAdAppAuthentication(env)
     install(ContentNegotiation) {
         jackson {
@@ -77,7 +77,7 @@ internal fun Application.spokelse(env: Environment.Auth, vedtakDao: VedtakDao, t
     }
 }
 
-internal fun Route.grunnlagApi(vedtakDAO: VedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
+internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
     get("/grunnlag") {
         call.logRequest()
         val fødselsnummer = call.request.queryParameters["fodselsnummer"]
@@ -102,7 +102,7 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDao, tbdUtbtalingApi: TbdUtbtali
     }
 }
 
-internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
+internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
     post("/utbetalinger") {
         call.logRequest()
         val fødselsnumre = call.receive<List<String>>()
