@@ -44,7 +44,7 @@ fun launchApplication(env: Environment) {
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env.raw, tbdUtbetalingDao)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
-        .withKtorModule { spokelse(env.auth, vedtakDao, TbdUtbtalingApi(env.raw, tbdUtbetalingDao)) }
+        .withKtorModule { spokelse(env.auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
         .build()
         .apply {
             registerRivers(dokumentDao, annulleringDao)

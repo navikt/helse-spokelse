@@ -81,7 +81,7 @@ class ApiTest {
                         clientId = "client-Id",
                         issuer = "Microsoft Azure AD",
                         jwksUri = "${wireMockServer.baseUrl()}/jwks"
-                    ), vedtakDao, TbdUtbtalingApi(emptyMap(), tbdUtbetalingDao)
+                    ), vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)
                 )
             }
             .build(CIO)

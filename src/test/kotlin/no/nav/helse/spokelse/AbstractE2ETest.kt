@@ -73,7 +73,7 @@ internal abstract class AbstractE2ETest {
         authorized: Boolean = true
     ) {
         withTestApplication({
-            spokelse(auth, vedtakDao, TbdUtbtalingApi(emptyMap(), tbdUtbetalingDao))
+            spokelse(auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao))
         }) {
             Awaitility.await().atMost(timeout.toLong(), TimeUnit.SECONDS).untilAsserted {
                 handleRequest(HttpMethod.parse(httpMethod.uppercase()), "/$path") {
