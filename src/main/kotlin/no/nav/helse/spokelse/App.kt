@@ -16,6 +16,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.spokelse.VedtakDao.UtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
@@ -43,7 +44,7 @@ fun launchApplication(env: Environment) {
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env.raw, tbdUtbetalingDao)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
-        .withKtorModule { spokelse(env.auth, vedtakDao) }
+        .withKtorModule { spokelse(env.auth, vedtakDao, TbdUtbtalingApi(env.raw, tbdUtbetalingDao)) }
         .build()
         .apply {
             registerRivers(dokumentDao, annulleringDao)
@@ -60,7 +61,7 @@ internal fun RapidsConnection.registerRivers(
     AnnulleringRiver(this, annulleringDao)
 }
 
-internal fun Application.spokelse(env: Environment.Auth, vedtakDao: VedtakDao) {
+internal fun Application.spokelse(env: Environment.Auth, vedtakDao: VedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
     azureAdAppAuthentication(env)
     install(ContentNegotiation) {
         jackson {
@@ -70,13 +71,13 @@ internal fun Application.spokelse(env: Environment.Auth, vedtakDao: VedtakDao) {
     }
     routing {
         authenticate {
-            grunnlagApi(vedtakDao)
-            utbetalingerApi(vedtakDao)
+            grunnlagApi(vedtakDao, tbdUtbtalingApi)
+            utbetalingerApi(vedtakDao, tbdUtbtalingApi)
         }
     }
 }
 
-internal fun Route.grunnlagApi(vedtakDAO: VedtakDao) {
+internal fun Route.grunnlagApi(vedtakDAO: VedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
     get("/grunnlag") {
         call.logRequest()
         val fødselsnummer = call.request.queryParameters["fodselsnummer"]
@@ -86,7 +87,7 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDao) {
             }
         val time = measureTimeMillis {
             try {
-                val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer)
+                val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer)
                 vedtak.filter { it.vedtattTidspunkt > sisteKjenning }.takeUnless { it.isEmpty() }?.let {
                     tjenestekallLog.info("Fant ${it.size} vedtak for $fødselsnummer vedtatt etter $sisteKjenning")
                 }
@@ -101,7 +102,7 @@ internal fun Route.grunnlagApi(vedtakDAO: VedtakDao) {
     }
 }
 
-internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
+internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
     post("/utbetalinger") {
         call.logRequest()
         val fødselsnumre = call.receive<List<String>>()
@@ -133,7 +134,7 @@ internal fun Route.utbetalingerApi(vedtakDAO: VedtakDao) {
                         )
                     )
                 }
-        }
+        } + tbdUtbtalingApi.hentUtbetalingDTO(fødselsnumre)
         utbetalinger.filter { it.utbetaltTidspunkt?.isAfter(sisteKjenning) ?: false }.takeUnless { it.isEmpty() }?.let {
             tjenestekallLog.info("Fant ${it.size} utbetalinger utbetalt etter $sisteKjenning")
         }
