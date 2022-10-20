@@ -18,12 +18,10 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
 
 private val log: Logger = LoggerFactory.getLogger("spokelse")
 private val tjenestekallLog = LoggerFactory.getLogger("tjenestekall")
-private val sisteKjenning = LocalDateTime.parse("2022-03-16T21:53:18")
 
 fun main() {
     val env = Environment(System.getenv())
@@ -84,9 +82,6 @@ internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtb
         val time = measureTimeMillis {
             try {
                 val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer)
-                vedtak.filter { it.vedtattTidspunkt > sisteKjenning }.takeUnless { it.isEmpty() }?.let {
-                    tjenestekallLog.info("Fant ${it.size} vedtak for $fødselsnummer vedtatt etter $sisteKjenning")
-                }
                 call.respond(HttpStatusCode.OK, vedtak)
             } catch (e: Exception) {
                 log.error("Feil ved henting av vedtak", e)
@@ -131,9 +126,6 @@ internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: Tb
                     )
                 }
         } + tbdUtbtalingApi.hentUtbetalingDTO(fødselsnumre)
-        utbetalinger.filter { it.utbetaltTidspunkt?.isAfter(sisteKjenning) ?: false }.takeUnless { it.isEmpty() }?.let {
-            tjenestekallLog.info("Fant ${it.size} utbetalinger utbetalt etter $sisteKjenning")
-        }
         call.respond(utbetalinger)
     }
 }
