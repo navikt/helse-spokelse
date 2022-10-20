@@ -18,6 +18,8 @@ import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.Events.genererFagsystemId
 import no.nav.helse.spokelse.Events.inntektsmeldingEvent
 import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -43,6 +45,7 @@ class ApiTest {
 
     private lateinit var dokumentDao: DokumentDao
     private lateinit var vedtakDao: VedtakDao
+    private lateinit var tbdUtbetalingDao: TbdUtbetalingDao
     private val client = HttpClient(Apache) {
         install(JsonFeature)
     }
@@ -60,6 +63,7 @@ class ApiTest {
         dataSource = PgDb.connection()
         dokumentDao = DokumentDao(dataSource)
         vedtakDao = VedtakDao(dataSource)
+        tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
 
         val randomPort = randomPort()
         rapid = TestRapid().apply {
@@ -75,7 +79,7 @@ class ApiTest {
                         clientId = "client-Id",
                         issuer = "Microsoft Azure AD",
                         jwksUri = "${wireMockServer.baseUrl()}/jwks"
-                    ), vedtakDao
+                    ), vedtakDao, TbdUtbtalingApi(emptyMap(), tbdUtbetalingDao)
                 )
             }
             .build(CIO)
