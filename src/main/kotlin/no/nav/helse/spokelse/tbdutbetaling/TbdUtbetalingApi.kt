@@ -10,7 +10,7 @@ internal class TbdUtbtalingApi(private val tbdUtbetalingDao: TbdUtbetalingDao) {
     private val brukUtbetalingerEtter = LocalDateTime.parse("2022-03-16T21:53:18")
 
     private fun utbetalinger(fødselsnummer: String) = tbdUtbetalingDao.hentUtbetalinger(fødselsnummer).filter { it.sistUtbetalt > brukUtbetalingerEtter }.also {
-        sikkerlogg.info("Fant ${it.size} utbetalinger for $fødselsnummer fra tbd.utbetaling.")
+        if (it.isNotEmpty()) sikkerlogg.info("Fant ${it.size} utbetalinger for $fødselsnummer fra tbd.utbetaling.")
     }
 
     fun hentFpVedtak(fødselsnummer: String) = utbetalinger(fødselsnummer).somFpVedtak()

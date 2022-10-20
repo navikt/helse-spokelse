@@ -1,11 +1,8 @@
 package no.nav.helse.spokelse
 
-import io.ktor.application.Application
-import io.ktor.application.install
-import io.ktor.application.log
-import io.ktor.auth.Authentication
-import io.ktor.auth.jwt.JWTPrincipal
-import io.ktor.auth.jwt.jwt
+import io.ktor.application.*
+import io.ktor.auth.*
+import io.ktor.auth.jwt.*
 
 internal fun Application.azureAdAppAuthentication(env: Environment.Auth) {
     install(Authentication) {

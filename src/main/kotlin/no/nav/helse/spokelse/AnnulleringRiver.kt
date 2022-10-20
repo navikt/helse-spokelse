@@ -60,12 +60,12 @@ class AnnulleringRiver(
 
 
     private fun insertAnnullering(fagsystemId: String, fagområde: String, fødselsnummer: String, orgnummer: String, fom: LocalDate, tom:LocalDate, eventName: String) {
-        sikkerLogg.info("Inserter annullering for {} via {}",
+        sikkerLogg.info("Inserter annullering for {} {} via {}",
             keyValue("fagsystemId", fagsystemId),
             keyValue("fagområde", fagområde),
             keyValue("event_name", eventName))
         if (annulleringDao.insertAnnullering(fødselsnummer, orgnummer, fagsystemId, fom, tom, fagområde) < 1) {
-            sikkerLogg.info("Annulering for {} ble ikke insertet siden den ble sett som et duplikat",
+            sikkerLogg.info("Annulering for {} {} ble ikke insertet siden den ble sett som et duplikat",
                 keyValue("fagsystemId", fagsystemId),
                 keyValue("fagområde", fagområde))
         }

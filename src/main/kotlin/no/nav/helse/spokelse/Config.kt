@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.auth.jwt.*
 import no.nav.helse.spokelse.Environment.Auth.Companion.auth
-import java.io.File
-import java.io.FileNotFoundException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL

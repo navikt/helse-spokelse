@@ -2,8 +2,6 @@ package no.nav.helse.spokelse
 
 import no.nav.helse.spokelse.Events.annulleringEvent
 import no.nav.helse.spokelse.Events.genererFagsystemId
-import no.nav.helse.spokelse.Events.inntektsmeldingEvent
-import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -28,9 +26,6 @@ internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
             requestBody = """["$fødselsnummer"]""",
             forventetResponseBody = ingenUtbetalingerResponse(fødselsnummer)
         )
-
-        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
-        rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
 
         utbetaltDao.opprett(Vedtak(
             hendelseId = UUID.randomUUID(),
@@ -92,8 +87,6 @@ internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
             forventetResponseBody = ingenUtbetalingerResponse(fødselsnummer)
         )
 
-        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
-        rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
         utbetaltDao.opprett(Vedtak(
             hendelseId = UUID.randomUUID(),
             fødselsnummer = fødselsnummer,
@@ -156,8 +149,6 @@ internal class AnnullerteUtbetalingerE2ETest : AbstractE2ETest() {
             forventetResponseBody = ingenUtbetalingerResponse(fødselsnummer)
         )
 
-        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
-        rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
         utbetaltDao.opprett(
             Vedtak(
                 hendelseId = UUID.randomUUID(),

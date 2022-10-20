@@ -1,5 +1,7 @@
 package no.nav.helse.spokelse
 
+import java.util.*
+
 data class Dokumenter(
     val sykmelding: Hendelse,
     val søknad: Hendelse,
@@ -12,3 +14,12 @@ data class Dokumenter(
     }
 }
 
+enum class Dokument {
+    Sykmelding, Inntektsmelding, Søknad
+}
+
+data class Hendelse(
+    val dokumentId: UUID,
+    val hendelseId: UUID,
+    val type: Dokument
+)

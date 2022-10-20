@@ -1,7 +1,5 @@
 package no.nav.helse.spokelse
 
-import no.nav.helse.spokelse.Events.inntektsmeldingEvent
-import no.nav.helse.spokelse.Events.sendtSøknadNavEvent
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -15,8 +13,6 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         val fnr = "01010145678"
         val orgnummer = "123456789"
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
-        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
-        rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
         val vedtaksperiodeId = UUID.randomUUID()
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ4"
         val fom = LocalDate.of(2020, 4, 1)
@@ -63,8 +59,6 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         val fnr = "01010145679"
         val orgnummer = "123456789"
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
-        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
-        rapid.sendTestMessage(inntektsmeldingEvent(inntektsmelding))
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ5"
         val fom = LocalDate.of(2020, 4, 1)
         val tom = LocalDate.of(2020, 4, 6)
@@ -100,7 +94,6 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         val fnr = "01010145679"
         val orgnummer = "123456789"
         val (sykmelding, søknad, _) = nyeDokumenter()
-        rapid.sendTestMessage(sendtSøknadNavEvent(sykmelding, søknad))
         val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ6"
         val fom = LocalDate.of(2020, 4, 1)
         val tom = LocalDate.of(2020, 4, 6)

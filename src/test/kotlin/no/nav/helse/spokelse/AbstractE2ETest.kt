@@ -37,7 +37,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var dataSource: DataSource
     protected lateinit var dokumentDao: DokumentDao
     protected lateinit var utbetaltDao: UtbetaltDao
-    protected lateinit var vedtakDao: HentVedtakDao
+    private lateinit var vedtakDao: HentVedtakDao
     protected lateinit var lagreVedtakDao: LagreVedtakDao
     private lateinit var annulleringDao: AnnulleringDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
@@ -55,7 +55,7 @@ internal abstract class AbstractE2ETest {
         tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
 
         rapid = TestRapid().apply {
-            registerRivers(dokumentDao, annulleringDao)
+            registerRivers(annulleringDao)
         }
     }
 
@@ -102,6 +102,9 @@ internal abstract class AbstractE2ETest {
         val sykmelding = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Sykmelding)
         val søknad = Hendelse(UUID.randomUUID(), søknadHendelseId, Dokument.Søknad)
         val inntektsmelding = Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Inntektsmelding)
+        dokumentDao.opprett(sykmelding)
+        dokumentDao.opprett(søknad)
+        dokumentDao.opprett(inntektsmelding)
         return Triple(sykmelding, søknad, inntektsmelding)
     }
 

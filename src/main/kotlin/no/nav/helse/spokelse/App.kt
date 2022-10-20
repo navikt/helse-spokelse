@@ -13,7 +13,6 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
-import no.nav.helse.spokelse.HentVedtakDao.UtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
@@ -36,7 +35,6 @@ fun launchApplication(env: Environment) {
         .apply(DataSourceBuilder::migrate)
         .getDataSource()
 
-    val dokumentDao = DokumentDao(dataSource)
     val vedtakDao = HentVedtakDao(dataSource)
     val annulleringDao = AnnulleringDao(dataSource)
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
@@ -47,17 +45,15 @@ fun launchApplication(env: Environment) {
         .withKtorModule { spokelse(env.auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
         .build()
         .apply {
-            registerRivers(dokumentDao, annulleringDao)
+            registerRivers(annulleringDao)
             register(tbdUtbetalingConsumer)
         }
         .start()
 }
 
 internal fun RapidsConnection.registerRivers(
-    dokumentDao: DokumentDao,
     annulleringDao: AnnulleringDao
 ) {
-    NyttDokumentRiver(this, dokumentDao)
     AnnulleringRiver(this, annulleringDao)
 }
 
