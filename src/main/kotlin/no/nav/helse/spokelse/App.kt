@@ -39,6 +39,8 @@ fun launchApplication(env: Environment) {
 
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env.raw, tbdUtbetalingDao)
 
+    log.info("AvailableProcessors=${Runtime.getRuntime().availableProcessors()}")
+
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
         .withKtorModule { spokelse(env.auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
         .build()
