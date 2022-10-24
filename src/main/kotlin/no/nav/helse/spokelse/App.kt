@@ -43,7 +43,7 @@ fun launchApplication(env: Environment) {
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
         .withKtorModule { spokelse(env.auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
-        .build()
+        .build(factory = ConfiguredCIO)
         .apply {
             registerRivers(annulleringDao)
             register(tbdUtbetalingConsumer)
