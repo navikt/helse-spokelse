@@ -40,8 +40,6 @@ fun launchApplication(env: Environment) {
 
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env.raw, tbdUtbetalingDao)
 
-    log.info("AvailableProcessors=${Runtime.getRuntime().availableProcessors()}")
-
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
         .withKtorModule { spokelse(env.auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
         .build(factory = ConfiguredCIO)
@@ -87,7 +85,7 @@ internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtb
         }
         val time = measureTimeMillis {
             try {
-                val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer, fom) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer)
+                val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer, fom) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer, fom)
                 call.respond(HttpStatusCode.OK, vedtak)
             } catch (e: Exception) {
                 log.error("Feil ved henting av vedtak", e)

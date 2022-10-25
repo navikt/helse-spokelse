@@ -171,17 +171,37 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger("99999999999"))
     }
 
+    @Test
+    fun `filtrerer på fom`() {
+        val januar = lagreFullRefusjon(utbetalingslinjer = listOf(Utbetalingslinje(2.januar, 31.januar, 100.0)), fagsystemId = "1")
+        val mars = lagreFullRefusjon(utbetalingslinjer = listOf(Utbetalingslinje(1.mars, 31.mars, 100.0)), fagsystemId = "2")
+        assertEquals(listOf(januar, mars), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
+        assertEquals(listOf(januar, mars), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, 1.januar))
+        assertEquals(listOf(januar, mars), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, 2.januar))
+        assertEquals(listOf(januar, mars), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, 31.januar))
+        assertEquals(listOf(mars), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, 1.februar))
+        assertEquals(listOf(mars), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, 1.mars))
+        assertEquals(listOf(mars), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, 31.mars))
+        assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, 1.april))
+
+        val april = lagreFullRefusjon(fødselsnummer = "22345678911", utbetalingslinjer = listOf(Utbetalingslinje(1.april, 1.april, 100.0)), fagsystemId = "3")
+        assertEquals(listOf(april), tbdUtbetalingDao.hentUtbetalinger("22345678911", 31.mars))
+        assertEquals(listOf(april), tbdUtbetalingDao.hentUtbetalinger("22345678911", 1.april))
+        assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger("22345678911", 2.april))
+    }
+
     private fun nyMeldingId() = tbdUtbetalingDao.lagreMelding(Melding("{}", nå(), "test_event", Fødselsnummer))
     private fun lagreFullRefusjon(
         korrelasjonsId: UUID = UUID.randomUUID(),
         fagsystemId: String = ArbeidsgiverFagsystemId,
         utbetalingslinjer: List<Utbetalingslinje> = listOf(
             Utbetalingslinje(fom = 1.januar, tom = 31.januar, grad = 50.7)
-        )
+        ),
+        fødselsnummer: String = Fødselsnummer
     ): Utbetaling {
         val meldingId = nyMeldingId()
         val utbetaling = Utbetaling(
-            fødselsnummer = Fødselsnummer,
+            fødselsnummer = fødselsnummer,
             korrelasjonsId = korrelasjonsId,
             gjenståendeSykedager = 50,
             personOppdrag = null,

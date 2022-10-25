@@ -5,6 +5,7 @@ import kotliquery.TransactionalSession
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import org.intellij.lang.annotations.Language
+import java.time.LocalDate
 import javax.sql.DataSource
 
 internal class TbdUtbetalingDao(
@@ -40,14 +41,14 @@ internal class TbdUtbetalingDao(
         }
     }
 
-    internal fun hentUtbetalinger(fødselsnummer: String): List<Utbetaling> {
+    internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate? = null): List<Utbetaling> {
         return sessionOf(dataSource).use { session ->
             session.run(queryOf(hentUtbetalinger, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
 
                 val arbeidsgiverFagystemId = row.stringOrNull("arbeidsgiverFagsystemId")
-                val arbeidsgiverUtbetalingslinjer = arbeidsgiverFagystemId?.let { session.hentUtbetalingslinjer(it) } ?: emptyList()
+                val arbeidsgiverUtbetalingslinjer = arbeidsgiverFagystemId?.let { session.hentUtbetalingslinjer(it, fom) } ?: emptyList()
                 val personFagsystemId = row.stringOrNull("personFagsystemId")
-                val personUtbetalingslinjer = personFagsystemId?.let { session.hentUtbetalingslinjer(it) } ?: emptyList()
+                val personUtbetalingslinjer = personFagsystemId?.let { session.hentUtbetalingslinjer(it, fom) } ?: emptyList()
 
                 if (arbeidsgiverUtbetalingslinjer.isEmpty() && personUtbetalingslinjer.isEmpty()) null
 
@@ -88,7 +89,7 @@ internal class TbdUtbetalingDao(
         }
     }
 
-    private fun Session.hentUtbetalingslinjer(fagsystemId: String) = run(queryOf(hentUtbetalingslinjer, mapOf("fagsystemId" to fagsystemId)).map { row -> Utbetalingslinje(
+    private fun Session.hentUtbetalingslinjer(fagsystemId: String, fom: LocalDate?) = run(queryOf(hentUtbetalingslinjer(fom), mapOf("fagsystemId" to fagsystemId, "fom" to fom)).map { row -> Utbetalingslinje(
         fom = row.localDate("fom"),
         tom = row.localDate("tom"),
         grad = row.double("grad")
@@ -150,11 +151,14 @@ internal class TbdUtbetalingDao(
         """
 
         @Language("PostgreSQL")
-        val hentUtbetalingslinjer = """
+        fun hentUtbetalingslinjer(fom: LocalDate?) = """
             SELECT *
             FROM tbdUtbetaling_Utbetalingslinje
             WHERE fagsystemId = :fagsystemId
-        """
+        """.let { when (fom) {
+            null -> it
+            else -> "$it AND tom >= :fom"
+        }}
 
         @Language("PostgreSQL")
         val slettUtbetalingslinjer = """
