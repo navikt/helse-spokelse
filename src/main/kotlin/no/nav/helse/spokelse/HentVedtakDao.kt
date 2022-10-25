@@ -9,17 +9,28 @@ import javax.sql.DataSource
 
 class HentVedtakDao(private val dataSource: DataSource) {
 
-    fun hentVedtakListe(fødselsnummer: String) = sessionOf(dataSource).use { session ->
-        data class VedtakRow(
-            val fagsystemId: String,
-            val utbetaltTidspunkt: LocalDateTime,
-            val fom: LocalDate,
-            val tom: LocalDate,
-            val grad: Double
-        )
+    internal companion object {
+        private val harDataTilOgMed = LocalDate.parse("2022-03-16")
+        internal fun harData(fraOgMed: LocalDate?) = fraOgMed == null || fraOgMed <= harDataTilOgMed
+        internal fun List<VedtakRow>.filtrer(fraOgMed: LocalDate?) = when (fraOgMed) {
+            null -> this
+            else -> filter { it.tom >= fraOgMed }
+        }
+    }
 
-        @Language("PostgreSQL")
-        val query = """
+    data class VedtakRow(
+        val fagsystemId: String,
+        val utbetaltTidspunkt: LocalDateTime,
+        val fom: LocalDate,
+        val tom: LocalDate,
+        val grad: Double
+    )
+
+    fun hentVedtakListe(fødselsnummer: String, fom: LocalDate?): List<FpVedtak> {
+        if (!harData(fom)) return emptyList()
+        return sessionOf(dataSource).use { session ->
+            @Language("PostgreSQL")
+            val query = """
             (SELECT o.fagsystemid fagsystem_id,
                     u.fom         fom,
                     u.tom         tom,
@@ -42,29 +53,31 @@ class HentVedtakDao(private val dataSource: DataSource) {
              WHERE ov.fodselsnummer = :fodselsnummer)
             ORDER BY utbetalt_tidspunkt, fom, tom
                 """
-        session.run(queryOf(query, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
-            VedtakRow(
-                fagsystemId = row.string("fagsystem_id"),
-                fom = row.localDate("fom"),
-                tom = row.localDate("tom"),
-                grad = row.double("grad"),
-                utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt")
-            )
-        }.asList)
-            .groupBy { it.fagsystemId }
-            .map { (_, value) ->
-                FpVedtak(
-                    vedtaksreferanse = value.first().fagsystemId,
-                    utbetalinger = value.map { utbetaling ->
-                        Utbetalingsperiode(
-                            fom = utbetaling.fom,
-                            tom = utbetaling.tom,
-                            grad = utbetaling.grad
-                        )
-                    },
-                    vedtattTidspunkt = value.first().utbetaltTidspunkt
+            session.run(queryOf(query, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
+                VedtakRow(
+                    fagsystemId = row.string("fagsystem_id"),
+                    fom = row.localDate("fom"),
+                    tom = row.localDate("tom"),
+                    grad = row.double("grad"),
+                    utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt")
                 )
-            }
+            }.asList)
+                .filtrer(fom)
+                .groupBy { it.fagsystemId }
+                .map { (_, value) ->
+                    FpVedtak(
+                        vedtaksreferanse = value.first().fagsystemId,
+                        utbetalinger = value.map { utbetaling ->
+                            Utbetalingsperiode(
+                                fom = utbetaling.fom,
+                                tom = utbetaling.tom,
+                                grad = utbetaling.grad
+                            )
+                        },
+                        vedtattTidspunkt = value.first().utbetaltTidspunkt
+                    )
+                }
+        }
     }
 
     data class UtbetalingRad(

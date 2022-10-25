@@ -1,6 +1,10 @@
 package no.nav.helse.spokelse
 
+import no.nav.helse.spokelse.HentVedtakDao.Companion.filtrer
+import no.nav.helse.spokelse.HentVedtakDao.Companion.harData
+import no.nav.helse.spokelse.HentVedtakDao.VedtakRow
 import org.intellij.lang.annotations.Language
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -51,6 +55,18 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
             path = "grunnlag?fodselsnummer=$fnr",
             httpMethod = "GET",
             forventetResponseBody = forventetFørAnnullering
+        )
+
+        assertApiRequest(
+            path = "grunnlag?fodselsnummer=$fnr&fom=2020-04-06",
+            httpMethod = "GET",
+            forventetResponseBody = forventetFørAnnullering
+        )
+
+        assertApiRequest(
+            path = "grunnlag?fodselsnummer=$fnr&fom=2020-04-07",
+            httpMethod = "GET",
+            forventetResponseBody = "[]"
         )
     }
 
@@ -131,5 +147,49 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
             httpMethod = "GET",
             forventetHttpStatus = 400
         )
+    }
+
+    @Test
+    fun `kall til grunnlag med ugyldig fom gir 400`() {
+        assertApiRequest(
+            path = "grunnlag?fodselsnummer=01010145679&fom=29.08.1990",
+            httpMethod = "GET",
+            forventetHttpStatus = 400
+        )
+    }
+
+    @Test
+    fun `dropper oppslag mot gamle tabeller om man spør om nyere data enn tabellene inneholder`() {
+        assertTrue(harData(null))
+        assertTrue(harData(LocalDate.parse("2022-03-15")))
+        assertTrue(harData(LocalDate.parse("2022-03-16")))
+        assertFalse(harData(LocalDate.parse("2022-03-17")))
+    }
+
+    @Test
+    fun `filtrerer bort vedtak basert på fom`() {
+        var vedtak = listOf(vedtak(2.januar, 15.januar))
+        assertEquals(vedtak, vedtak.filtrer(null))
+        assertEquals(vedtak, vedtak.filtrer(1.januar))
+        assertEquals(vedtak, vedtak.filtrer(15.januar))
+        assertEquals(emptyList<VedtakRow>(), vedtak.filtrer(16.januar))
+        assertEquals(emptyList<VedtakRow>(), vedtak.filtrer(17.januar))
+
+        val januar = vedtak(1.januar, 31.januar)
+        val mars = vedtak(1.mars, 31.mars)
+        vedtak = listOf(januar, mars)
+
+        assertEquals(vedtak, vedtak.filtrer(null))
+        assertEquals(vedtak, vedtak.filtrer(LocalDate.parse("2017-12-31")))
+        assertEquals(vedtak, vedtak.filtrer(1.januar))
+        assertEquals(listOf(mars), vedtak.filtrer(1.februar))
+        assertEquals(listOf(mars), vedtak.filtrer(28.februar))
+        assertEquals(listOf(mars), vedtak.filtrer(1.mars))
+        assertEquals(listOf(mars), vedtak.filtrer(31.mars))
+        assertEquals(emptyList<VedtakRow>(), vedtak.filtrer(1.april))
+    }
+
+    private companion object {
+        private fun vedtak(fom: LocalDate, tom: LocalDate) = VedtakRow("fagsystemId", LocalDateTime.now(), fom, tom, 100.0)
     }
 }

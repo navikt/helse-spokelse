@@ -2,6 +2,7 @@ package no.nav.helse.spokelse.tbdutbetaling
 
 import kotliquery.queryOf
 import kotliquery.sessionOf
+import no.nav.helse.spokelse.*
 import no.nav.helse.spokelse.AbstractE2ETest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -263,9 +264,5 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         private const val Fødselsnummer = "12345678911"
         private const val ArbeidsgiverFagsystemId = "arbeid"
         private const val PersonFagsystemId = "person"
-        val Int.januar get() = LocalDate.of(2018, Month.JANUARY, this)
-        val Int.februar get() = LocalDate.of(2018, Month.FEBRUARY, this)
-        val Int.mars get() = LocalDate.of(2018, Month.MARCH, this)
-        val Int.mai get() = LocalDate.of(2018, Month.MAY, this)
     }
 }

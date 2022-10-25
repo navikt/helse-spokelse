@@ -18,6 +18,7 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
 private val log: Logger = LoggerFactory.getLogger("spokelse")
@@ -81,9 +82,12 @@ internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtb
                 log.error("/grunnlag Mangler fodselsnummer query param")
                 return@get call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
             }
+        val fom = call.request.queryParameters["fom"]?.let {
+            it.asLocalDateOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest, "Ugyldig fom query param")
+        }
         val time = measureTimeMillis {
             try {
-                val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer)
+                val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer, fom) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer)
                 call.respond(HttpStatusCode.OK, vedtak)
             } catch (e: Exception) {
                 log.error("Feil ved henting av vedtak", e)
@@ -91,7 +95,7 @@ internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtb
                 call.respond(HttpStatusCode.InternalServerError, "Feil ved henting av vedtak")
             }
         }
-        tjenestekallLog.info("FP hentet vedtak for $fødselsnummer ($time ms)")
+        tjenestekallLog.info("FP hentet vedtak for $fødselsnummer fra og med $fom ($time ms)")
     }
 }
 
@@ -141,3 +145,4 @@ private fun ApplicationCall.applicationId() = try {
 }
 
 private fun ApplicationCall.logRequest() = tjenestekallLog.info("Mottok request mot ${request.path()} fra ${applicationId()}")
+private fun String.asLocalDateOrNull() = kotlin.runCatching { LocalDate.parse(this) }.getOrNull()
