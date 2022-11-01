@@ -130,9 +130,15 @@ internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: Tb
                     )
                 }
         } + tbdUtbtalingApi.hentUtbetalingDTO(fødselsnumre)
+        log.info("Spokelse ble bedt om informasjon om ${fødselsnumre.size} fnr, og fant informasjon ekte om ${utbetalinger.unikeFnrMedEkteUtbetalinger()} fnr")
         call.respond(utbetalinger)
     }
 }
+
+private fun List<UtbetalingDTO>.unikeFnrMedEkteUtbetalinger() = this.filter {
+    it != UtbetalingDTO(fødselsnummer = it.fødselsnummer, null, null, 0.0, null, null, null)
+}.map { it.fødselsnummer }
+    .toSet()
 
 private fun ApplicationCall.applicationId() = try {
     val jwt = (authentication.principal!! as JWTPrincipal)
