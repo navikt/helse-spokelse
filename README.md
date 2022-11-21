@@ -3,7 +3,7 @@ Spøkelse [![Actions Status](https://github.com/navikt/helse-spokelse/workflows/
 
 Dette er en kafka-til-http proxy for konsumenter som ikke har anledning til å hente sykepengehistorikk over Kafka.
 
-Den lytter på `tbd.utbetaling` og lagrer ned utbetalinger & annuleringer.
+Den lytter på `tbd.utbetaling` og lagrer ned utbetalinger & annulleringer.
 
 # Henvendelser
 
