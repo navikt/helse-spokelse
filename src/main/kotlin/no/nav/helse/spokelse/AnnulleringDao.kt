@@ -20,7 +20,7 @@ INSERT INTO annullering(fodselsnummer, mottaker, fagsystem_id, fom, tom, fagomra
                 "fodselsnummer" to fødselsnummer,
                 "mottaker" to mottaker,
                 "fagsystem_id" to fagsystemId,
-                "fom" to fom,
+                "fom" to maxOf(fom, LocalDate.ofYearDay(100, 1)),
                 "tom" to tom,
                 "fagomrade" to fagområde
             )).asUpdate)
