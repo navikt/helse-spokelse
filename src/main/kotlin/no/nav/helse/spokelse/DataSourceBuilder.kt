@@ -25,18 +25,26 @@ internal class DataSourceBuilder {
         password = databasePassword
         connectionTimeout = Duration.ofSeconds(30).toMillis()
         initializationFailTimeout = Duration.ofMinutes(30).toMillis()
-        maximumPoolSize = 2
+        maximumPoolSize = 5
     }
 
     internal val dataSource by lazy { HikariDataSource(hikariConfig) }
 
     fun migrate() {
         logger.info("Migrerer database")
-        Flyway.configure()
-            .dataSource(dataSource)
-            .lockRetryCount(-1)
-            .load()
-            .migrate()
+        HikariDataSource(HikariConfig().apply {
+            jdbcUrl = dbUrl
+            username = databaseUsername
+            password = databasePassword
+            connectionTimeout = Duration.ofSeconds(30).toMillis()
+            initializationFailTimeout = Duration.ofMinutes(30).toMillis()
+        }).use { migrateDataSource ->
+            Flyway.configure()
+                .dataSource(migrateDataSource)
+                .lockRetryCount(-1)
+                .load()
+                .migrate()
+        }
         logger.info("Migrering ferdig!")
     }
 }
