@@ -31,17 +31,17 @@ fun main() {
 fun launchApplication(env: Map<String, String>) {
     val builder = RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env))
 
-    val dataSource = DataSourceBuilder()
-
-    val vedtakDao = HentVedtakDao(dataSource.dataSource)
-    val annulleringDao = AnnulleringDao(dataSource.dataSource)
-    val tbdUtbetalingDao = TbdUtbetalingDao(dataSource.dataSource)
-
     val auth = Auth.auth(
         name = "ourissuer",
         clientId = env.getValue("AZURE_APP_CLIENT_ID"),
         discoveryUrl = env.getValue("AZURE_APP_WELL_KNOWN_URL")
     )
+
+    val dataSource = DataSourceBuilder()
+
+    val vedtakDao = HentVedtakDao(dataSource::dataSource)
+    val annulleringDao = AnnulleringDao(dataSource::dataSource)
+    val tbdUtbetalingDao = TbdUtbetalingDao(dataSource::dataSource)
 
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao)
         builder.withKtorModule { spokelse(auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }

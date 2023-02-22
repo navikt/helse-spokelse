@@ -6,7 +6,7 @@ import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import javax.sql.DataSource
 
-class AnnulleringDao(private val dataSource: DataSource) {
+class AnnulleringDao(private val dataSource: () -> DataSource) {
     fun insertAnnullering(fødselsnummer: String, mottaker: String, fagsystemId: String, fom: LocalDate, tom: LocalDate, fagområde: String): Int {
         @Language("PostgreSQL")
         val query = """
@@ -15,7 +15,7 @@ INSERT INTO annullering(fodselsnummer, mottaker, fagsystem_id, fom, tom, fagomra
     ON CONFLICT DO NOTHING;
                 """
 
-        return sessionOf(dataSource).use { session ->
+        return sessionOf(dataSource()).use { session ->
             session.run(queryOf(query, mapOf(
                 "fodselsnummer" to fødselsnummer,
                 "mottaker" to mottaker,

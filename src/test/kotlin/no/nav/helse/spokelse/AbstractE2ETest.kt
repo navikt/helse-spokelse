@@ -49,10 +49,10 @@ internal abstract class AbstractE2ETest {
         dataSource = PgDb.connection()
         dokumentDao = DokumentDao(dataSource)
         utbetaltDao = UtbetaltDao(dataSource)
-        vedtakDao = HentVedtakDao(dataSource)
+        vedtakDao = HentVedtakDao(::dataSource)
         lagreVedtakDao = LagreVedtakDao(dataSource)
-        annulleringDao = AnnulleringDao(dataSource)
-        tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
+        annulleringDao = AnnulleringDao(::dataSource)
+        tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
 
         rapid = TestRapid().apply {
             registerRivers(annulleringDao)

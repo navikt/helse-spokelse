@@ -34,7 +34,7 @@ class AnnulleringRiverTest {
         PgDb.start()
 
         dataSource = PgDb.connection()
-        annulleringDao = AnnulleringDao(dataSource)
+        annulleringDao = AnnulleringDao(::dataSource)
 
         AnnulleringRiver(rapid, annulleringDao)
     }

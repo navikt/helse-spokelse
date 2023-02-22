@@ -7,7 +7,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.sql.DataSource
 
-class HentVedtakDao(private val dataSource: DataSource) {
+class HentVedtakDao(private val dataSource: () -> DataSource) {
 
     internal companion object {
         private val harDataTilOgMed = LocalDate.parse("2022-03-16")
@@ -28,7 +28,7 @@ class HentVedtakDao(private val dataSource: DataSource) {
 
     fun hentVedtakListe(fødselsnummer: String, fom: LocalDate?): List<FpVedtak> {
         if (!harData(fom)) return emptyList()
-        return sessionOf(dataSource).use { session ->
+        return sessionOf(dataSource()).use { session ->
             @Language("PostgreSQL")
             val query = """
             (SELECT o.fagsystemid fagsystem_id,
@@ -141,7 +141,7 @@ class HentVedtakDao(private val dataSource: DataSource) {
                  INNER JOIN old_utbetaling ON vedtak_id = vo.id;
         """
 
-        return sessionOf(dataSource).use { session ->
+        return sessionOf(dataSource()).use { session ->
             session.run(queryOf(spørring, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
                 UtbetalingRad(
                     fagsystemId = row.string("fagsystem_id"),
@@ -160,7 +160,7 @@ class HentVedtakDao(private val dataSource: DataSource) {
         @Language("PostgreSQL")
         val spørring = "SELECT fagsystem_id FROM annullering WHERE fodselsnummer = :fodselsnummer"
 
-        return sessionOf(dataSource).use { session ->
+        return sessionOf(dataSource()).use { session ->
             session.run(queryOf(spørring, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
                 row.string("fagsystem_id")
             }.asList)

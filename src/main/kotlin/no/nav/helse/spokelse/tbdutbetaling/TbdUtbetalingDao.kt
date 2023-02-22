@@ -9,10 +9,10 @@ import java.time.LocalDate
 import javax.sql.DataSource
 
 internal class TbdUtbetalingDao(
-    private val dataSource: DataSource
+    private val dataSource: () -> DataSource
 ) {
     internal fun lagreMelding(melding: Melding): Long {
-        return sessionOf(dataSource = dataSource, returnGeneratedKey = true).use { session ->
+        return sessionOf(dataSource = dataSource(), returnGeneratedKey = true).use { session ->
             val parameters = mapOf(
                 "melding" to "$melding",
                 "sendt" to melding.meldingSendt,
@@ -26,7 +26,7 @@ internal class TbdUtbetalingDao(
     }
 
     internal fun lagreUtbetaling(meldingId: Long, utbetaling: Utbetaling) {
-        sessionOf(dataSource).use { session ->
+        sessionOf(dataSource()).use { session ->
             session.transaction { transactionalSession ->
                 // Sletter eventuell eksisterende utbetaling (og tilhørende utbetalingslinjer)
                 transactionalSession.execute(queryOf(slettUtbetaling, mapOf("korrelasjonsId" to utbetaling.korrelasjonsId)))
@@ -42,7 +42,7 @@ internal class TbdUtbetalingDao(
     }
 
     internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate? = null): List<Utbetaling> {
-        return sessionOf(dataSource).use { session ->
+        return sessionOf(dataSource()).use { session ->
             session.run(queryOf(hentUtbetalinger, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
 
                 val arbeidsgiverFagystemId = row.stringOrNull("arbeidsgiverFagsystemId")
@@ -65,7 +65,7 @@ internal class TbdUtbetalingDao(
     }
 
     internal fun annuller(meldingId: Long, annullering: Annullering) {
-        sessionOf(dataSource).use { session ->
+        sessionOf(dataSource()).use { session ->
             session.transaction { transactionalSession ->
                 annullering.arbeidsgiverFagsystemId?.let { arbeidsgiverFagsystemId ->
                     transactionalSession.run(queryOf(slettUtbetalingslinjer, mapOf(
