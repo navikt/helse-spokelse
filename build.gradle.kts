@@ -1,7 +1,8 @@
 val ktorVersion = "1.6.7"
+val postgresqlVersion = "42.5.4"
 val wireMockVersion = "2.27.1"
 val junitJupiterVersion = "5.8.2"
-val testcontainersVersion = "1.16.3"
+val testcontainersVersion = "1.17.6"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
@@ -18,10 +19,10 @@ dependencies {
     implementation("io.ktor:ktor-client-apache:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
 
+    implementation("org.postgresql:postgresql:$postgresqlVersion")
     implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("no.nav:vault-jdbc:1.3.9")
-    implementation("org.flywaydb:flyway-core:8.5.5")
-    implementation("com.github.seratch:kotliquery:1.7.0")
+    implementation("org.flywaydb:flyway-core:9.15.0")
+    implementation("com.github.seratch:kotliquery:1.9.0")
 
     testImplementation("io.mockk:mockk:1.12.3")
     testImplementation("com.github.tomakehurst:wiremock-jre8:$wireMockVersion") {

@@ -37,19 +37,19 @@ jobs:
       - uses: nais/deploy/actions/deploy@v1
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-          CLUSTER: dev-fss
+          CLUSTER: dev-gcp
           RESOURCE: deploy/dev.yml
 
-  deployProd:
-    name: Deploy to prod
-    needs: [build, deployDev]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create image tag
-        run: echo "IMAGE=ghcr.io/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-      - uses: actions/checkout@v1
-      - uses: nais/deploy/actions/deploy@v1
-        env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-          CLUSTER: prod-fss
-          RESOURCE: deploy/prod.yml
+#  deployProd:
+#    name: Deploy to prod
+#    needs: [build, deployDev]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Create image tag
+#        run: echo "IMAGE=ghcr.io/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+#      - uses: actions/checkout@v1
+#      - uses: nais/deploy/actions/deploy@v1
+#        env:
+#          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+#          CLUSTER: prod-fss
+#          RESOURCE: deploy/prod.yml

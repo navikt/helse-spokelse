@@ -23,7 +23,7 @@ import javax.sql.DataSource
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal abstract class AbstractE2ETest {
-    private val auth = Environment.Auth.auth(
+    private val auth = Auth.auth(
         name = "issuer",
         clientId = "spokelse_azure_ad_app_id",
         discoveryUrl = "${wireMockServer.baseUrl()}/config"

@@ -23,14 +23,12 @@ spec:
       memory: 256Mi
   replicas:
     min: 1
-    max: 6
-    cpuThresholdPercentage: 90
+    max: 2
   prometheus:
     enabled: true
     path: /metrics
   kafka:
     pool: nav-dev
-  webproxy: true
   secureLogs:
     enabled: true
   azure:
@@ -57,12 +55,4 @@ spec:
     value: tbd-spokelse-v1
   - name: KAFKA_RESET_POLICY
     value: earliest
-  - name: DATABASE_HOST
-    value: b27dbvl013.preprod.local
-  - name: DATABASE_PORT
-    value: "5432"
-  - name: DATABASE_NAME
-    value: spokelse
-  - name: DATABASE_VAULT_MOUNT_PATH
-    value: postgresql/preprod-fss/
 

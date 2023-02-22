@@ -42,12 +42,12 @@ internal object PgDb {
     }
 
     private fun createSchema(dataSource: DataSource) {
-        Flyway.configure().dataSource(dataSource).initSql("create user cloudsqliamuser with encrypted password 'foo';").load().migrate()
-        using(sessionOf(dataSource)) { it.run(queryOf(truncateTablesSql).asExecute) }
+        Flyway.configure().dataSource(dataSource).load().migrate()
+        sessionOf(dataSource).use { it.run(queryOf(truncateTablesSql).asExecute) }
     }
 
     private fun resetSchema() {
-        using(sessionOf(connection())) { it.run(queryOf("SELECT truncate_tables();").asExecute) }
+        sessionOf(connection()).use { it.run(queryOf("SELECT truncate_tables();").asExecute) }
     }
 
     private fun stopDatabase() {
@@ -83,9 +83,8 @@ internal object PgDb {
             jdbcUrl = db.postgres.jdbcUrl
             username = db.postgres.username
             password = db.postgres.password
-            maximumPoolSize = 1
+            maximumPoolSize = 2
             connectionTimeout = Duration.ofSeconds(5).toMillis()
-            maxLifetime = Duration.ofMinutes(30).toMillis()
             initializationFailTimeout = Duration.ofMinutes(1).toMillis()
         }
 

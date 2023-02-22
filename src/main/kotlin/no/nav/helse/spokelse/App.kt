@@ -25,27 +25,35 @@ private val log: Logger = LoggerFactory.getLogger("spokelse")
 private val tjenestekallLog = LoggerFactory.getLogger("tjenestekall")
 
 fun main() {
-    val env = Environment(System.getenv())
-    launchApplication(env)
+    launchApplication(System.getenv())
 }
 
-fun launchApplication(env: Environment) {
-    val dataSource = DataSourceBuilder(env.db)
-        .apply(DataSourceBuilder::migrate)
-        .getDataSource()
+fun launchApplication(env: Map<String, String>) {
+    val builder = RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env))
 
-    val vedtakDao = HentVedtakDao(dataSource)
-    val annulleringDao = AnnulleringDao(dataSource)
-    val tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
+    val dataSource = DataSourceBuilder()
 
-    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env.raw, tbdUtbetalingDao)
+    val vedtakDao = HentVedtakDao(dataSource.dataSource)
+    val annulleringDao = AnnulleringDao(dataSource.dataSource)
+    val tbdUtbetalingDao = TbdUtbetalingDao(dataSource.dataSource)
 
-    RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(env.raw))
-        .withKtorModule { spokelse(env.auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
+    val auth = Auth.auth(
+        name = "ourissuer",
+        clientId = env.getValue("AZURE_APP_CLIENT_ID"),
+        discoveryUrl = env.getValue("AZURE_APP_WELL_KNOWN_URL")
+    )
+
+    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao)
+        builder.withKtorModule { spokelse(auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
         .build(factory = ConfiguredCIO)
         .apply {
             registerRivers(annulleringDao)
             register(tbdUtbetalingConsumer)
+            register(object : RapidsConnection.StatusListener {
+                override fun onStartup(rapidsConnection: RapidsConnection) {
+                    dataSource.migrate()
+                }
+            })
         }
         .start()
 }
@@ -56,7 +64,7 @@ internal fun RapidsConnection.registerRivers(
     AnnulleringRiver(this, annulleringDao)
 }
 
-internal fun Application.spokelse(env: Environment.Auth, vedtakDao: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
+internal fun Application.spokelse(env: Auth, vedtakDao: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
     azureAdAppAuthentication(env)
     install(ContentNegotiation) {
         jackson {
