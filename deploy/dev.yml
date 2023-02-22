@@ -46,8 +46,16 @@ spec:
           namespace: teamforeldrepenger
         - application: spissnok
           namespace: tbd
-  vault:
-    enabled: true
+  gcp:
+    sqlInstances:
+    - type: POSTGRES_14
+      diskAutoresize: true
+      pointInTimeRecovery: true
+      tier: db-custom-4-16384
+      name: spokelse
+      databases:
+      - name: spokelse
+        envVarPrefix: DATABASE
   env:
   - name: KAFKA_RAPID_TOPIC
     value: tbd.rapid.v1
