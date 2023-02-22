@@ -14,6 +14,8 @@ spec:
   readiness:
     path: isready
     initialDelay: 5
+  ingresses:
+  - https://spokelse.intern.nav.no
   resources:
     limits:
       cpu: 3000m
