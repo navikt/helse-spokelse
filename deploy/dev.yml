@@ -42,12 +42,16 @@ spec:
       rules:
         - application: fpsak
           namespace: teamforeldrepenger
+          cluster: dev-fss
         - application: fprisk
           namespace: teamforeldrepenger
+          cluster: dev-fss
         - application: fpabakus
           namespace: teamforeldrepenger
+          cluster: dev-fss
         - application: spissnok
           namespace: tbd
+          cluster: dev-fss
   gcp:
     sqlInstances:
     - type: POSTGRES_14
