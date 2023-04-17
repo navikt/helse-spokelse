@@ -15,7 +15,6 @@ spec:
     path: isready
     initialDelay: 5
   ingresses:
-  - https://spokelse.dev.intern.nav.no
   - https://spokelse.intern.dev.nav.no
   resources:
     limits:
