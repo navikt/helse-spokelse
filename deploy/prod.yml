@@ -51,6 +51,8 @@ spec:
         - application: spissnok
           namespace: tbd
           cluster: prod-fss
+        - application: spissnok
+          namespace: tbd
   gcp:
     sqlInstances:
     - type: POSTGRES_14
