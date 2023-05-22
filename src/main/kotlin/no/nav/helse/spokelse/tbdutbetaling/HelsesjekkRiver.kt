@@ -44,16 +44,19 @@ internal class HelsesjekkRiver(
             private val farePåFerde = listOf(arbeidsgiverutbetalinger, personutbetalinger, arbeidsgiverannulleringer, personannulleringer).any { it == 0 }
 
             private val melding get() = """
-                \n
-                :briefcase: ARBEIDSGIVER :briefcase:\n
-                Utbetalinger siste ${arbeidsgiverutbetalingerTidsrom.first} ${arbeidsgiverutbetalingerTidsrom.second.name}: $arbeidsgiverutbetalinger\n
-                Annulleringer siste ${arbeidsgiverAnnulleringerTidsrom.first} ${arbeidsgiverAnnulleringerTidsrom.second.name}: $arbeidsgiverannulleringer\n
-                \n
-                :face_with_thermometer: PERSON :face_with_thermometer:\n
-                Utbetalinger siste ${personutbetalingerTidsrom.first} ${personutbetalingerTidsrom.second.name}: $personutbetalinger\n
-                Annulleringer siste ${personannulleringerTidsrom.first} ${personannulleringerTidsrom.second.name}: $personutbetalinger
+Hen husker så godt Spøkelse-gate, og ønsker nødig at jeg skal havne i samme situasjon igjen!
+Så jeg tok en titt på utbetalingene jeg har registret i det siste, ser ikke dette litt lite ut? :pinching_hand:
 
-            """
+:briefcase: Arbeidsgiver :briefcase:
+Utbetalinger siste ${arbeidsgiverutbetalingerTidsrom.first} ${arbeidsgiverutbetalingerTidsrom.second.name}: $arbeidsgiverutbetalinger
+Annulleringer siste ${arbeidsgiverAnnulleringerTidsrom.first} ${arbeidsgiverAnnulleringerTidsrom.second.name}: $arbeidsgiverannulleringer
+
+:face_with_thermometer: Person :face_with_thermometer:
+Utbetalinger siste ${personutbetalingerTidsrom.first} ${personutbetalingerTidsrom.second.name}: $personutbetalinger
+Annulleringer siste ${personannulleringerTidsrom.first} ${personannulleringerTidsrom.second.name}: $personannulleringer
+
+- Deres erbødig SPøkelse :ghostie:
+"""
 
             internal fun slackAlarm(): String? {
                 //if (!farePåFerde) return null
