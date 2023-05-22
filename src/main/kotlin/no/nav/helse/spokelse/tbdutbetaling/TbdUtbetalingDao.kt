@@ -6,6 +6,7 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import javax.sql.DataSource
 
 internal class TbdUtbetalingDao(
@@ -89,6 +90,22 @@ internal class TbdUtbetalingDao(
         }
     }
 
+    internal fun arbeidsgiverutbetalinger(tidsrom: Pair<Int, ChronoUnit>) =
+        helsesjekk("arbeidsgiverfagsystemid IS NOT NULL AND arbeidsgiverannuleringskilde IS NULL", tidsrom)
+    internal fun arbeidsgiverannulleringer(tidsrom: Pair<Int, ChronoUnit>) =
+        helsesjekk("arbeidsgiverannuleringskilde IS NOT NULL", tidsrom)
+    internal fun personutbetalinger(tidsrom: Pair<Int, ChronoUnit>) =
+        helsesjekk("personfagsystemid IS NOT NULL AND personannuleringskilde IS NULL", tidsrom)
+    internal fun personannulleringer(tidsrom: Pair<Int, ChronoUnit>) =
+        helsesjekk("personannuleringskilde IS NOT NULL", tidsrom)
+    private fun helsesjekk(where: String, tidsrom: Pair<Int, ChronoUnit>): Int {
+        check(tidsrom.first >= 1) { "Ugyldig tidsrom ${tidsrom.first} ${tidsrom.second}" }
+        @Language("PostgresSQL")
+        val statement = "SELECT count(1) FROM tbdutbetaling_utbetaling WHERE $where AND sistutbetalt > now() - INTERVAL '${tidsrom.first} ${tidsrom.second}'"
+        return sessionOf(dataSource()).use { session ->
+            session.run(queryOf(statement).map { row -> row.int(1) }.asSingle) ?: 0
+        }
+    }
     private fun Session.hentUtbetalingslinjer(fagsystemId: String, fom: LocalDate?) = run(queryOf(hentUtbetalingslinjer(fom), mapOf("fagsystemId" to fagsystemId, "fom" to fom)).map { row -> Utbetalingslinje(
         fom = row.localDate("fom"),
         tom = row.localDate("tom"),

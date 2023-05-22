@@ -13,6 +13,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
+import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
@@ -47,7 +48,7 @@ fun launchApplication(env: Map<String, String>) {
         builder.withKtorModule { spokelse(auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
         .build(factory = ConfiguredCIO)
         .apply {
-            registerRivers(annulleringDao)
+            registerRivers(annulleringDao, tbdUtbetalingDao)
             register(tbdUtbetalingConsumer)
             register(object : RapidsConnection.StatusListener {
                 override fun onStartup(rapidsConnection: RapidsConnection) {
@@ -59,9 +60,11 @@ fun launchApplication(env: Map<String, String>) {
 }
 
 internal fun RapidsConnection.registerRivers(
-    annulleringDao: AnnulleringDao
+    annulleringDao: AnnulleringDao,
+    tbdUtbetalingDao: TbdUtbetalingDao
 ) {
     AnnulleringRiver(this, annulleringDao)
+    HelsesjekkRiver(this, tbdUtbetalingDao)
 }
 
 internal fun Application.spokelse(env: Auth, vedtakDao: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
