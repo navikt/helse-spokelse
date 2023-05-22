@@ -3,6 +3,7 @@ package no.nav.helse.spokelse.tbdutbetaling
 import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.*
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.HOURS
 import java.time.temporal.ChronoUnit.WEEKS
 
@@ -14,7 +15,7 @@ internal class HelsesjekkRiver(
     init {
         River(rapidsConnection).apply {
             validate {
-                it.demandValue("@event_name", "halv_time")
+                it.demandValue("@event_name", "hel_time")
                 it.requireKey("system_participating_services")
                 it.rejectValues("ukedag", listOf("SATURDAY", "SUNDAY"))
             }
@@ -22,6 +23,8 @@ internal class HelsesjekkRiver(
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
+        if (ignorer) return
+
         val systemParticipatingServices = packet["system_participating_services"]
         try {
             val slackAlarm = Helsesjekk(dao, systemParticipatingServices).slackAlarm() ?: return sikkerlogg.info("Spøkelse fungerer som den skal")
@@ -34,6 +37,7 @@ internal class HelsesjekkRiver(
 
     private companion object {
         private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
+        private val ignorer get() = LocalDateTime.now().hour != 9
 
         class Helsesjekk(dao: TbdUtbetalingDao, private val systemParticipatingServices: JsonNode) {
             private val arbeidsgiverutbetalinger = dao.arbeidsgiverutbetalinger(arbeidsgiverutbetalingerTidsrom)
