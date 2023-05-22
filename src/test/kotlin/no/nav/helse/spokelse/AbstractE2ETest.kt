@@ -55,7 +55,7 @@ internal abstract class AbstractE2ETest {
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
 
         rapid = TestRapid().apply {
-            registerRivers(annulleringDao)
+            registerRivers(annulleringDao, tbdUtbetalingDao)
         }
     }
 

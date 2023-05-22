@@ -14,7 +14,7 @@ internal class HelsesjekkRiver(
     init {
         River(rapidsConnection).apply {
             validate {
-                it.demandValue("@event_name", "time")
+                it.demandValue("@event_name", "halv_time")
                 it.requireKey("system_participating_services")
                 it.rejectValues("ukedag", listOf("SATURDAY", "SUNDAY"))
             }
@@ -56,7 +56,7 @@ internal class HelsesjekkRiver(
             """
 
             internal fun slackAlarm(): String? {
-                if (!farePåFerde) return null
+                //if (!farePåFerde) return null
                 return JsonMessage.newMessage("slackmelding", mapOf(
                     "melding" to melding,
                     "level" to "ERROR",
