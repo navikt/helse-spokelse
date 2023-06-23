@@ -56,11 +56,11 @@ internal class HelsesjekkRiver(
             private val oppsummering get() = """
 :briefcase: Arbeidsgiver :briefcase:
 Utbetalinger siste ${arbeidsgiverutbetalingerTidsrom.first} ${arbeidsgiverutbetalingerTidsrom.second.name}: $arbeidsgiverutbetalinger
-Annulleringer siste ${arbeidsgiverAnnulleringerTidsrom.first} ${arbeidsgiverAnnulleringerTidsrom.second.name}: $arbeidsgiverannulleringer
+Utbetalt & annullert innenfor siste ${arbeidsgiverAnnulleringerTidsrom.first} ${arbeidsgiverAnnulleringerTidsrom.second.name}: $arbeidsgiverannulleringer
 
 :face_with_thermometer: Person :face_with_thermometer:
 Utbetalinger siste ${personutbetalingerTidsrom.first} ${personutbetalingerTidsrom.second.name}: $personutbetalinger
-Annulleringer siste ${personannulleringerTidsrom.first} ${personannulleringerTidsrom.second.name}: $personannulleringer
+Utbetalt & annullert innenfor siste ${personannulleringerTidsrom.first} ${personannulleringerTidsrom.second.name}: $personannulleringer
 
 - Deres erbødig SPøkelse :ghostie:
 """
