@@ -19,6 +19,13 @@ internal class HelsesjekkRiver(
     init {
         River(rapidsConnection).apply {
             validate {
+                it.demandValue("@event_name", "spokelse_helsesjekk")
+                it.requireKey("system_participating_services", "@opprettet")
+                it.interestedIn("ukedag")
+            }
+        }.register(this)
+        River(rapidsConnection).apply {
+            validate {
                 it.demandValue("@event_name", "halv_time")
                 it.requireKey("system_participating_services", "@opprettet")
                 it.rejectValues("ukedag", listOf("SATURDAY", "SUNDAY"))
@@ -30,7 +37,7 @@ internal class HelsesjekkRiver(
         if (!packet.utførHelsesjekk) return
 
         val systemParticipatingServices = packet["system_participating_services"]
-        val ukedag = DayOfWeek.valueOf(packet["ukedag"].asText())
+        val ukedag = packet["ukedag"].takeUnless { it.isMissingOrNull() }?.let { DayOfWeek.valueOf(it.asText()) } ?: THURSDAY
 
         try {
             val slackmelding = Helsesjekk(dao, systemParticipatingServices, ukedag).slackmelding() ?: return
@@ -42,7 +49,7 @@ internal class HelsesjekkRiver(
 
     private companion object {
         private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
-        private val JsonMessage.utførHelsesjekk get() = get("@opprettet").asLocalDateTime().let { it.hour == 8 && it.minute == 30 }
+        private val JsonMessage.utførHelsesjekk get() = get("@opprettet").asLocalDateTime().let { it.hour == 8 && it.minute == 30 } || get("@event_name").asText() == "spokelse_helsesjekk"
 
         class Helsesjekk(dao: TbdUtbetalingDao, private val systemParticipatingServices: JsonNode, ukedag: DayOfWeek) {
             private val arbeidsgiverutbetalinger = dao.arbeidsgiverutbetalinger(arbeidsgiverutbetalingerTidsrom)
@@ -92,6 +99,7 @@ $oppsummering
                 "system_participating_services" to systemParticipatingServices
             )).toJson().also {
                 if (level == ERROR) sikkerlogg.error("Kan se ut til at Spøkelse har problemer, sender alarm på slack:\n\t${it}")
+                else sikkerlogg.info("Sender gladmelding på slack:\n\t${it}")
             }
 
             private companion object {
