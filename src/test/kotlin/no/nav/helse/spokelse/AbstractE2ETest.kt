@@ -17,9 +17,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.skyscreamer.jsonassert.JSONAssert
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
@@ -120,7 +118,6 @@ internal abstract class AbstractE2ETest {
     }
 
     internal companion object {
-        internal fun nå() = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDateTime()
 
         private var jwtStub: JwtStub
         private val wireMockServer = WireMockServer(WireMockConfiguration.options().dynamicPort()).apply { start() }

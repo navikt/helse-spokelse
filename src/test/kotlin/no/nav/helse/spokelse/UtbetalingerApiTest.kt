@@ -5,11 +5,12 @@ import no.nav.helse.spokelse.Events.genererFagsystemId
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 
 internal class UtbetalingerApiTest : AbstractE2ETest() {
 
-    private val nå = nå()
+    private val nå = "2023-09-30T16:28:31.123"
 
     @Test
     fun `finner sykepengeperioder for fnr`() = runBlocking {
@@ -139,7 +140,7 @@ internal class UtbetalingerApiTest : AbstractE2ETest() {
                         1337,
                         9001
                     )
-                }, nå, 10, 238,
+                }, LocalDateTime.parse(nå), 10, 238,
                 Dokumenter(
                     Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Sykmelding),
                     Hendelse(UUID.randomUUID(), UUID.randomUUID(), Dokument.Søknad),
