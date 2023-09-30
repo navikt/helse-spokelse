@@ -3,8 +3,11 @@ package no.nav.helse.spokelse
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
+import kotlinx.coroutines.runBlocking
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
@@ -32,7 +35,7 @@ internal abstract class AbstractE2ETest {
         subject = "fp_object_id",
         authorizedParty = "fp_object_id",
         audience = "spokelse_azure_ad_app_id"
-    ).let { "Bearer $it" }
+    )
 
     protected lateinit var dataSource: DataSource
     protected lateinit var dokumentDao: DokumentDao
@@ -74,23 +77,31 @@ internal abstract class AbstractE2ETest {
         timeout: Int = 1,
         authorized: Boolean = true
     ) {
-        withTestApplication({
-            spokelse(auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao))
-        }) {
+        testApplication {
+            this.application {
+                spokelse(auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao))
+            }
+
             Awaitility.await().atMost(timeout.toLong(), TimeUnit.SECONDS).untilAsserted {
-                handleRequest(HttpMethod.parse(httpMethod.uppercase()), "/$path") {
-                    addHeader(HttpHeaders.Accept, "application/json")
-                    if (authorized) {
-                        addHeader(HttpHeaders.Authorization, authorizationHeader)
+                val response = runBlocking {
+                    client.request("/$path") {
+                        method = HttpMethod.parse(httpMethod)
+                        accept(ContentType.Application.Json)
+                        if (authorized) {
+                            bearerAuth(authorizationHeader)
+                        }
+                        if (requestBody != null) {
+                            contentType(ContentType.Application.Json)
+                        }
+                        if (requestBody != null) {
+                            setBody(requestBody)
+                        }
                     }
-                    if (requestBody != null) {
-                        setBody(requestBody)
-                        addHeader(HttpHeaders.ContentType, "application/json")
-                    }
-                }.apply {
-                    assertEquals(HttpStatusCode.fromValue(forventetHttpStatus), response.status())
-                    forventetResponseBody?.let {
-                        JSONAssert.assertEquals(it, response.content!!, true)
+                }
+                assertEquals(HttpStatusCode.fromValue(forventetHttpStatus), response.status)
+                forventetResponseBody?.let {
+                    runBlocking {
+                        JSONAssert.assertEquals(it, response.bodyAsText(), true)
                     }
                 }
             }

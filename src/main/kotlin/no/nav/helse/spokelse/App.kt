@@ -2,15 +2,17 @@ package no.nav.helse.spokelse
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import io.ktor.application.*
-import io.ktor.auth.*
-import io.ktor.auth.jwt.*
-import io.ktor.features.*
 import io.ktor.http.*
-import io.ktor.jackson.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.serialization.jackson.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.callid.*
+import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
@@ -19,7 +21,9 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
 import java.time.LocalDate
+import java.util.*
 import kotlin.system.measureTimeMillis
 
 private val log: Logger = LoggerFactory.getLogger("spokelse")
@@ -69,11 +73,24 @@ internal fun RapidsConnection.registerRivers(
 
 internal fun Application.spokelse(env: Auth, vedtakDao: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
     azureAdAppAuthentication(env)
+    requestResponseTracing(tjenestekallLog)
     install(ContentNegotiation) {
         jackson {
             disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             registerModule(JavaTimeModule())
         }
+    }
+    install(CallId) {
+        header("callId")
+        verify { it.isNotEmpty() }
+        generate { UUID.randomUUID().toString() }
+    }
+    install(CallLogging) {
+        logger = tjenestekallLog
+        level = Level.INFO
+        disableDefaultColors()
+        callIdMdc("callId")
+        filter { call -> setOf("/isalive", "/isready", "/metrics").none { call.request.path().contains(it) } }
     }
     routing {
         authenticate {
@@ -152,7 +169,7 @@ private fun List<UtbetalingDTO>.unikeFnrMedEkteUtbetalinger() = this.filter {
     .toSet()
 
 private fun ApplicationCall.applicationId() = try {
-    val jwt = (authentication.principal!! as JWTPrincipal)
+    val jwt = (authentication.principal(provider = null, JWTPrincipal::class))!!
     jwt.getClaim("azp", String::class) ?: jwt.getClaim("appid", String::class) ?: "n/a (fant ikke)"
 } catch (ex: Exception) {
     tjenestekallLog.error("Klarte ikke å utlede Application ID", ex)

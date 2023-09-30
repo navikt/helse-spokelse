@@ -4,7 +4,7 @@ import com.auth0.jwk.JwkProvider
 import com.auth0.jwk.JwkProviderBuilder
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.ktor.auth.jwt.*
+import io.ktor.server.auth.jwt.*
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -17,7 +17,7 @@ class Auth(
 ) {
     private val jwkProvider: JwkProvider = JwkProviderBuilder(URL(jwksUri)).build()
 
-    fun configureVerification(configuration: JWTAuthenticationProvider.Configuration) {
+    fun configureVerification(configuration: JWTAuthenticationProvider.Config) {
         configuration.verifier(jwkProvider, issuer) {
             withAudience(clientId)
         }

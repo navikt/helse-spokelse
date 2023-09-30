@@ -47,8 +47,8 @@ class JwtStub(private val issuer: String, private val wireMockServer: WireMockSe
             "kty": "RSA",
             "alg": "RS256",
             "kid": "key-1234",
-            "e": "${String(Base64.getEncoder().encode(publicKey.publicExponent.toByteArray()))}",
-            "n": "${String(Base64.getEncoder().encode(publicKey.modulus.toByteArray()))}"
+            "e": "${String(Base64.getUrlEncoder().encode(publicKey.publicExponent.toByteArray()))}",
+            "n": "${String(Base64.getUrlEncoder().encode(publicKey.modulus.toByteArray()))}"
         }
     ]
 }

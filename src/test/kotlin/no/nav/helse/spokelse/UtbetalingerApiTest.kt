@@ -115,7 +115,7 @@ internal class UtbetalingerApiTest : AbstractE2ETest() {
     }
 
     private fun assertUtbetalinger(fødselsnumre: List<String>, forventet: String) = assertApiRequest(
-        path = "/utbetalinger",
+        path = "utbetalinger",
         httpMethod = "POST",
         requestBody = "${fødselsnumre.map { "\"$it\"" }}",
         forventetResponseBody = forventet
