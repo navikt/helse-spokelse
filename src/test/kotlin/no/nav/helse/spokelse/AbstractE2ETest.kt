@@ -17,10 +17,12 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.skyscreamer.jsonassert.JSONAssert
+import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
+import kotlin.math.log
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal abstract class AbstractE2ETest {
@@ -99,7 +101,13 @@ internal abstract class AbstractE2ETest {
                 assertEquals(HttpStatusCode.fromValue(forventetHttpStatus), response.status)
                 forventetResponseBody?.let {
                     runBlocking {
-                        JSONAssert.assertEquals(it, response.bodyAsText(), true)
+                        val body = response.bodyAsText()
+                        try {
+                            JSONAssert.assertEquals(it, body, true)
+                        } catch (err: AssertionError) {
+                            logg.info("<{}> er ikke som forventet <{}>", body, it, err)
+                            throw err
+                        }
                     }
                 }
             }
@@ -118,7 +126,7 @@ internal abstract class AbstractE2ETest {
     }
 
     internal companion object {
-
+        private val logg = LoggerFactory.getLogger(AbstractE2ETest::class.java)
         private var jwtStub: JwtStub
         private val wireMockServer = WireMockServer(WireMockConfiguration.options().dynamicPort()).apply { start() }
 
