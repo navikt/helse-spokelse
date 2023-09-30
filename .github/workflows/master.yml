@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
     - name: create image tag
       run: echo "IMAGE=ghcr.io/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
