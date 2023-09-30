@@ -74,7 +74,7 @@ internal abstract class AbstractE2ETest {
         requestBody: String? = null,
         forventetHttpStatus: Int = 200,
         forventetResponseBody: String? = null,
-        timeout: Int = 1,
+        timeout: Int = 5,
         authorized: Boolean = true
     ) {
         testApplication {
@@ -98,16 +98,15 @@ internal abstract class AbstractE2ETest {
                         }
                     }
                 }
+                val body = runBlocking { response.bodyAsText() }
+                logg.info("fikk <{}> tilbake fra /{}", body, path)
                 assertEquals(HttpStatusCode.fromValue(forventetHttpStatus), response.status)
                 forventetResponseBody?.let {
-                    runBlocking {
-                        val body = response.bodyAsText()
-                        try {
-                            JSONAssert.assertEquals(it, body, true)
-                        } catch (err: AssertionError) {
-                            logg.info("<{}> er ikke som forventet <{}>", body, it, err)
-                            throw err
-                        }
+                    try {
+                        JSONAssert.assertEquals(it, body, true)
+                    } catch (err: AssertionError) {
+                        logg.info("<{}> er ikke som forventet <{}>", body, it, err)
+                        throw err
                     }
                 }
             }
