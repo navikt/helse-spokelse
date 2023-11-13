@@ -56,7 +56,7 @@ spec:
     - type: POSTGRES_14
       diskAutoresize: true
       pointInTimeRecovery: true
-      tier: db-custom-4-16384
+      tier: db-f1-micro
       name: spokelse
       databases:
       - name: spokelse
