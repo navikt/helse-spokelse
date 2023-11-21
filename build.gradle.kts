@@ -34,7 +34,6 @@ dependencies {
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("org.wiremock:wiremock:$wiremockVersion")
 
-    testImplementation("no.nav:kafka-embedded-env:3.1.4") // TODO: Håper vi kan fjerne denne.. 🤔
     testImplementation("org.awaitility:awaitility:$awaitilityVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
