@@ -15,6 +15,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
+import no.nav.helse.spokelse.perioder.perioderApi
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
@@ -96,6 +97,7 @@ internal fun Application.spokelse(env: Auth, vedtakDao: HentVedtakDao, tbdUtbtal
         authenticate {
             grunnlagApi(vedtakDao, tbdUtbtalingApi)
             utbetalingerApi(vedtakDao, tbdUtbtalingApi)
+            perioderApi()
         }
     }
 }
