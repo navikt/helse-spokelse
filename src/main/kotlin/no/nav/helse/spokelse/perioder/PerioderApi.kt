@@ -16,7 +16,7 @@ internal fun Route.perioderApi() {
         val personidentifikatorer = request.path("personidentifikatorer")
             .map { Personidentifikator(it.asText()) }
             .toSet()
-            .takeUnless { it.isNotEmpty() } ?: throw IllegalArgumentException("Det må sendes med minst én personidentifikator")
+            .takeUnless { it.isEmpty() } ?: throw IllegalArgumentException("Det må sendes med minst én personidentifikator")
         val fom = LocalDate.parse(request.path("fom").asText())
         val tom = LocalDate.parse(request.path("tom").asText())
         call.respondText("""{"perioder": []}""", Json)
