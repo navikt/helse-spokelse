@@ -1,16 +1,22 @@
-val ktorVersion = "2.3.4"
-val postgresqlVersion = "42.6.0"
-val wireMockVersion = "2.27.1"
-val junitJupiterVersion = "5.10.0"
-val testcontainersVersion = "1.19.0"
+val ktorVersion = "2.3.6"
+val postgresqlVersion = "42.7.0"
+val wiremockVersion = "3.3.1"
+val junitJupiterVersion = "5.10.1"
+val testcontainersVersion = "1.19.2"
+val jsonAssertVersion = "1.5.1"
+val hikariCPVersion = "5.1.0"
+val kotliqueryVersion="1.9.0"
+val flywayVersion = "9.22.3" // Finnes en major update 🤔
+val mockkVersion = "1.13.8"
+val awaitilityVersion = "4.2.0"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
-    kotlin("jvm") version "1.9.10"
+    kotlin("jvm") version "1.9.20"
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:2023093008351696055717.ffdec6aede3d")
+    implementation("com.github.navikt:rapids-and-rivers:2023101613431697456627.0cdd93eb696f")
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-server-call-id:$ktorVersion")
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion") {
@@ -21,16 +27,15 @@ dependencies {
     implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
 
     implementation("org.postgresql:postgresql:$postgresqlVersion")
-    implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("org.flywaydb:flyway-core:9.15.0")
-    implementation("com.github.seratch:kotliquery:1.9.0")
+    implementation("com.zaxxer:HikariCP:$hikariCPVersion")
+    implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation("com.github.seratch:kotliquery:$kotliqueryVersion")
 
-    testImplementation("io.mockk:mockk:1.12.3")
-    testImplementation("com.github.tomakehurst:wiremock-jre8:$wireMockVersion") {
-        exclude(group = "junit")
-    }
-    testImplementation("no.nav:kafka-embedded-env:3.1.4")
-    testImplementation("org.awaitility:awaitility:4.1.1")
+    testImplementation("io.mockk:mockk:$mockkVersion")
+    testImplementation("org.wiremock:wiremock:$wiremockVersion")
+
+    testImplementation("no.nav:kafka-embedded-env:3.1.4") // TODO: Håper vi kan fjerne denne.. 🤔
+    testImplementation("org.awaitility:awaitility:$awaitilityVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
@@ -40,7 +45,7 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
         exclude(group = "org.eclipse.jetty")
     }
-    testImplementation("org.skyscreamer:jsonassert:1.5.0")
+    testImplementation("org.skyscreamer:jsonassert:$jsonAssertVersion")
 }
 
 repositories {
