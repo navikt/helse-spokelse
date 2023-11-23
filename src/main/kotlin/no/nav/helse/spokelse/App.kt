@@ -2,7 +2,6 @@ package no.nav.helse.spokelse
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -11,27 +10,24 @@ import io.ktor.server.plugins.callid.*
 import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.spokelse.gamlevedtak.AnnulleringDao
 import no.nav.helse.spokelse.gamlevedtak.AnnulleringRiver
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
-import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
+import no.nav.helse.spokelse.grunnlag.grunnlagApi
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
-import org.slf4j.Logger
+import no.nav.helse.spokelse.utbetalinger.utbetalingerApi
+import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-import java.time.LocalDate
 import java.util.*
-import kotlin.system.measureTimeMillis
 
-private val log: Logger = LoggerFactory.getLogger("spokelse")
-private val tjenestekallLog = LoggerFactory.getLogger("tjenestekall")
+private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
 
 fun main() {
     launchApplication(System.getenv())
@@ -77,7 +73,7 @@ internal fun RapidsConnection.registerRivers(
 
 internal fun Application.spokelse(env: Auth, vedtakDao: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
     azureAdAppAuthentication(env)
-    requestResponseTracing(tjenestekallLog)
+    requestResponseTracing(sikkerlogg)
     install(ContentNegotiation) {
         jackson {
             disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -90,7 +86,7 @@ internal fun Application.spokelse(env: Auth, vedtakDao: HentVedtakDao, tbdUtbtal
         generate { UUID.randomUUID().toString() }
     }
     install(CallLogging) {
-        logger = tjenestekallLog
+        logger = sikkerlogg
         level = Level.INFO
         disableDefaultColors()
         callIdMdc("callId")
@@ -105,81 +101,12 @@ internal fun Application.spokelse(env: Auth, vedtakDao: HentVedtakDao, tbdUtbtal
     }
 }
 
-internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
-    get("/grunnlag") {
-        call.logRequest()
-        val fødselsnummer = call.request.queryParameters["fodselsnummer"]
-            ?: run {
-                log.error("/grunnlag Mangler fodselsnummer query param")
-                return@get call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
-            }
-        val fom = call.request.queryParameters["fom"]?.let {
-            it.asLocalDateOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest, "Ugyldig fom query param")
-        }
-        val time = measureTimeMillis {
-            try {
-                val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer, fom) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer, fom)
-                call.respond(HttpStatusCode.OK, vedtak)
-            } catch (e: Exception) {
-                log.error("Feil ved henting av vedtak", e)
-                tjenestekallLog.error("Feil ved henting av vedtak for $fødselsnummer", e)
-                call.respond(HttpStatusCode.InternalServerError, "Feil ved henting av vedtak")
-            }
-        }
-        tjenestekallLog.info("FP hentet vedtak for $fødselsnummer fra og med $fom ($time ms)")
-    }
-}
-
-internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
-    post("/utbetalinger") {
-        call.logRequest()
-        val fødselsnumre = call.receive<List<String>>()
-        val utbetalinger = fødselsnumre.flatMap { fødselsnummer ->
-            val annulerteFagsystemIder = vedtakDAO.hentAnnuleringerForFødselsnummer(fødselsnummer)
-
-            vedtakDAO.hentUtbetalingerForFødselsnummer(fødselsnummer)
-                .filterNot { it.fagsystemId in annulerteFagsystemIder }
-                .map {
-                    UtbetalingDTO(
-                        fødselsnummer = fødselsnummer,
-                        fom = it.fom,
-                        tom = it.tom,
-                        grad = it.grad,
-                        utbetaltTidspunkt = it.utbetaltTidspunkt,
-                        gjenståendeSykedager = it.gjenståendeSykedager,
-                        refusjonstype = it.refusjonstype
-                    )
-                }.ifEmpty {
-                    listOf(
-                        UtbetalingDTO(
-                            fødselsnummer = fødselsnummer,
-                            fom = null,
-                            tom = null,
-                            grad = 0.0,
-                            gjenståendeSykedager = null,
-                            utbetaltTidspunkt = null,
-                            refusjonstype = null
-                        )
-                    )
-                }
-        } + tbdUtbtalingApi.hentUtbetalingDTO(fødselsnumre)
-        tjenestekallLog.info("Spokelse ble bedt om informasjon om ${fødselsnumre.size} fnr, og fant informasjon ekte om ${utbetalinger.unikeFnrMedEkteUtbetalinger().size} fnr")
-        call.respond(utbetalinger)
-    }
-}
-
-private fun List<UtbetalingDTO>.unikeFnrMedEkteUtbetalinger() = this.filter {
-    it != UtbetalingDTO(fødselsnummer = it.fødselsnummer, null, null, 0.0, null, null, null)
-}.map { it.fødselsnummer }
-    .toSet()
-
 private fun ApplicationCall.applicationId() = try {
     val jwt = (authentication.principal(provider = null, JWTPrincipal::class))!!
     jwt.getClaim("azp", String::class) ?: jwt.getClaim("appid", String::class) ?: "n/a (fant ikke)"
 } catch (ex: Exception) {
-    tjenestekallLog.error("Klarte ikke å utlede Application ID", ex)
+    sikkerlogg.error("Klarte ikke å utlede Application ID", ex)
     "n/a (feil)"
 }
 
-private fun ApplicationCall.logRequest() = tjenestekallLog.info("Mottok request mot ${request.path()} fra ${applicationId()}")
-private fun String.asLocalDateOrNull() = kotlin.runCatching { LocalDate.parse(this) }.getOrNull()
+internal fun ApplicationCall.logRequest() = sikkerlogg.info("Mottok request mot ${request.path()} fra ${applicationId()}")
