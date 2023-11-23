@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse.perioder
+package no.nav.helse.spokelse.utbetalteperioder
 
 class Personidentifikator(private val id: String) {
     init {

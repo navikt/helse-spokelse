@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse.perioder
+package no.nav.helse.spokelse.utbetalteperioder
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.http.ContentType.Application.Json
@@ -10,8 +10,8 @@ import java.time.LocalDate
 
 private val objectMapper = jacksonObjectMapper()
 
-internal fun Route.perioderApi() {
-    post("/perioder") {
+internal fun Route.utbetaltePerioderApi() {
+    post("/utbetalte-perioder") {
         val request = objectMapper.readTree(call.receiveText())
         val personidentifikatorer = request.path("personidentifikatorer")
             .map { Personidentifikator(it.asText()) }
