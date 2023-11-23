@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse
+package no.nav.helse.spokelse.gamlevedtak
 
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.rapids_rivers.*

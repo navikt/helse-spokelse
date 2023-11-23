@@ -1,8 +1,8 @@
 package no.nav.helse.spokelse
 
-import no.nav.helse.spokelse.HentVedtakDao.Companion.filtrer
-import no.nav.helse.spokelse.HentVedtakDao.Companion.harData
-import no.nav.helse.spokelse.HentVedtakDao.VedtakRow
+import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao.Companion.filtrer
+import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao.Companion.harData
+import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao.VedtakRow
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

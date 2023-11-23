@@ -1,7 +1,10 @@
-package no.nav.helse.spokelse
+package no.nav.helse.spokelse.gamlevedtak
 
 import kotliquery.queryOf
 import kotliquery.sessionOf
+import no.nav.helse.spokelse.FpVedtak
+import no.nav.helse.spokelse.Refusjonstype
+import no.nav.helse.spokelse.Utbetalingsperiode
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.time.LocalDateTime

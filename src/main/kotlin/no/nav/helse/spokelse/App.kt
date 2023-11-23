@@ -15,6 +15,9 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
+import no.nav.helse.spokelse.gamlevedtak.AnnulleringDao
+import no.nav.helse.spokelse.gamlevedtak.AnnulleringRiver
+import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer

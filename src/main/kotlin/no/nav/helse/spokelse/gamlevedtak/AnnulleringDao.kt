@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse
+package no.nav.helse.spokelse.gamlevedtak
 
 import kotliquery.queryOf
 import kotliquery.sessionOf

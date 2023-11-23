@@ -9,6 +9,8 @@ import io.ktor.http.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
+import no.nav.helse.spokelse.gamlevedtak.AnnulleringDao
+import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
 import org.awaitility.Awaitility
@@ -22,7 +24,6 @@ import java.time.LocalDate
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
-import kotlin.math.log
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal abstract class AbstractE2ETest {

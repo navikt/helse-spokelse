@@ -5,6 +5,8 @@ import kotliquery.sessionOf
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.Events.annulleringEvent
 import no.nav.helse.spokelse.Events.genererFagsystemId
+import no.nav.helse.spokelse.gamlevedtak.AnnulleringDao
+import no.nav.helse.spokelse.gamlevedtak.AnnulleringRiver
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
