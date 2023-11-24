@@ -53,6 +53,9 @@ spec:
           namespace: tbd
         - application: spapi
           namespace: tbd
+    outbound:
+      external:
+        - sykepengeperioder-api.dev-fss-pub.nais.io
   gcp:
     sqlInstances:
     - type: POSTGRES_14
@@ -70,4 +73,8 @@ spec:
     value: tbd-spokelse-v1
   - name: KAFKA_RESET_POLICY
     value: earliest
+  - name: INFOTRYGD_SCOPE
+    value: api://dev-fss.tbd.sykepengeperioder-api/.default
+  - name: INFOTRYGD_URL
+    value: https://sykepengeperioder-api.dev-fss-pub.nais.io
 

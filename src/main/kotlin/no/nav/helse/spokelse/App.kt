@@ -2,6 +2,8 @@ package no.nav.helse.spokelse
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -49,7 +51,7 @@ fun launchApplication(env: Map<String, String>) {
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource::dataSource)
 
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao)
-        builder.withKtorModule { spokelse(auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
+        builder.withKtorModule { spokelse(env, auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
         .build(factory = ConfiguredCIO)
         .apply {
             registerRivers(annulleringDao, tbdUtbetalingDao)
@@ -71,8 +73,9 @@ internal fun RapidsConnection.registerRivers(
     HelsesjekkRiver(this, tbdUtbetalingDao)
 }
 
-internal fun Application.spokelse(env: Auth, vedtakDao: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
-    azureAdAppAuthentication(env)
+internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDao: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
+    val httpClient = HttpClient(CIO)
+    azureAdAppAuthentication(auth)
     requestResponseTracing(sikkerlogg)
     install(ContentNegotiation) {
         jackson {
@@ -96,7 +99,7 @@ internal fun Application.spokelse(env: Auth, vedtakDao: HentVedtakDao, tbdUtbtal
         authenticate {
             grunnlagApi(vedtakDao, tbdUtbtalingApi)
             utbetalingerApi(vedtakDao, tbdUtbtalingApi)
-            utbetaltePerioderApi()
+            utbetaltePerioderApi(env, httpClient)
         }
     }
 }
