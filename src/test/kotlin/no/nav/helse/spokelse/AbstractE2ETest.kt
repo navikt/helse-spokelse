@@ -27,6 +27,13 @@ import javax.sql.DataSource
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal abstract class AbstractE2ETest {
+    private val env = mapOf(
+        "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "http://localhost",
+        "AZURE_APP_CLIENT_ID" to "clientId",
+        "AZURE_APP_CLIENT_SECRET" to "secret",
+        "INFOTRYGD_URL" to "http://localhost",
+        "INFOTRYGD_SCOPE" to "api://infotrygd"
+    )
     private val auth = Auth.auth(
         name = "issuer",
         clientId = "spokelse_azure_ad_app_id",
@@ -80,7 +87,7 @@ internal abstract class AbstractE2ETest {
     ) {
         testApplication {
             this.application {
-                spokelse(auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao))
+                spokelse(env, auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao))
             }
 
             Awaitility.await().atMost(timeout.toLong(), TimeUnit.SECONDS).untilAsserted {

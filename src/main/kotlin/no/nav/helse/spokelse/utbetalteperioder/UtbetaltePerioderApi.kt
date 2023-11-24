@@ -26,7 +26,7 @@ private val ApplicationCall.erSpapi get() = applicationId in setOf(SpapiDev, Spa
 
 internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient: HttpClient) {
     val accessToken = Azure(config, httpClient)
-    val infotrygdperiodeKlient = InfotrygdperioderKlient(httpClient, config.hent("scope"), accessToken, config.hent("INFOTRYGD_URL"))
+    val infotrygdperiodeKlient = InfotrygdperioderKlient(httpClient, config.hent("INFOTRYGD_SCOPE"), accessToken, config.hent("INFOTRYGD_URL"))
     post("/utbetalte-perioder") {
         if (!call.erSpapi) {
             sikkerlogg.error("Applikasjonen ${call.applicationId} har ikke tilgang")
