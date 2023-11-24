@@ -73,6 +73,6 @@ spec:
   - name: KAFKA_RESET_POLICY
     value: none
   - name: INFOTRYGD_SCOPE
-    value: api://prod-fss.tbd.sykepengeperioder-api/.default
+    value: api://prod-fss.tbd.sparkel-sykepengeperioder-api/.default
   - name: INFOTRYGD_URL
     value: https://sykepengeperioder-api.prod-fss-pub.nais.io
