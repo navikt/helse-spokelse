@@ -13,11 +13,11 @@ jobs:
     steps:
     - name: create image tag
       run: echo "IMAGE=ghcr.io/${{ github.repository }}/spokelse:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-    - uses: actions/checkout@v2
-    - uses: actions/setup-java@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
-        java-version: '17.x'
+        java-version: '21.x'
         cache: 'gradle'
     - name: test and build
       run: ./gradlew test build -i
