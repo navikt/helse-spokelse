@@ -54,7 +54,7 @@ spec:
           namespace: tbd
     outbound:
       external:
-        - sykepengeperioder-api.prod-fss-pub.nais.io
+        - host: sykepengeperioder-api.prod-fss-pub.nais.io
   gcp:
     sqlInstances:
     - type: POSTGRES_14
