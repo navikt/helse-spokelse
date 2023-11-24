@@ -19,8 +19,8 @@ class Infotrygdperioder(private val infotrygd: InfotrygdperioderKlient, private 
 }
 
 class InfotrygdperioderKlient(private val httpClient: HttpClient, private val scope :String, private val accessToken: AccessToken, private val url: String) {
-    suspend fun data(personidentifikatorer: Set<Personidentifikator>, fom: LocalDate, tom: LocalDate): List<SpøkelsePeriode> =
-        jacksonObjectMapper().readTree(httpClient.post(url) {
+    suspend fun data(personidentifikatorer: Set<Personidentifikator>, fom: LocalDate, tom: LocalDate): List<SpøkelsePeriode> {
+        val response = httpClient.post(url) {
             header(HttpHeaders.Authorization, "Bearer ${accessToken.get(scope)}")
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             header(HttpHeaders.Accept, ContentType.Application.Json)
@@ -34,7 +34,14 @@ class InfotrygdperioderKlient(private val httpClient: HttpClient, private val sc
                 }
             """
             setBody(request)
-        }.bodyAsText()).perioder()
+        }
+
+        check(response.status == HttpStatusCode.OK) {
+            "Mottok HTTP ${response.status} ved oppslag på Infotrygddata"
+        }
+
+        return objectMapper.readTree(response.bodyAsText()).perioder()
+    }
 
     private fun JsonNode.perioder(): List<SpøkelsePeriode> =
         path("utbetaltePerioder").map { it.somPeriode() }
@@ -45,5 +52,8 @@ class InfotrygdperioderKlient(private val httpClient: HttpClient, private val sc
             grad = path("grad").asInt(),
             kilde = "Infotrygd"
         )
+    }
+    private companion object {
+        val objectMapper = jacksonObjectMapper()
     }
 }
