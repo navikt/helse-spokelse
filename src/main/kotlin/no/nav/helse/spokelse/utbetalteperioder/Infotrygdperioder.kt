@@ -6,6 +6,7 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.util.*
 
@@ -24,13 +25,15 @@ class InfotrygdperioderKlient(private val httpClient: HttpClient, private val sc
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             header(HttpHeaders.Accept, ContentType.Application.Json)
             header(HttpHeaders.XCorrelationId, "${UUID.randomUUID()}")
-            setBody("""
+            @Language("JSON")
+            val request = """
                 {
                     "personidentifikatorer": ${personidentifikatorer.map { "\"$it\"" }},
                     "fom": "$fom",
-                    "tom": "$tom",
+                    "tom": "$tom"
                 }
-            """.trimIndent())
+            """
+            setBody(request)
         }.bodyAsText()).perioder()
 
     private fun JsonNode.perioder(): List<SpøkelsePeriode> =
