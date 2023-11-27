@@ -40,7 +40,22 @@ internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient:
             .takeUnless { it.isEmpty() } ?: throw IllegalArgumentException("Det må sendes med minst én personidentifikator")
         val fom = LocalDate.parse(request.path("fom").asText())
         val tom = LocalDate.parse(request.path("tom").asText())
-        val grandUnifiedPerioder = Infotrygdperioder(infotrygd, personidentifikatorer, fom, tom) + SpleisPerioder(spleis, personidentifikatorer, fom, tom)
-        call.respondText("""{"perioder": []}""", Json)
+        val utbetaltePerioder = Infotrygdperioder(infotrygd, personidentifikatorer, fom, tom) + SpleisPerioder(spleis, personidentifikatorer, fom, tom)
+        call.respondText(utbetaltePerioder.response, Json)
     }
 }
+
+private val List<SpøkelsePeriode>.response get() = """
+    {
+        "utbetaltePerioder": ${map { """
+            {
+                "personidentifikator": "${it.personidentifikator}",
+                "organisasjonsnummer": ${it.organisasjonsnummer?.let { orgnr -> "\"$orgnr\"" }},
+                "fom": "${it.fom}",
+                "tom": "${it.tom}",
+                "grad": ${it.grad},
+                "kilde": "${it.kilde}"
+            }
+        """ }}
+    }
+"""
