@@ -26,7 +26,8 @@ private val ApplicationCall.erSpapi get() = applicationId in setOf(SpapiDev, Spa
 
 internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient: HttpClient) {
     val accessToken = Azure(config, httpClient)
-    val infotrygdperiodeKlient = InfotrygdperioderKlient(httpClient, config.hent("INFOTRYGD_SCOPE"), accessToken, config.hent("INFOTRYGD_URL"))
+    val infotrygd = Infotrygd(httpClient, config.hent("INFOTRYGD_SCOPE"), accessToken, config.hent("INFOTRYGD_URL"))
+    val spleis = Spleis()
     post("/utbetalte-perioder") {
         if (!call.erSpapi) {
             sikkerlogg.error("Applikasjonen ${call.applicationId} har ikke tilgang")
@@ -39,7 +40,7 @@ internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient:
             .takeUnless { it.isEmpty() } ?: throw IllegalArgumentException("Det må sendes med minst én personidentifikator")
         val fom = LocalDate.parse(request.path("fom").asText())
         val tom = LocalDate.parse(request.path("tom").asText())
-        val grandUnifiedPerioder = Infotrygdperioder(infotrygdperiodeKlient, personidentifikatorer, fom, tom) + SpeilPerioder(personidentifikatorer, fom, tom)
+        val grandUnifiedPerioder = Infotrygdperioder(infotrygd, personidentifikatorer, fom, tom) + SpleisPerioder(spleis, personidentifikatorer, fom, tom)
         call.respondText("""{"perioder": []}""", Json)
     }
 }

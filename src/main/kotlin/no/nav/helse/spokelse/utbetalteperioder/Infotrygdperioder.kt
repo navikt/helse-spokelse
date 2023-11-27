@@ -11,15 +11,15 @@ import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.util.*
 
-class Infotrygdperioder(private val infotrygd: InfotrygdperioderKlient, private val personidentifikatorer: Set<Personidentifikator>, private val fom: LocalDate, private val tom: LocalDate) {
+internal class Infotrygdperioder(private val infotrygd: Infotrygd, private val personidentifikatorer: Set<Personidentifikator>, private val fom: LocalDate, private val tom: LocalDate) {
 
-    suspend operator fun plus(speilPerioder: SpeilPerioder): List<SpøkelsePeriode> {
-        return infotrygd.hent(personidentifikatorer, fom, tom)
+    suspend operator fun plus(spleisPerioder: SpleisPerioder): List<SpøkelsePeriode> {
+        return spleisPerioder + infotrygd.hent(personidentifikatorer, fom, tom)
     }
 
 }
 
-class InfotrygdperioderKlient(private val httpClient: HttpClient, private val scope :String, private val accessToken: AccessToken, private val url: String) {
+internal class Infotrygd(private val httpClient: HttpClient, private val scope :String, private val accessToken: AccessToken, private val url: String) {
     suspend fun hent(personidentifikatorer: Set<Personidentifikator>, fom: LocalDate, tom: LocalDate): List<SpøkelsePeriode> {
         val response = httpClient.post(url) {
             header(HttpHeaders.Authorization, "Bearer ${accessToken.get(scope)}")
