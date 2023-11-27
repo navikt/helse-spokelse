@@ -190,6 +190,16 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger("22345678911", 2.april))
     }
 
+    @Test
+    fun `filtrerer på fom & tom`() {
+        val januar = lagreFullRefusjon(utbetalingslinjer = listOf(Utbetalingslinje(2.januar, 31.januar, 100.0)), fagsystemId = "1")
+        val mars = lagreFullRefusjon(utbetalingslinjer = listOf(Utbetalingslinje(1.mars, 31.mars, 100.0)), fagsystemId = "2")
+        assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, fom = 1.januar, tom = 1.januar))
+        assertEquals(listOf(januar), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, fom = 1.januar, tom = 28.februar))
+        assertEquals(listOf(januar, mars), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, fom = 31.januar, tom = 1.mars))
+        assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer, fom = 1.april, tom = 31.mai))
+    }
+
     private fun nyMeldingId() = tbdUtbetalingDao.lagreMelding(Melding("{}", nå(), "test_event", Fødselsnummer))
     private fun lagreFullRefusjon(
         korrelasjonsId: UUID = UUID.randomUUID(),

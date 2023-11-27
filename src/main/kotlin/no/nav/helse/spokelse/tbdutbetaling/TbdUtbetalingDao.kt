@@ -42,14 +42,14 @@ internal class TbdUtbetalingDao(
         }
     }
 
-    internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate? = null): List<Utbetaling> {
+    internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate? = null, tom: LocalDate? = null): List<Utbetaling> {
         return sessionOf(dataSource()).use { session ->
             session.run(queryOf(hentUtbetalinger, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
 
                 val arbeidsgiverFagystemId = row.stringOrNull("arbeidsgiverFagsystemId")
-                val arbeidsgiverUtbetalingslinjer = arbeidsgiverFagystemId?.let { session.hentUtbetalingslinjer(it, fom) } ?: emptyList()
+                val arbeidsgiverUtbetalingslinjer = arbeidsgiverFagystemId?.let { session.hentUtbetalingslinjer(it, fom, tom) } ?: emptyList()
                 val personFagsystemId = row.stringOrNull("personFagsystemId")
-                val personUtbetalingslinjer = personFagsystemId?.let { session.hentUtbetalingslinjer(it, fom) } ?: emptyList()
+                val personUtbetalingslinjer = personFagsystemId?.let { session.hentUtbetalingslinjer(it, fom, tom) } ?: emptyList()
 
                 if (arbeidsgiverUtbetalingslinjer.isEmpty() && personUtbetalingslinjer.isEmpty()) null
 
@@ -106,7 +106,7 @@ internal class TbdUtbetalingDao(
             session.run(queryOf(statement).map { row -> row.int(1) }.asSingle) ?: 0
         }
     }
-    private fun Session.hentUtbetalingslinjer(fagsystemId: String, fom: LocalDate?) = run(queryOf(hentUtbetalingslinjer(fom), mapOf("fagsystemId" to fagsystemId, "fom" to fom)).map { row -> Utbetalingslinje(
+    private fun Session.hentUtbetalingslinjer(fagsystemId: String, fom: LocalDate?, tom: LocalDate?) = run(queryOf(hentUtbetalingslinjer(fom, tom), mapOf("fagsystemId" to fagsystemId, "fom" to fom, "tom" to tom)).map { row -> Utbetalingslinje(
         fom = row.localDate("fom"),
         tom = row.localDate("tom"),
         grad = row.double("grad")
@@ -168,13 +168,16 @@ internal class TbdUtbetalingDao(
         """
 
         @Language("PostgreSQL")
-        fun hentUtbetalingslinjer(fom: LocalDate?) = """
+        fun hentUtbetalingslinjer(fom: LocalDate?, tom: LocalDate?) = """
             SELECT *
             FROM tbdUtbetaling_Utbetalingslinje
             WHERE fagsystemId = :fagsystemId
         """.let { when (fom) {
             null -> it
             else -> "$it AND tom >= :fom"
+        }}.let { when (tom) {
+            null -> it
+            else -> "$it AND NOT fom > :tom"
         }}
 
         @Language("PostgreSQL")
