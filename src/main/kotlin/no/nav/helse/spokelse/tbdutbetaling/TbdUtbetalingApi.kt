@@ -10,12 +10,12 @@ internal class TbdUtbtalingApi(private val tbdUtbetalingDao: TbdUtbetalingDao) {
 
     private val brukUtbetalingerEtter = LocalDateTime.parse("2022-03-16T21:53:18")
 
-    private fun utbetalinger(fødselsnummer: String, fom: LocalDate?) = tbdUtbetalingDao.hentUtbetalinger(fødselsnummer, fom).filter { it.sistUtbetalt > brukUtbetalingerEtter }.also {
+    internal fun utbetalinger(fødselsnummer: String, fom: LocalDate?, tom: LocalDate?) = tbdUtbetalingDao.hentUtbetalinger(fødselsnummer, fom, tom).filter { it.sistUtbetalt > brukUtbetalingerEtter }.also {
         if (it.isNotEmpty()) sikkerlogg.info("Fant ${it.size} utbetalinger for $fødselsnummer fra tbd.utbetaling.")
     }
 
-    fun hentFpVedtak(fødselsnummer: String, fom: LocalDate?) = utbetalinger(fødselsnummer, fom).somFpVedtak()
-    fun hentUtbetalingDTO(fødselsnumre: List<String>) = fødselsnumre.map { fødselsnummer -> utbetalinger(fødselsnummer, null).somUtbetalingDTO() }.flatten()
+    fun hentFpVedtak(fødselsnummer: String, fom: LocalDate?) = utbetalinger(fødselsnummer, fom, null).somFpVedtak()
+    fun hentUtbetalingDTO(fødselsnumre: List<String>) = fødselsnumre.map { fødselsnummer -> utbetalinger(fødselsnummer, null, null).somUtbetalingDTO() }.flatten()
 
     private companion object {
         private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
