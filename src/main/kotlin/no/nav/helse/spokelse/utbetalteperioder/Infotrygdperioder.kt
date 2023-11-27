@@ -6,6 +6,7 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import no.nav.helse.rapids_rivers.isMissingOrNull
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.util.*
@@ -13,13 +14,13 @@ import java.util.*
 class Infotrygdperioder(private val infotrygd: InfotrygdperioderKlient, private val personidentifikatorer: Set<Personidentifikator>, private val fom: LocalDate, private val tom: LocalDate) {
 
     suspend operator fun plus(speilPerioder: SpeilPerioder): List<SpøkelsePeriode> {
-        return infotrygd.data(personidentifikatorer, fom, tom)
+        return infotrygd.hent(personidentifikatorer, fom, tom)
     }
 
 }
 
 class InfotrygdperioderKlient(private val httpClient: HttpClient, private val scope :String, private val accessToken: AccessToken, private val url: String) {
-    suspend fun data(personidentifikatorer: Set<Personidentifikator>, fom: LocalDate, tom: LocalDate): List<SpøkelsePeriode> {
+    suspend fun hent(personidentifikatorer: Set<Personidentifikator>, fom: LocalDate, tom: LocalDate): List<SpøkelsePeriode> {
         val response = httpClient.post(url) {
             header(HttpHeaders.Authorization, "Bearer ${accessToken.get(scope)}")
             header(HttpHeaders.ContentType, ContentType.Application.Json)
@@ -47,9 +48,11 @@ class InfotrygdperioderKlient(private val httpClient: HttpClient, private val sc
         path("utbetaltePerioder").map { it.somPeriode() }
     private fun JsonNode.somPeriode(): SpøkelsePeriode {
         return SpøkelsePeriode(
+            personidentifikator = Personidentifikator(path("personidentifikator").asText()),
             fom = LocalDate.parse(path("fom").asText()),
             tom = LocalDate.parse(path("tom").asText()),
             grad = path("grad").asInt(),
+            organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asText(),
             kilde = "Infotrygd"
         )
     }
