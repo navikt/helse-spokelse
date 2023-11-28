@@ -17,13 +17,12 @@ internal class SpøkelsePerioderFraGamleVedtakTest : AbstractE2ETest() {
         lagreOldVedtakOgOldUtbetaling(1.januar, 31.januar, fagsystemId1)
         lagreVedtakOppdragOgUtbetaling(1.februar, 28.februar, fagsystemId2)
         lagreGammelUtbetaling(1.mars, 31.mars, fagsystemId3)
-        val spøkelsePerioder = vedtakDao.hentSpøkelsePerioder(fødselsnummer, 1.januar, 31.mars)
         assertEquals(
             setOf(
                 SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.januar, tom = 31.januar, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
                 SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.februar, tom = 28.februar, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
                 SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.mars, tom = 31.mars, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
-            ), spøkelsePerioder.toSet()
+            ), vedtakDao.hentSpøkelsePerioder(fødselsnummer, 1.januar, 31.mars)
         )
     }
 
@@ -33,7 +32,7 @@ internal class SpøkelsePerioderFraGamleVedtakTest : AbstractE2ETest() {
         lagreVedtakOppdragOgUtbetaling(1.februar, 28.februar, fagsystemId2)
         lagreGammelUtbetaling(1.mars, 31.mars, fagsystemId3)
         annuller(fagsystemId1, fagsystemId2, fagsystemId3)
-        assertEquals(emptyList<SpøkelsePeriode>(), vedtakDao.hentSpøkelsePerioder(fødselsnummer, 1.januar, 31.mars))
+        assertEquals(emptySet<SpøkelsePeriode>(), vedtakDao.hentSpøkelsePerioder(fødselsnummer, 1.januar, 31.mars))
     }
 
     @Test
@@ -44,6 +43,18 @@ internal class SpøkelsePerioderFraGamleVedtakTest : AbstractE2ETest() {
         assertEquals(
             SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.februar, tom = 28.februar, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
             vedtakDao.hentSpøkelsePerioder(fødselsnummer, 1.februar, 28.februar).single()
+        )
+    }
+
+    @Test
+    fun `returnerer ikke duplikate utbetalinger`() {
+        lagreOldVedtakOgOldUtbetaling(1.januar, 31.januar, fagsystemId1)
+        lagreVedtakOppdragOgUtbetaling(1.januar, 31.januar, fagsystemId2)
+        lagreGammelUtbetaling(1.januar, 31.januar, fagsystemId3)
+
+        assertEquals(
+            SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.januar, tom = 31.januar, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
+            vedtakDao.hentSpøkelsePerioder(fødselsnummer, 1.januar, 31.januar).single()
         )
     }
 

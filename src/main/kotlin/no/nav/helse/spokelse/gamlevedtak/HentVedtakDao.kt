@@ -172,8 +172,8 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
         }
     }
 
-    fun hentSpøkelsePerioder(fødselsnummer: String, fom: LocalDate, tom: LocalDate): List<SpøkelsePeriode> {
-        if (!harData(fom)) return emptyList()
+    fun hentSpøkelsePerioder(fødselsnummer: String, fom: LocalDate, tom: LocalDate): Set<SpøkelsePeriode> {
+        if (!harData(fom)) return emptySet()
         @Language("PostgreSQL")
         val vedtakOppdragOgUtbetalingQuery = """
             SELECT o.fagsystemid fagsystem_id,
@@ -235,7 +235,7 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
                     organisasjonsnummer = row.string("organisasjonsnummer"),
                     kilde = "Spleis"
                 )
-            }.asList)
+            }.asList).toSet()
         }
     }
 }
