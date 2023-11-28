@@ -219,7 +219,8 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
                 fagsystemId = fagsystemId,
                 utbetalingslinjer = utbetalingslinjer
             ),
-            sistUtbetalt = nå()
+            sistUtbetalt = nå(),
+            organisasjonsnummer = Organisasjonsnummer
         )
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling
@@ -241,7 +242,8 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
                 utbetalingslinjer = utbetalingslinjer
             ),
             arbeidsgiverOppdrag = null,
-            sistUtbetalt = nå()
+            sistUtbetalt = nå(),
+            organisasjonsnummer = Organisasjonsnummer
         )
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling
@@ -270,7 +272,8 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
                 fagsystemId = arbeidsgiverFagsystemId,
                 utbetalingslinjer = arbeidsgiverUtbetalingslinjer
             ),
-            sistUtbetalt = nå()
+            sistUtbetalt = nå(),
+            organisasjonsnummer = Organisasjonsnummer
         )
         tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
         return utbetaling
@@ -292,6 +295,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     private companion object {
         private fun nå() = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDateTime()
         private const val Fødselsnummer = "12345678911"
+        private const val Organisasjonsnummer = "987654321"
         private const val ArbeidsgiverFagsystemId = "arbeid"
         private const val PersonFagsystemId = "person"
     }

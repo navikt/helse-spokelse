@@ -27,6 +27,7 @@ internal data class Oppdrag(
 
 internal data class Utbetaling(
     internal val fødselsnummer: String,
+    internal val organisasjonsnummer: String?,
     internal val korrelasjonsId: UUID,
     internal val gjenståendeSykedager: Int,
     internal val arbeidsgiverOppdrag: Oppdrag?,
@@ -66,11 +67,13 @@ internal data class Utbetaling(
         internal fun JsonNode.utbetaling(sistUtbetalt: LocalDateTime): Utbetaling {
             require(erUtbetaling) { "Kan ikke mappe event $event til utbetaling" }
             val arbeidsgiverOppdrag = oppdrag("arbeidsgiverOppdrag")
+            val organisasjonsnummer = path("organisasjonsnummer").asText().takeIf { it.matches("\\d{9}".toRegex()) }
             val personOppdrag = oppdrag("personOppdrag")
             val korrelasjonsId = UUID.fromString(get("korrelasjonsId").asText())
             val gjenståendeSykedager = get("gjenståendeSykedager").asInt()
             return Utbetaling(
                 fødselsnummer = fødselsnummer,
+                organisasjonsnummer = organisasjonsnummer,
                 korrelasjonsId = korrelasjonsId,
                 gjenståendeSykedager = gjenståendeSykedager,
                 arbeidsgiverOppdrag = arbeidsgiverOppdrag,

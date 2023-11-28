@@ -8,16 +8,17 @@ import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.MigrationVersion
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.util.*
 import javax.sql.DataSource
 import kotlin.system.measureTimeMillis
 
-internal class ArbeidsgiverMottakerMigreringTest {
+internal class OrganisasjonsnummerMigreringTest {
 
     @Test
-    fun `Migrerer inn arbeidsgiverMottaker på utbetaling`() {
+    fun `Migrerer inn organisasjonsnummer på utbetaling`() {
         PgDb.start()
         val dataSource = PgDb.connection()
         val dao = TbdUtbetalingDao { dataSource }
@@ -26,18 +27,19 @@ internal class ArbeidsgiverMottakerMigreringTest {
 
         for (i in 1..antall) {
             dao.lagreTestUtbetaling(i)
+            assertNull(dataSource.organisasjonsnummer(i))
         }
 
         assertEquals(antall, dataSource.antallUtbetalinger)
 
         val millis = measureTimeMillis {
-            dataSource.flywayConfiguration.target(MigrationVersion.fromVersion("14")).load().migrate()
+            dataSource.flywayConfiguration.target(MigrationVersion.fromVersion("15")).load().migrate()
         }
 
-        println("Tok $millis millis å migrere inn arbeidsgiverMottaker på $antall utbetalinger")
+        println("Tok $millis millis å migrere inn organisasjonsnummer på $antall utbetalinger")
 
         for (i in 1..antall) {
-            assertEquals(i.orgnr, dataSource.arbeidsgiverMottaker(i))
+            assertEquals(i.orgnr, dataSource.organisasjonsnummer(i))
         }
 
         PgDb.hardReset()
@@ -55,10 +57,10 @@ internal class ArbeidsgiverMottakerMigreringTest {
         } ?: 0
     }
 
-    private fun DataSource.arbeidsgiverMottaker(nummer: Int) = "SELECT arbeidsgiverMottaker FROM tbdUtbetaling_Utbetaling WHERE fodselsnummer='${nummer.fnr}'".let { sql ->
+    private fun DataSource.organisasjonsnummer(nummer: Int) = "SELECT organisasjonsnummer FROM tbdUtbetaling_Utbetaling WHERE fodselsnummer='${nummer.fnr}'".let { sql ->
         sessionOf(this).use { session ->
-            session.run(queryOf(sql).map { it.string("arbeidsgiverMottaker") }.asSingle)
-        } ?: throw IllegalStateException("Fant ikke arbeidsgiverMottaker for $nummer")
+            session.run(queryOf(sql).map { it.stringOrNull("organisasjonsnummer") }.asSingle)
+        }
     }
 
     private fun TbdUtbetalingDao.lagreTestUtbetaling(nummer: Int) {
@@ -66,6 +68,7 @@ internal class ArbeidsgiverMottakerMigreringTest {
 
         val utbetaling = Utbetaling(
             fødselsnummer = nummer.fnr,
+            organisasjonsnummer = null,
             korrelasjonsId = UUID.randomUUID(),
             gjenståendeSykedager = 100,
             arbeidsgiverOppdrag = Oppdrag("ArbeidsgiverOppdrag_$nummer", listOf(Utbetalingslinje(1.januar, 31.januar, 100.0))),
@@ -80,9 +83,7 @@ internal class ArbeidsgiverMottakerMigreringTest {
         val melding = """
             {
               "@event_name": "utbetaling_utbetalt",
-              "arbeidsgiverOppdrag": {
-                "mottaker": "${nummer.orgnr}"
-              }
+              "organisasjonsnummer": "${nummer.orgnr}"
             }
         """
         return lagreMelding(Melding(

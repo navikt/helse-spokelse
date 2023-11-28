@@ -42,7 +42,8 @@ internal class UtbetalingMappingTest {
                     Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
                 )
             ),
-            sistUtbetalt = meldingSendt
+            sistUtbetalt = meldingSendt,
+            organisasjonsnummer = "999263550"
         )
         assertEquals(forventet, utbetaling)
     }
@@ -68,7 +69,8 @@ internal class UtbetalingMappingTest {
                 )
             ),
             personOppdrag = null,
-            sistUtbetalt = meldingSendt
+            sistUtbetalt = meldingSendt,
+            organisasjonsnummer = "999263550"
         )
         assertEquals(forventet, utbetaling)
     }
@@ -88,7 +90,8 @@ internal class UtbetalingMappingTest {
                     Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
                 )
             ),
-            sistUtbetalt = meldingSendt
+            sistUtbetalt = meldingSendt,
+            organisasjonsnummer = "999263550"
         )
         assertEquals(forventet, utbetaling)
     }
@@ -113,7 +116,8 @@ internal class UtbetalingMappingTest {
                     Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
                 )
             ),
-            sistUtbetalt = sistUtbetalt
+            sistUtbetalt = sistUtbetalt,
+            organisasjonsnummer = "999263550"
         ))
 
         val forventetFpVedtak = listOf(

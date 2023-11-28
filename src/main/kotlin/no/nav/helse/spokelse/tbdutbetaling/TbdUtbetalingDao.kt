@@ -59,7 +59,8 @@ internal class TbdUtbetalingDao(
                     gjenståendeSykedager = row.int("gjenstaaendeSykedager"),
                     arbeidsgiverOppdrag = arbeidsgiverUtbetalingslinjer.takeUnless { it.isEmpty() }?.let { Oppdrag(arbeidsgiverFagystemId!!, it) },
                     personOppdrag = personUtbetalingslinjer.takeUnless { it.isEmpty() }?.let { Oppdrag(personFagsystemId!!, it) },
-                    sistUtbetalt = row.localDateTime("sistUtbetalt")
+                    sistUtbetalt = row.localDateTime("sistUtbetalt"),
+                    organisasjonsnummer = row.stringOrNull("organisasjonsnummer")
                 )
             }.asList)
         }
@@ -133,7 +134,8 @@ internal class TbdUtbetalingDao(
             "meldingId" to meldingId,
             "gjenstaaendeSykedager" to utbetaling.gjenståendeSykedager,
             "fodselsnummer" to utbetaling.fødselsnummer,
-            "sistUtbetalt" to utbetaling.sistUtbetalt
+            "sistUtbetalt" to utbetaling.sistUtbetalt,
+            "organisasjonsnummer" to utbetaling.organisasjonsnummer
         )
 
         run(queryOf(opprettUtbetaling, parameters).asUpdate)
@@ -149,8 +151,8 @@ internal class TbdUtbetalingDao(
 
         @Language("PostgreSQL")
         val opprettUtbetaling = """
-            INSERT INTO tbdUtbetaling_Utbetaling(kilde, gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, fodselsnummer, korrelasjonsId, sistUtbetalt)
-            VALUES (:meldingId, :gjenstaaendeSykedager, :arbeidsgiverFagsystemId, :personFagsystemId, :fodselsnummer, :korrelasjonsId, :sistUtbetalt)
+            INSERT INTO tbdUtbetaling_Utbetaling(kilde, gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, fodselsnummer, korrelasjonsId, sistUtbetalt, organisasjonsnummer)
+            VALUES (:meldingId, :gjenstaaendeSykedager, :arbeidsgiverFagsystemId, :personFagsystemId, :fodselsnummer, :korrelasjonsId, :sistUtbetalt, :organisasjonsnummer)
         """
 
         @Language("PostgreSQL")
@@ -161,7 +163,7 @@ internal class TbdUtbetalingDao(
 
         @Language("PostgreSQL")
         val hentUtbetalinger = """
-            SELECT gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, korrelasjonsId, sistUtbetalt
+            SELECT gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, korrelasjonsId, sistUtbetalt, organisasjonsnummer
             FROM tbdUtbetaling_Utbetaling
             WHERE fodselsnummer = :fodselsnummer
             AND (arbeidsgiverAnnuleringskilde IS NULL OR personAnnuleringskilde IS NULL)
