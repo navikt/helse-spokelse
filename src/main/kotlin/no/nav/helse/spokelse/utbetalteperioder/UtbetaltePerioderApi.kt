@@ -48,17 +48,16 @@ internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient:
     }
 }
 
-private val List<SpøkelsePeriode>.response get() = """
-    {
-        "utbetaltePerioder": ${map { """
-            {
-                "personidentifikator": "${it.personidentifikator}",
-                "organisasjonsnummer": ${it.organisasjonsnummer?.let { orgnr -> "\"$orgnr\"" }},
-                "fom": "${it.fom}",
-                "tom": "${it.tom}",
-                "grad": ${it.grad},
-                "kilde": "${it.kilde}"
-            }
-        """ }}
-    }
-"""
+private val List<SpøkelsePeriode>.response get(): String {
+    val utbetaltePerioder = map { objectMapper.createObjectNode().apply {
+        put("personidentifikator", "${it.personidentifikator}")
+        put("organisasjonsnummer", it.organisasjonsnummer)
+        put("fom", "${it.fom}")
+        put("tom", "${it.tom}")
+        put("grad", it.grad)
+        put("kilde", it.kilde)
+    }}
+    return objectMapper.createObjectNode().apply {
+        putArray("utbetaltePerioder").addAll(utbetaltePerioder)
+    }.toString()
+}
