@@ -5,6 +5,8 @@ import kotliquery.sessionOf
 import no.nav.helse.spokelse.FpVedtak
 import no.nav.helse.spokelse.Refusjonstype
 import no.nav.helse.spokelse.Utbetalingsperiode
+import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
+import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -166,6 +168,73 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
         return sessionOf(dataSource()).use { session ->
             session.run(queryOf(spørring, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
                 row.string("fagsystem_id")
+            }.asList)
+        }
+    }
+
+    fun hentSpøkelsePerioder(fødselsnummer: String, fom: LocalDate, tom: LocalDate): List<SpøkelsePeriode> {
+        if (!harData(fom)) return emptyList()
+        @Language("PostgreSQL")
+        val vedtakOppdragOgUtbetalingQuery = """
+            SELECT o.fagsystemid fagsystem_id,
+                u.fom         fom,
+                u.tom         tom,
+                u.grad        grad,
+                v.opprettet   utbetalt_tidspunkt,
+                v.orgnummer   organisasjonsnummer
+            FROM vedtak v
+            INNER JOIN oppdrag o on v.id = o.vedtak_id
+            INNER JOIN utbetaling u on o.id = u.oppdrag_id
+            WHERE v.fodselsnummer = :fodselsnummer
+            AND u.tom >= :fom AND NOT u.fom > :tom
+        """
+
+        @Language("PostgreSQL")
+        val oldVedtakOgOldUtbetalingQuery = """
+            SELECT
+                (SELECT distinct vu.utbetalingsref FROM vedtak_utbetalingsref vu WHERE vu.vedtaksperiode_id = ov.vedtaksperiode_id) fagsystem_id,
+                ou.fom fom,
+                ou.tom tom,
+                ou.grad grad,
+                ov.opprettet utbetalt_tidspunkt,
+                ov.orgnummer organisasjonsnummer
+            FROM old_vedtak ov
+            INNER JOIN old_utbetaling ou on ov.id = ou.vedtak_id
+            WHERE ov.fodselsnummer = :fodselsnummer
+            AND ou.tom >= :fom AND NOT ou.fom > :tom
+        """
+
+        @Language("PostgreSQL")
+        val gamleUtbetalingerQuery = """
+            SELECT
+                fagsystem_id,
+                fom,
+                tom,
+                grad,
+                opprettet utbetalt_tidspunkt,
+                orgnummer organisasjonsnummer
+            FROM gamle_utbetalinger
+            WHERE fodselsnummer = :fodselsnummer
+            AND tom >= :fom AND NOT fom > :tom
+        """
+
+        val sammenstiltQuery = """
+            $vedtakOppdragOgUtbetalingQuery UNION ALL $oldVedtakOgOldUtbetalingQuery UNION ALL $gamleUtbetalingerQuery
+        """
+
+        val annullerteFagsystemIder = hentAnnuleringerForFødselsnummer(fødselsnummer)
+
+        return sessionOf(dataSource()).use { session ->
+            session.run(queryOf(sammenstiltQuery, mapOf("fodselsnummer" to fødselsnummer, "fom" to fom, "tom" to tom)).map { row ->
+                if (row.string("fagsystem_id") in annullerteFagsystemIder) null
+                else SpøkelsePeriode(
+                    personidentifikator = Personidentifikator(fødselsnummer),
+                    fom = row.localDate("fom"),
+                    tom = row.localDate("tom"),
+                    grad = row.int("grad"),
+                    organisasjonsnummer = row.string("organisasjonsnummer"),
+                    kilde = "Spleis"
+                )
             }.asList)
         }
     }

@@ -2,7 +2,7 @@ package no.nav.helse.spokelse.utbetalteperioder
 
 import java.time.LocalDate
 
-class SpøkelsePeriode(
+data class SpøkelsePeriode(
     val personidentifikator: Personidentifikator,
     val fom: LocalDate,
     val tom: LocalDate,

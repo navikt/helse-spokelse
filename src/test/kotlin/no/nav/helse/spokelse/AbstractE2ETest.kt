@@ -48,9 +48,9 @@ internal abstract class AbstractE2ETest {
     protected lateinit var dataSource: DataSource
     protected lateinit var dokumentDao: DokumentDao
     protected lateinit var utbetaltDao: UtbetaltDao
-    private lateinit var vedtakDao: HentVedtakDao
+    protected lateinit var vedtakDao: HentVedtakDao
     protected lateinit var lagreVedtakDao: LagreVedtakDao
-    private lateinit var annulleringDao: AnnulleringDao
+    protected lateinit var annulleringDao: AnnulleringDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
     protected lateinit var rapid: TestRapid
 
