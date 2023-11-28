@@ -4,7 +4,6 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotliquery.queryOf
 import kotliquery.sessionOf
-import kotliquery.using
 import org.flywaydb.core.Flyway
 import org.intellij.lang.annotations.Language
 import org.testcontainers.containers.PostgreSQLContainer
@@ -26,8 +25,13 @@ internal object PgDb {
         state.reset(this)
     }
 
+    fun hardReset() {
+        state.hardReset(this)
+    }
+
     fun config() = state.config(this)
     fun connection() = state.connection(this)
+    private val DataSource.flyway get() = Flyway.configure().dataSource(this).cleanDisabled(false).load()
 
     private fun stop(): PgDb {
         state.stop(this)
@@ -42,7 +46,7 @@ internal object PgDb {
     }
 
     private fun createSchema(dataSource: DataSource) {
-        Flyway.configure().dataSource(dataSource).load().migrate()
+        dataSource.flyway.migrate()
         sessionOf(dataSource).use { it.run(queryOf(truncateTablesSql).asExecute) }
     }
 
@@ -64,6 +68,7 @@ internal object PgDb {
         fun start(db: PgDb) {}
         fun stop(db: PgDb) {}
         fun reset(db: PgDb) {}
+        fun hardReset(db: PgDb) {}
     }
 
     private object NotStarted : DBState {
@@ -94,6 +99,12 @@ internal object PgDb {
 
         override fun reset(db: PgDb) {
             db.resetSchema()
+        }
+
+        override fun hardReset(db: PgDb) {
+            val ds = connection()
+            ds.flyway.clean()
+            createSchema(ds)
         }
 
     }
