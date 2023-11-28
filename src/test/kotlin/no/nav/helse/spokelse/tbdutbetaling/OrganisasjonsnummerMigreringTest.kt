@@ -45,6 +45,23 @@ internal class OrganisasjonsnummerMigreringTest {
         PgDb.hardReset()
     }
 
+    @Test
+    fun `Migrerer ikke organisasjonsnummer hvor det allerede finnes`() {
+        PgDb.start()
+        val dataSource = PgDb.connection()
+        val dao = TbdUtbetalingDao { dataSource }
+
+        dao.lagreTestUtbetaling(1, null)
+        dao.lagreTestUtbetaling(2, "999999999")
+
+        dataSource.flywayConfiguration.target(MigrationVersion.fromVersion("15")).load().migrate()
+
+        assertEquals(1.orgnr, dataSource.organisasjonsnummer(1))
+        assertEquals("999999999", dataSource.organisasjonsnummer(2))
+
+        PgDb.hardReset()
+    }
+
     private val DataSource.flywayConfiguration get() = Flyway
         .configure()
         .dataSource(this)
@@ -63,12 +80,12 @@ internal class OrganisasjonsnummerMigreringTest {
         }
     }
 
-    private fun TbdUtbetalingDao.lagreTestUtbetaling(nummer: Int) {
+    private fun TbdUtbetalingDao.lagreTestUtbetaling(nummer: Int, organisasjonsnummer: String? = null) {
         val meldingId = lagreTestMelding(nummer)
 
         val utbetaling = Utbetaling(
             fødselsnummer = nummer.fnr,
-            organisasjonsnummer = null,
+            organisasjonsnummer = organisasjonsnummer,
             korrelasjonsId = UUID.randomUUID(),
             gjenståendeSykedager = 100,
             arbeidsgiverOppdrag = Oppdrag("ArbeidsgiverOppdrag_$nummer", listOf(Utbetalingslinje(1.januar, 31.januar, 100.0))),
