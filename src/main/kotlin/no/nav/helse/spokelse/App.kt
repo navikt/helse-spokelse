@@ -99,7 +99,7 @@ internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDa
         authenticate {
             grunnlagApi(vedtakDao, tbdUtbtalingApi)
             utbetalingerApi(vedtakDao, tbdUtbtalingApi)
-            utbetaltePerioderApi(env, httpClient, tbdUtbtalingApi)
+            utbetaltePerioderApi(env, httpClient, tbdUtbtalingApi, vedtakDao)
         }
     }
 }
