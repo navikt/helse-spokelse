@@ -29,7 +29,7 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
         val grad: Double
     )
 
-    fun hentVedtakListe(fødselsnummer: String, fom: LocalDate?): List<FpVedtak> {
+    fun hentFpVedtak(fødselsnummer: String, fom: LocalDate?): List<FpVedtak> {
         if (!harData(fom)) return emptyList()
         return sessionOf(dataSource()).use { session ->
             @Language("PostgreSQL")
@@ -93,7 +93,7 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
         val refusjonstype: Refusjonstype
     )
 
-    fun hentUtbetalingerForFødselsnummer(fødselsnummer: String): List<UtbetalingRad> {
+    fun hentSpissnokUtbetalinger(fødselsnummer: String): List<UtbetalingRad> {
         @Language("PostgreSQL")
         val spørring = """
         SELECT fagsystem_id,

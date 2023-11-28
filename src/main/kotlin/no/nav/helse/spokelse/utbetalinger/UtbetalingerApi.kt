@@ -24,7 +24,7 @@ internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: Tb
         val utbetalinger = fødselsnumre.flatMap { fødselsnummer ->
             val annulerteFagsystemIder = vedtakDAO.hentAnnuleringerForFødselsnummer(fødselsnummer)
 
-            vedtakDAO.hentUtbetalingerForFødselsnummer(fødselsnummer)
+            vedtakDAO.hentSpissnokUtbetalinger(fødselsnummer)
                 .filterNot { it.fagsystemId in annulerteFagsystemIder }
                 .map {
                     UtbetalingDTO(
@@ -49,7 +49,7 @@ internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: Tb
                         )
                     )
                 }
-        } + tbdUtbtalingApi.hentUtbetalingDTO(fødselsnumre)
+        } + tbdUtbtalingApi.hentSpissnokUtbetalinger(fødselsnumre)
         sikkerlogg.info("Spokelse ble bedt om informasjon om ${fødselsnumre.size} fnr, og fant informasjon ekte om ${utbetalinger.unikeFnrMedEkteUtbetalinger().size} fnr")
         call.respond(utbetalinger)
     }

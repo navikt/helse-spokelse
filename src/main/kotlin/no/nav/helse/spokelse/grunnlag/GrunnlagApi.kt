@@ -29,7 +29,7 @@ internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtb
         }
         val time = measureTimeMillis {
             try {
-                val vedtak = vedtakDAO.hentVedtakListe(fødselsnummer, fom) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer, fom)
+                val vedtak = vedtakDAO.hentFpVedtak(fødselsnummer, fom) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer, fom)
                 call.respond(HttpStatusCode.OK, vedtak)
             } catch (e: Exception) {
                 logg.error("Feil ved henting av vedtak", e)

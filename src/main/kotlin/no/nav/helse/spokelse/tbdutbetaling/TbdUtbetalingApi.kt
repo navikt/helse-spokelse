@@ -15,7 +15,7 @@ internal class TbdUtbtalingApi(private val tbdUtbetalingDao: TbdUtbetalingDao) {
     }
 
     fun hentFpVedtak(fødselsnummer: String, fom: LocalDate?) = utbetalinger(fødselsnummer, fom, null).somFpVedtak()
-    fun hentUtbetalingDTO(fødselsnumre: List<String>) = fødselsnumre.map { fødselsnummer -> utbetalinger(fødselsnummer, null, null).somUtbetalingDTO() }.flatten()
+    fun hentSpissnokUtbetalinger(fødselsnumre: List<String>) = fødselsnumre.map { fødselsnummer -> utbetalinger(fødselsnummer, null, null).somUtbetalingDTO() }.flatten()
 
     private companion object {
         private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
