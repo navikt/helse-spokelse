@@ -19,9 +19,9 @@ internal class SpøkelsePerioderFraGamleVedtakTest : AbstractE2ETest() {
         lagreGammelUtbetaling(1.mars, 31.mars, fagsystemId3)
         assertEquals(
             setOf(
-                SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.januar, tom = 31.januar, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
-                SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.februar, tom = 28.februar, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
-                SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.mars, tom = 31.mars, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
+                SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.januar, tom = 31.januar, grad = 100, organisasjonsnummer = organisasjonsnummer, setOf("Spleis", "OldVedtakOgOldUtbetaling")),
+                SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.februar, tom = 28.februar, grad = 100, organisasjonsnummer = organisasjonsnummer, setOf("Spleis", "VedtakOppdragOgUtbetaling")),
+                SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.mars, tom = 31.mars, grad = 100, organisasjonsnummer = organisasjonsnummer,setOf("Spleis", "GamleUtbetalinger"))
             ), vedtakDao.hentSpøkelsePerioder(fødselsnummer, 1.januar, 31.mars)
         )
     }
@@ -41,7 +41,7 @@ internal class SpøkelsePerioderFraGamleVedtakTest : AbstractE2ETest() {
         lagreVedtakOppdragOgUtbetaling(1.februar, 28.februar, fagsystemId2)
         lagreGammelUtbetaling(1.mars, 31.mars, fagsystemId3)
         assertEquals(
-            SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.februar, tom = 28.februar, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
+            SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.februar, tom = 28.februar, grad = 100, organisasjonsnummer = organisasjonsnummer, tags = setOf("Spleis", "VedtakOppdragOgUtbetaling")),
             vedtakDao.hentSpøkelsePerioder(fødselsnummer, 1.februar, 28.februar).single()
         )
     }
@@ -53,7 +53,7 @@ internal class SpøkelsePerioderFraGamleVedtakTest : AbstractE2ETest() {
         lagreGammelUtbetaling(1.januar, 31.januar, fagsystemId3)
 
         assertEquals(
-            SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.januar, tom = 31.januar, grad = 100, organisasjonsnummer = organisasjonsnummer, kilde = "Spleis"),
+            SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.januar, tom = 31.januar, grad = 100, organisasjonsnummer = organisasjonsnummer, tags = setOf("Spleis")),
             vedtakDao.hentSpøkelsePerioder(fødselsnummer, 1.januar, 31.januar).single()
         )
     }

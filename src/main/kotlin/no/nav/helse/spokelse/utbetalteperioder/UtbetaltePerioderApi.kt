@@ -56,7 +56,9 @@ private val List<SpøkelsePeriode>.response get(): String {
         put("fom", "${it.fom}")
         put("tom", "${it.tom}")
         put("grad", it.grad)
-        put("kilde", it.kilde)
+        .apply {
+            putArray("tags").let { tags -> it.tags.forEach(tags::add) }
+        }
     }}
     return objectMapper.createObjectNode().apply {
         putArray("utbetaltePerioder").addAll(utbetaltePerioder)

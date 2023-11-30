@@ -181,7 +181,8 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
                 u.tom         tom,
                 u.grad        grad,
                 v.opprettet   utbetalt_tidspunkt,
-                v.orgnummer   organisasjonsnummer
+                v.orgnummer   organisasjonsnummer,
+                'VedtakOppdragOgUtbetaling' tag
             FROM vedtak v
             INNER JOIN oppdrag o on v.id = o.vedtak_id
             INNER JOIN utbetaling u on o.id = u.oppdrag_id
@@ -197,7 +198,8 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
                 ou.tom tom,
                 ou.grad grad,
                 ov.opprettet utbetalt_tidspunkt,
-                ov.orgnummer organisasjonsnummer
+                ov.orgnummer organisasjonsnummer,
+                'OldVedtakOgOldUtbetaling' tag
             FROM old_vedtak ov
             INNER JOIN old_utbetaling ou on ov.id = ou.vedtak_id
             WHERE ov.fodselsnummer = :fodselsnummer
@@ -212,7 +214,8 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
                 tom,
                 grad,
                 opprettet utbetalt_tidspunkt,
-                orgnummer organisasjonsnummer
+                orgnummer organisasjonsnummer,
+                'GamleUtbetalinger' tag
             FROM gamle_utbetalinger
             WHERE fodselsnummer = :fodselsnummer
             AND tom >= :fom AND NOT fom > :tom
@@ -233,7 +236,7 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
                     tom = row.localDate("tom"),
                     grad = row.int("grad"),
                     organisasjonsnummer = row.string("organisasjonsnummer"),
-                    kilde = "Spleis"
+                    tags = setOf("Spleis", row.string("tag"))
                 )
             }.asList).toSet()
         }

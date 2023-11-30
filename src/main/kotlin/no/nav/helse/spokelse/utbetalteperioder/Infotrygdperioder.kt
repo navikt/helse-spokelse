@@ -53,7 +53,7 @@ internal class Infotrygd(private val httpClient: HttpClient, private val scope :
             tom = LocalDate.parse(path("tom").asText()),
             grad = path("grad").asInt(),
             organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asText(),
-            kilde = "Infotrygd"
+            tags = (path("tags").map { it.asText() } + "Infotrygd").toSet()
         )
     }
     private companion object {

@@ -19,7 +19,7 @@ internal class Spleis(private val tbdUtbtalingApi: TbdUtbtalingApi, private val 
                 utbetalinger.flatMap { utbetaling ->
                     val førsteOppdragMedLinjer = utbetaling.arbeidsgiverOppdrag?.takeUnless { it.utbetalingslinjer.isEmpty() } ?: utbetaling.personOppdrag!!
                     førsteOppdragMedLinjer.utbetalingslinjer.map { utbetalingslinje ->
-                        SpøkelsePeriode(personidentifikator, utbetalingslinje.fom, utbetalingslinje.tom, utbetalingslinje.grad.toInt(), utbetaling.organisasjonsnummer, "Spleis")
+                        SpøkelsePeriode(personidentifikator, utbetalingslinje.fom, utbetalingslinje.tom, utbetalingslinje.grad.toInt(), utbetaling.organisasjonsnummer, setOf("Spleis", "TbdUtbetaling"))
                     }
                 }
             }.mapValues { (personidentifikator, spøkelsePerioder) ->
