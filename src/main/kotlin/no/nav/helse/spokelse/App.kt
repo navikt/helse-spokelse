@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.http.HttpStatusCode.Companion.InternalServerError
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -11,7 +12,9 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.callid.*
 import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
@@ -84,7 +87,7 @@ internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDa
         }
     }
     install(CallId) {
-        header("callId")
+        header("x-callId")
         verify { it.isNotEmpty() }
         generate { UUID.randomUUID().toString() }
     }
@@ -94,6 +97,13 @@ internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDa
         disableDefaultColors()
         callIdMdc("callId")
         filter { call -> setOf("/isalive", "/isready", "/metrics").none { call.request.path().contains(it) } }
+    }
+
+    install(StatusPages) {
+        exception<Throwable> { call, cause ->
+            sikkerlogg.error("Feil ved håndtering av ${call.request.httpMethod.value} - ${call.request.path()}", cause)
+            call.respond(InternalServerError)
+        }
     }
     routing {
         authenticate {

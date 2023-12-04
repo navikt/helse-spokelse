@@ -19,6 +19,7 @@ dependencies {
     implementation("com.github.navikt:rapids-and-rivers:2023101613431697456627.0cdd93eb696f")
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-server-call-id:$ktorVersion")
+    implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion") {
         exclude(group = "junit")
     }
