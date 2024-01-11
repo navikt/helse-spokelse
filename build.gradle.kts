@@ -1,4 +1,4 @@
-val ktorVersion = "2.3.6"
+val ktorVersion = "2.3.7"
 val postgresqlVersion = "42.7.0"
 val wiremockVersion = "3.3.1"
 val junitJupiterVersion = "5.10.1"
@@ -12,11 +12,11 @@ val awaitilityVersion = "4.2.0"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
-    kotlin("jvm") version "1.9.20"
+    kotlin("jvm") version "1.9.22"
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:2023101613431697456627.0cdd93eb696f")
+    implementation("com.github.navikt:rapids-and-rivers:2024010209171704183456.6d035b91ffb4")
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-server-call-id:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
@@ -40,9 +40,10 @@ dependencies {
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
         exclude(group = "org.eclipse.jetty")
     }
@@ -50,18 +51,33 @@ dependencies {
 }
 
 repositories {
+    val githubPassword: String? by project
     mavenCentral()
+    /* ihht. https://github.com/navikt/utvikling/blob/main/docs/teknisk/Konsumere%20biblioteker%20fra%20Github%20Package%20Registry.md
+        så plasseres github-maven-repo (med autentisering) før nav-mirror slik at github actions kan anvende førstnevnte.
+        Det er fordi nav-mirroret kjører i Google Cloud og da ville man ellers fått unødvendige utgifter til datatrafikk mellom Google Cloud og GitHub
+     */
+    maven {
+        url = uri("https://maven.pkg.github.com/navikt/maven-release")
+        credentials {
+            username = "x-access-token"
+            password = githubPassword
+        }
+    }
+    maven("https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
     maven("https://packages.confluent.io/maven/")
     maven("https://jitpack.io")
 }
 
 tasks {
-    compileKotlin {
-        kotlinOptions.jvmTarget = "21"
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
     }
 
-    compileTestKotlin {
-        kotlinOptions.jvmTarget = "21"
+    withType<Wrapper> {
+        gradleVersion = "8.5"
     }
 
     withType<Test> {

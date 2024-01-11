@@ -18,11 +18,10 @@ spec:
   - https://spokelse.intern.nav.no
   resources:
     limits:
-      cpu: 3000m
       memory: 1024Mi
     requests:
-      cpu: 250m
-      memory: 256Mi
+      cpu: 50m
+      memory: 64Mi
   replicas:
     min: 3
     max: 6
