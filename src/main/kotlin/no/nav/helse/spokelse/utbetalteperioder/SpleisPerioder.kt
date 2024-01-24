@@ -24,6 +24,24 @@ internal class Spleis(private val tbdUtbtalingApi: TbdUtbtalingApi, private val 
                 }
             }.mapValues { (personidentifikator, spøkelsePerioder) ->
                 spøkelsePerioder + hentVedtakDao.hentSpøkelsePerioder(personidentifikator.toString(), tidligsteSluttdato, senesteStartdato)
-            }.values.flatten()
+            }.values.flatten().slåSammen()
+    }
+
+    internal companion object {
+        private data class Grupperingsnøkkel(val personidentifikator: Personidentifikator, val fom: LocalDate, val grad: Int, val organisasjonsnummer: String)
+        internal fun List<SpøkelsePeriode>.slåSammen(): List<SpøkelsePeriode> {
+            val (medOrganisasjonsnummer, utenOrganisasjonsnummer) = partition { it.organisasjonsnummer != null }
+
+            return medOrganisasjonsnummer.groupBy { Grupperingsnøkkel(it.personidentifikator, it.fom, it.grad, it.organisasjonsnummer!!) }
+                .mapValues { (_, gruppertePerioder) -> SpøkelsePeriode(
+                    personidentifikator = gruppertePerioder.first().personidentifikator,
+                    fom = gruppertePerioder.first().fom,
+                    tom = gruppertePerioder.maxOf { it.tom },
+                    grad = gruppertePerioder.first().grad,
+                    organisasjonsnummer = gruppertePerioder.first().organisasjonsnummer,
+                    tags = gruppertePerioder.flatMap { it.tags }.toSet()
+                ) }
+                .values.toList() + utenOrganisasjonsnummer
+        }
     }
 }
