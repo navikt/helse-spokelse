@@ -11,6 +11,8 @@ import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje.Companion.utbetalingslinje
+import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
+import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import java.time.LocalDateTime
 import java.util.*
 
@@ -59,6 +61,14 @@ internal data class Utbetaling(
 
     private fun somUtbetalingDTO() = arbeidsgiverOppdrag.somUtbetalingDTO(REFUSJON_TIL_ARBEIDSGIVER) + personOppdrag.somUtbetalingDTO(REFUSJON_TIL_PERSON)
 
+    private fun somSpøkelsePeriode() : List<SpøkelsePeriode> {
+        val personidentifikator = Personidentifikator(fødselsnummer)
+        val utbetalingslinjer = (arbeidsgiverOppdrag?.utbetalingslinjer ?: emptyList()) + (personOppdrag?.utbetalingslinjer ?: emptyList())
+        return utbetalingslinjer.map { utbetalingslinje ->
+            SpøkelsePeriode(personidentifikator, utbetalingslinje.fom, utbetalingslinje.tom, utbetalingslinje.grad.toInt(), organisasjonsnummer, setOf("Spleis", "TbdUtbetaling"))
+        }
+    }
+
     internal companion object {
         private fun JsonNode.oppdrag(path:String) = path(path).takeUnless { it.isMissingOrNull() || it.path("utbetalingslinjer").isEmpty }?.let { Oppdrag(
             fagsystemId = it.path("fagsystemId").asText(),
@@ -81,7 +91,8 @@ internal data class Utbetaling(
                 sistUtbetalt = sistUtbetalt
             )
         }
-        internal fun List<Utbetaling>.somFpVedtak() = map { it.somFpVedtak() }.flatten()
-        internal fun List<Utbetaling>.somUtbetalingDTO() = map { it.somUtbetalingDTO() }.flatten()
+        internal fun List<Utbetaling>.somFpVedtak() = flatMap(Utbetaling::somFpVedtak)
+        internal fun List<Utbetaling>.somUtbetalingDTO() = flatMap(Utbetaling::somUtbetalingDTO)
+        internal fun List<Utbetaling>.somSpøkelsePerioder() = flatMap(Utbetaling::somSpøkelsePeriode)
     }
 }

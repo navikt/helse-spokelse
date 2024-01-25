@@ -3,7 +3,7 @@ package no.nav.helse.spokelse.utbetalteperioder
 import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
-import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
+import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somSpøkelsePerioder
 import java.time.LocalDate
 
 
@@ -17,10 +17,8 @@ internal class Spleis(private val tbdUtbetalingApi: TbdUtbetalingApi, private va
     fun hent(personidentifikatorer: Set<Personidentifikator>, tidligsteSluttdato: LocalDate, senesteStartdato: LocalDate): List<SpøkelsePeriode> {
         return personidentifikatorer
             .associateWith { tbdUtbetalingApi.utbetalinger(it.toString(), tidligsteSluttdato, senesteStartdato) }
-            .mapValues { (personidentifikator, utbetalinger) ->
-                utbetalinger.flatMap { utbetaling ->
-                    utbetaling.tilSpøkelsePerioder(personidentifikator)
-                }
+            .mapValues { (_, utbetalinger) ->
+                utbetalinger.somSpøkelsePerioder()
             }.mapValues { (personidentifikator, spøkelsePerioder) ->
                 spøkelsePerioder + hentVedtakDao.hentSpøkelsePerioder(personidentifikator.toString(), tidligsteSluttdato, senesteStartdato)
             }.values.flatten().slåSammen()
@@ -48,13 +46,6 @@ internal class Spleis(private val tbdUtbetalingApi: TbdUtbetalingApi, private va
                         )
                     }
                 }.values.flatten() + utenOrganisasjonsnummer
-        }
-
-        internal fun Utbetaling.tilSpøkelsePerioder(personidentifikator: Personidentifikator) : List<SpøkelsePeriode> {
-            val utbetalingslinjer = (arbeidsgiverOppdrag?.utbetalingslinjer ?: emptyList()) + (personOppdrag?.utbetalingslinjer ?: emptyList())
-            return utbetalingslinjer.map { utbetalingslinje ->
-                SpøkelsePeriode(personidentifikator, utbetalingslinje.fom, utbetalingslinje.tom, utbetalingslinje.grad.toInt(), organisasjonsnummer, setOf("Spleis", "TbdUtbetaling"))
-            }
         }
     }
 }

@@ -6,9 +6,9 @@ import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.mars
 import no.nav.helse.spokelse.tbdutbetaling.Oppdrag
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
+import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somSpøkelsePerioder
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
-import no.nav.helse.spokelse.utbetalteperioder.Spleis.Companion.tilSpøkelsePerioder
 import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -54,7 +54,7 @@ internal class UtbetalingTilSpøkelsePerioderTest {
                 SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 100, organisasjonsnummer, setOf("Spleis", "TbdUtbetaling")),
                 SpøkelsePeriode(personidentifikator, 1.april, 30.april, 100, organisasjonsnummer, setOf("Spleis", "TbdUtbetaling")),
             ),
-            utbetaling.tilSpøkelsePerioder(personidentifikator)
+            listOf(utbetaling).somSpøkelsePerioder()
         )
     }
 
@@ -88,7 +88,7 @@ internal class UtbetalingTilSpøkelsePerioderTest {
                 SpøkelsePeriode(personidentifikator, 17.januar, 31.januar, 100, organisasjonsnummer, setOf("Spleis", "TbdUtbetaling")),
                 SpøkelsePeriode(personidentifikator, 10.februar, 28.februar, 100, organisasjonsnummer, setOf("Spleis", "TbdUtbetaling"))
             ),
-            utbetaling.tilSpøkelsePerioder(personidentifikator)
+            listOf(utbetaling).somSpøkelsePerioder()
         )
     }
 }
