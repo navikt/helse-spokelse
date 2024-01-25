@@ -1,5 +1,9 @@
-package no.nav.helse.spokelse
+package no.nav.helse.spokelse.utbetaleperioder
 
+import no.nav.helse.spokelse.april
+import no.nav.helse.spokelse.februar
+import no.nav.helse.spokelse.januar
+import no.nav.helse.spokelse.mars
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.helse.spokelse.utbetalteperioder.Spleis.Companion.slåSammen
 import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode

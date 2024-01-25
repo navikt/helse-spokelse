@@ -1,5 +1,7 @@
-package no.nav.helse.spokelse
+package no.nav.helse.spokelse.utbetaleperioder
 
+import no.nav.helse.spokelse.februar
+import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy
 import no.nav.helse.spokelse.utbetalteperioder.Gruppering
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator

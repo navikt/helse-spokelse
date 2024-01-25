@@ -1,7 +1,9 @@
-package no.nav.helse.spokelse
+package no.nav.helse.spokelse.utbetaleperioder
 
 import kotliquery.queryOf
 import kotliquery.sessionOf
+import no.nav.helse.spokelse.*
+import no.nav.helse.spokelse.AbstractE2ETest
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import org.junit.jupiter.api.Assertions.assertEquals
