@@ -25,7 +25,7 @@ import no.nav.helse.spokelse.grunnlag.grunnlagApi
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.utbetalinger.utbetalingerApi
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
 import org.slf4j.LoggerFactory
@@ -54,7 +54,7 @@ fun launchApplication(env: Map<String, String>) {
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource::dataSource)
 
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao)
-        builder.withKtorModule { spokelse(env, auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao)) }
+        builder.withKtorModule { spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao)) }
         .build(factory = ConfiguredCIO)
         .apply {
             registerRivers(annulleringDao, tbdUtbetalingDao)
@@ -76,7 +76,7 @@ internal fun RapidsConnection.registerRivers(
     HelsesjekkRiver(this, tbdUtbetalingDao)
 }
 
-internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDao: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
+internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDao: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi) {
     val httpClient = HttpClient(CIO)
     azureAdAppAuthentication(auth)
     requestResponseTracing(sikkerlogg)
@@ -107,9 +107,9 @@ internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDa
     }
     routing {
         authenticate {
-            grunnlagApi(vedtakDao, tbdUtbtalingApi)
-            utbetalingerApi(vedtakDao, tbdUtbtalingApi)
-            utbetaltePerioderApi(env, httpClient, tbdUtbtalingApi, vedtakDao)
+            grunnlagApi(vedtakDao, tbdUtbetalingApi)
+            utbetalingerApi(vedtakDao, tbdUtbetalingApi)
+            utbetaltePerioderApi(env, httpClient, tbdUtbetalingApi, vedtakDao)
         }
     }
 }

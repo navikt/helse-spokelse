@@ -11,7 +11,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 
@@ -26,10 +26,10 @@ private val ApplicationCall.applicationId get() = this
     ?: throw IllegalStateException("Mangler 'azp' claim i access token")
 private val ApplicationCall.erSpapi get() = applicationId in setOf(SpapiDev, SpapiProd)
 
-internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient: HttpClient, tbdUtbtalingApi: TbdUtbtalingApi, hentVedtakDao: HentVedtakDao) {
+internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient: HttpClient, tbdUtbetalingApi: TbdUtbetalingApi, hentVedtakDao: HentVedtakDao) {
     val accessToken = Azure(config, httpClient)
     val infotrygd = Infotrygd(httpClient, config.hent("INFOTRYGD_SCOPE"), accessToken, config.hent("INFOTRYGD_URL"))
-    val spleis = Spleis(tbdUtbtalingApi, hentVedtakDao)
+    val spleis = Spleis(tbdUtbetalingApi, hentVedtakDao)
     post("/utbetalte-perioder") {
         if (!call.erSpapi) {
             sikkerlogg.error("Applikasjonen ${call.applicationId} har ikke tilgang")

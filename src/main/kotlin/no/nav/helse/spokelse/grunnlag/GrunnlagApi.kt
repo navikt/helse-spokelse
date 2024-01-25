@@ -6,7 +6,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.logRequest
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
@@ -16,7 +16,7 @@ private val logg: Logger = LoggerFactory.getLogger("spokelse")
 private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
 private fun String.asLocalDateOrNull() = kotlin.runCatching { LocalDate.parse(this) }.getOrNull()
 
-internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
+internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi) {
     get("/grunnlag") {
         call.logRequest()
         val fødselsnummer = call.request.queryParameters["fodselsnummer"]
@@ -29,7 +29,7 @@ internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtb
         }
         val time = measureTimeMillis {
             try {
-                val vedtak = vedtakDAO.hentFpVedtak(fødselsnummer, fom) + tbdUtbtalingApi.hentFpVedtak(fødselsnummer, fom)
+                val vedtak = vedtakDAO.hentFpVedtak(fødselsnummer, fom) + tbdUtbetalingApi.hentFpVedtak(fødselsnummer, fom)
                 call.respond(HttpStatusCode.OK, vedtak)
             } catch (e: Exception) {
                 logg.error("Feil ved henting av vedtak", e)

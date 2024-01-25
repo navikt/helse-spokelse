@@ -12,7 +12,7 @@ import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.gamlevedtak.AnnulleringDao
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -87,7 +87,7 @@ internal abstract class AbstractE2ETest {
     ) {
         testApplication {
             this.application {
-                spokelse(env, auth, vedtakDao, TbdUtbtalingApi(tbdUtbetalingDao))
+                spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao))
             }
 
             Awaitility.await().atMost(timeout.toLong(), TimeUnit.SECONDS).untilAsserted {

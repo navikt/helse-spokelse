@@ -1,7 +1,7 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import java.time.LocalDate
 
 
@@ -11,10 +11,10 @@ internal class SpleisPerioder(private val spleis: Spleis, private val personiden
     }
 }
 
-internal class Spleis(private val tbdUtbtalingApi: TbdUtbtalingApi, private val hentVedtakDao: HentVedtakDao) {
+internal class Spleis(private val tbdUtbetalingApi: TbdUtbetalingApi, private val hentVedtakDao: HentVedtakDao) {
     fun hent(personidentifikatorer: Set<Personidentifikator>, tidligsteSluttdato: LocalDate, senesteStartdato: LocalDate): List<SpøkelsePeriode> {
         return personidentifikatorer
-            .associateWith { tbdUtbtalingApi.utbetalinger(it.toString(), tidligsteSluttdato, senesteStartdato) }
+            .associateWith { tbdUtbetalingApi.utbetalinger(it.toString(), tidligsteSluttdato, senesteStartdato) }
             .mapValues { (personidentifikator, utbetalinger) ->
                 utbetalinger.flatMap { utbetaling ->
                     val førsteOppdragMedLinjer = utbetaling.arbeidsgiverOppdrag?.takeUnless { it.utbetalingslinjer.isEmpty() } ?: utbetaling.personOppdrag!!

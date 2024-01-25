@@ -7,7 +7,7 @@ import io.ktor.server.routing.*
 import no.nav.helse.spokelse.UtbetalingDTO
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.logRequest
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbtalingApi
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import org.slf4j.LoggerFactory
 
 private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
@@ -17,7 +17,7 @@ private fun List<UtbetalingDTO>.unikeFnrMedEkteUtbetalinger() = this.filter {
     .toSet()
 
 
-internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: TbdUtbtalingApi) {
+internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi) {
     post("/utbetalinger") {
         call.logRequest()
         val fødselsnumre = call.receive<List<String>>()
@@ -49,7 +49,7 @@ internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbtalingApi: Tb
                         )
                     )
                 }
-        } + tbdUtbtalingApi.hentSpissnokUtbetalinger(fødselsnumre)
+        } + tbdUtbetalingApi.hentSpissnokUtbetalinger(fødselsnumre)
         sikkerlogg.info("Spokelse ble bedt om informasjon om ${fødselsnumre.size} fnr, og fant informasjon ekte om ${utbetalinger.unikeFnrMedEkteUtbetalinger().size} fnr")
         call.respond(utbetalinger)
     }
