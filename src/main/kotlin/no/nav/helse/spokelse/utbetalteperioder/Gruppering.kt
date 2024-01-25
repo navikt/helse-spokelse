@@ -44,11 +44,11 @@ internal class Gruppering(
     private fun Iterable<SpøkelsePeriode>.gruppér(): List<SpøkelsePeriode> {
         val (medOrganisasjonsnummer, utenOrganisasjonsnummer) = partition { it.organisasjonsnummer != null }
 
-        return medOrganisasjonsnummer.groupBy { it.grupperingsnøkkel(groupBy)}
+        return medOrganisasjonsnummer.groupBy { it.grupperingsnøkkel(groupBy) }
             .mapValues { (_, gruppertePerioder) ->
                 val første = gruppertePerioder.first()
-                val sammenhengendePerioder = gruppertePerioder.map { it.periode }.grupperSammenhengendePerioder()
-                val tags = gruppertePerioder.associate { it.periode to it.tags }
+                val sammenhengendePerioder = gruppertePerioder.map(SpøkelsePeriode::periode).grupperSammenhengendePerioder()
+                val tags = gruppertePerioder.groupBy(SpøkelsePeriode::periode).mapValues { (_, values ) -> values.map(SpøkelsePeriode::tags).flatten() }
 
                 sammenhengendePerioder.map { sammenhengendePeriode ->
                     SpøkelsePeriode(
