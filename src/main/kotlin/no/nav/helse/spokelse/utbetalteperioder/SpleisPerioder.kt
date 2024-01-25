@@ -1,7 +1,9 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
+import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
+import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
 import java.time.LocalDate
 
 
@@ -17,10 +19,7 @@ internal class Spleis(private val tbdUtbetalingApi: TbdUtbetalingApi, private va
             .associateWith { tbdUtbetalingApi.utbetalinger(it.toString(), tidligsteSluttdato, senesteStartdato) }
             .mapValues { (personidentifikator, utbetalinger) ->
                 utbetalinger.flatMap { utbetaling ->
-                    val førsteOppdragMedLinjer = utbetaling.arbeidsgiverOppdrag?.takeUnless { it.utbetalingslinjer.isEmpty() } ?: utbetaling.personOppdrag!!
-                    førsteOppdragMedLinjer.utbetalingslinjer.map { utbetalingslinje ->
-                        SpøkelsePeriode(personidentifikator, utbetalingslinje.fom, utbetalingslinje.tom, utbetalingslinje.grad.toInt(), utbetaling.organisasjonsnummer, setOf("Spleis", "TbdUtbetaling"))
-                    }
+                    utbetaling.tilSpøkelsePerioder(personidentifikator)
                 }
             }.mapValues { (personidentifikator, spøkelsePerioder) ->
                 spøkelsePerioder + hentVedtakDao.hentSpøkelsePerioder(personidentifikator.toString(), tidligsteSluttdato, senesteStartdato)
@@ -28,20 +27,34 @@ internal class Spleis(private val tbdUtbetalingApi: TbdUtbetalingApi, private va
     }
 
     internal companion object {
-        private data class Grupperingsnøkkel(val personidentifikator: Personidentifikator, val fom: LocalDate, val grad: Int, val organisasjonsnummer: String)
+        private data class Grupperingsnøkkel(val personidentifikator: Personidentifikator, val grad: Int, val organisasjonsnummer: String)
         internal fun List<SpøkelsePeriode>.slåSammen(): List<SpøkelsePeriode> {
             val (medOrganisasjonsnummer, utenOrganisasjonsnummer) = partition { it.organisasjonsnummer != null }
 
-            return medOrganisasjonsnummer.groupBy { Grupperingsnøkkel(it.personidentifikator, it.fom, it.grad, it.organisasjonsnummer!!) }
-                .mapValues { (_, gruppertePerioder) -> SpøkelsePeriode(
-                    personidentifikator = gruppertePerioder.first().personidentifikator,
-                    fom = gruppertePerioder.first().fom,
-                    tom = gruppertePerioder.maxOf { it.tom },
-                    grad = gruppertePerioder.first().grad,
-                    organisasjonsnummer = gruppertePerioder.first().organisasjonsnummer,
-                    tags = gruppertePerioder.flatMap { it.tags }.toSet()
-                ) }
-                .values.toList() + utenOrganisasjonsnummer
+            return medOrganisasjonsnummer.groupBy { Grupperingsnøkkel(it.personidentifikator, it.grad, it.organisasjonsnummer!!) }
+                .mapValues { (_, gruppertePerioder) ->
+                    val første = gruppertePerioder.first()
+                    val sammenhengendePerioder = gruppertePerioder.map { it.periode }.grupperSammenhengendePerioder()
+                    val tags = gruppertePerioder.associate { it.periode to it.tags }
+
+                    sammenhengendePerioder.map { sammenhengendePeriode ->
+                        SpøkelsePeriode(
+                            personidentifikator = første.personidentifikator,
+                            fom = sammenhengendePeriode.start,
+                            tom = sammenhengendePeriode.endInclusive,
+                            grad = første.grad,
+                            organisasjonsnummer = første.organisasjonsnummer,
+                            tags = tags.filter { it.key.overlapperMed(sammenhengendePeriode) }.values.flatten().toSet()
+                        )
+                    }
+                }.values.flatten() + utenOrganisasjonsnummer
+        }
+
+        internal fun Utbetaling.tilSpøkelsePerioder(personidentifikator: Personidentifikator) : List<SpøkelsePeriode> {
+            val utbetalingslinjer = (arbeidsgiverOppdrag?.utbetalingslinjer ?: emptyList()) + (personOppdrag?.utbetalingslinjer ?: emptyList())
+            return utbetalingslinjer.map { utbetalingslinje ->
+                SpøkelsePeriode(personidentifikator, utbetalingslinje.fom, utbetalingslinje.tom, utbetalingslinje.grad.toInt(), organisasjonsnummer, setOf("Spleis", "TbdUtbetaling"))
+            }
         }
     }
 }

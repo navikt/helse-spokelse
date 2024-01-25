@@ -77,5 +77,34 @@ internal class SpøkelsePeriodeSammenslåerTest {
         )
     }
 
+    @Test
+    fun `Kant-i-kant perioder på samme arbeidsgiver og samme grad slås sammen til én`() {
+        val perioder = listOf(
+            SpøkelsePeriode(personidentifikator, 17.januar, 31.januar, 100, "111111111", setOf("1")),
+            SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 100, "111111111", setOf("2")),
+            SpøkelsePeriode(personidentifikator, 1.februar, 28.februar, 100, "111111111", setOf("3")),
+            SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 100, "111111111", setOf("4")),
+            SpøkelsePeriode(personidentifikator, 1.april, 30.april, 100, "111111111", setOf("5"))
+        )
+
+        assertEquals(
+            listOf(SpøkelsePeriode(personidentifikator, 17.januar, 30.april, 100, "111111111", setOf("1","2","3","4","5"))),
+            perioder.slåSammen()
+        )
+    }
+
+    @Test
+    fun `Delvis overlappende perioder slås sammen til én`() {
+        val perioder = listOf(
+            SpøkelsePeriode(personidentifikator, 17.januar, 31.januar, 100, "111111111", setOf("1")),
+            SpøkelsePeriode(personidentifikator, 20.januar, 31.mars, 100, "111111111", setOf("2")),
+        )
+
+        assertEquals(
+            listOf(SpøkelsePeriode(personidentifikator, 17.januar, 31.mars, 100, "111111111", setOf("1","2"))),
+            perioder.slåSammen()
+        )
+    }
+
     private val personidentifikator = Personidentifikator("11111111111")
 }

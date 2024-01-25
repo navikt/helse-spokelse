@@ -1,5 +1,6 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
+import no.nav.helse.spokelse.Periode
 import java.time.LocalDate
 
 class SpøkelsePeriode(
@@ -10,6 +11,7 @@ class SpøkelsePeriode(
     val organisasjonsnummer: String?,
     val tags: Set<String>
 ) {
+    internal val periode = Periode(fom, tom)
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
