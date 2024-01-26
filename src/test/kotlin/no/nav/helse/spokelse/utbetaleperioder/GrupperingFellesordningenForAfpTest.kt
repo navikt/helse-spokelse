@@ -28,7 +28,7 @@ internal class GrupperingFellesordningenForAfpTest {
         val forventet = """
             {
               "utbetaltePerioder": [
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-02-10", "grad": 100, "tags": ["1", "2", "3", "4"] }
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-02-10", "grad": 100, "tags": ["1", "2", "3", "4"] }
               ]
             }
         """
@@ -37,7 +37,7 @@ internal class GrupperingFellesordningenForAfpTest {
     }
 
     @Test
-    fun `Sammenhengende perioder hos samme arbeidsgiver med samme grad blir ikke slått sammen til én periode ved personidentifkatorbytte`() {
+    fun `Sammenhengende perioder hos samme arbeidsgiver med samme grad blir slått sammen til én periode ved personidentifkatorbytte`() {
         val perioder = listOf(
             SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
             SpøkelsePeriode(Personidentifikator("11111111112"), 1.januar, 20.januar, 100, "111111111", setOf("2")),
@@ -49,10 +49,7 @@ internal class GrupperingFellesordningenForAfpTest {
         val forventet = """
             {
               "utbetaltePerioder": [
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-10", "grad": 100, "tags": ["1"] },
-                { "personidentifikator": "11111111112", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-20", "grad": 100, "tags": ["2"] },
-                { "personidentifikator": "11111111113", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-31", "grad": 100, "tags": ["3"] },
-                { "personidentifikator": "11111111114", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-02-10", "grad": 100, "tags": ["4"] }
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-02-10", "grad": 100, "tags": ["1", "2", "3", "4"] }
               ]
             }
         """
@@ -73,10 +70,10 @@ internal class GrupperingFellesordningenForAfpTest {
         val forventet = """
             {
               "utbetaltePerioder": [
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-10", "grad": 100, "tags": ["1"] },
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111112", "fom": "2018-01-01", "tom": "2018-01-20", "grad": 100, "tags": ["2"] },
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111113", "fom": "2018-01-01", "tom": "2018-01-31", "grad": 100, "tags": ["3"] },
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111114", "fom": "2018-01-01", "tom": "2018-02-10", "grad": 100, "tags": ["4"] }
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-10", "grad": 100, "tags": ["1"] },
+                { "organisasjonsnummer": "111111112", "fom": "2018-01-01", "tom": "2018-01-20", "grad": 100, "tags": ["2"] },
+                { "organisasjonsnummer": "111111113", "fom": "2018-01-01", "tom": "2018-01-31", "grad": 100, "tags": ["3"] },
+                { "organisasjonsnummer": "111111114", "fom": "2018-01-01", "tom": "2018-02-10", "grad": 100, "tags": ["4"] }
               ]
             }
         """
@@ -96,10 +93,10 @@ internal class GrupperingFellesordningenForAfpTest {
         val forventet = """
             {
               "utbetaltePerioder": [
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-10", "grad": 100, "tags": ["1"] },
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-20", "grad": 99, "tags": ["2"] },
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-31", "grad": 98, "tags": ["3"] },
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-02-10", "grad": 97, "tags": ["4"] }
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-10", "grad": 100, "tags": ["1"] },
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-20", "grad": 99, "tags": ["2"] },
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-31", "grad": 98, "tags": ["3"] },
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-02-10", "grad": 97, "tags": ["4"] }
               ]
             }
         """
@@ -120,9 +117,9 @@ internal class GrupperingFellesordningenForAfpTest {
         val forventet = """
             {
               "utbetaltePerioder": [
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-31", "grad": 100, "tags": ["1", "3"] },
-                { "personidentifikator": "11111111111", "organisasjonsnummer": null, "fom": "2018-01-01", "tom": "2018-01-20", "grad": 100, "tags": ["2"] },
-                { "personidentifikator": "11111111111", "organisasjonsnummer": null, "fom": "2018-01-01", "tom": "2018-02-10", "grad": 100, "tags": ["4"] }
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-01", "tom": "2018-01-31", "grad": 100, "tags": ["1", "3"] },
+                { "organisasjonsnummer": null, "fom": "2018-01-01", "tom": "2018-01-20", "grad": 100, "tags": ["2"] },
+                { "organisasjonsnummer": null, "fom": "2018-01-01", "tom": "2018-02-10", "grad": 100, "tags": ["4"] }
               ]
             }
         """
@@ -144,7 +141,7 @@ internal class GrupperingFellesordningenForAfpTest {
         val forventet = """
             {
               "utbetaltePerioder": [
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-17", "tom": "2018-04-30", "grad": 100, "tags": ["1", "2", "3", "4", "5"] }
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-17", "tom": "2018-04-30", "grad": 100, "tags": ["1", "2", "3", "4", "5"] }
               ]
             }
         """
@@ -163,7 +160,7 @@ internal class GrupperingFellesordningenForAfpTest {
         val forventet = """
             {
               "utbetaltePerioder": [
-                { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "fom": "2018-01-17", "tom": "2018-03-31", "grad": 100, "tags": ["1", "2"] }
+                { "organisasjonsnummer": "111111111", "fom": "2018-01-17", "tom": "2018-03-31", "grad": 100, "tags": ["1", "2"] }
               ]
             }
         """
@@ -173,7 +170,7 @@ internal class GrupperingFellesordningenForAfpTest {
 
     private val personidentifikator = Personidentifikator("11111111111")
 
-    private val FellesordningenForAfpGroupBy = setOf(GroupBy.organisasjonsnummer, GroupBy.grad, GroupBy.personidentifikator)
+    private val FellesordningenForAfpGroupBy = setOf(GroupBy.organisasjonsnummer, GroupBy.grad)
     private fun assertEquals(forventet: String, perioder: List<SpøkelsePeriode>) {
         // Bare stokker periodene med en partalls-tag som Spleis og oddetall som Infotrygd. Ettersom det ikke grupperes på kilde skal det ikke ha noe å si
         val (spleis, infotrygd) = perioder.partition { it.tags.mapNotNull { tag-> tag.toIntOrNull() }.any { int -> int % 2 == 0 }}
