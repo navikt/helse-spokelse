@@ -12,6 +12,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
+import no.nav.helse.spokelse.utbetalteperioder.GroupBy.Companion.groupBy
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 
@@ -43,7 +44,7 @@ internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient:
         val fom = LocalDate.parse(request.path("fom").asText())
         val tom = LocalDate.parse(request.path("tom").asText())
         val response = Gruppering(
-            groupBy = setOf(GroupBy.organisasjonsnummer, GroupBy.grad, GroupBy.personidentifikator),
+            groupBy = request.groupBy,
             infotrygd = infotrygd.hent(personidentifikatorer, fom, tom),
             spleis = spleis.hent(personidentifikatorer, fom, tom)
         ).gruppér()

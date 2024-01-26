@@ -1,5 +1,6 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
 import no.nav.helse.spokelse.utbetalteperioder.Grupperingsnøkkel.Companion.grupperingsnøkkel
@@ -9,6 +10,14 @@ internal enum class GroupBy {
     personidentifikator,
     grad,
     kilde;
+
+    internal companion object {
+        internal val JsonNode.groupBy get(): Set<GroupBy> {
+            val oppløsning = path("oppløsning").takeIf { it.isArray }
+                ?: throw IllegalStateException("oppløsning må settes i requesten. Men kan settes til en tom liste om man kun ønsker utbetalte perioder per person")
+            return oppløsning.map { GroupBy.valueOf(it.asText()) }.toSet()
+        }
+    }
 }
 
 
@@ -57,6 +66,8 @@ internal class Gruppering(
     private fun List<SpøkelsePeriode>.json(): String {
         val utbetaltePerioder = map { objectMapper.createObjectNode().apply {
             // personidentifikator, organisasjonsnummer & grad legges kun til om det er gruppert på dem
+            //  - når vi ikke grupperer på verdiene tar vi bare verdiene fra `first()` - så det er ikke gitt at det er rett for alle periodene
+            //  - derfor kan vi heller ikke legge til disse verdiene i responsen
             if (GroupBy.personidentifikator in groupBy) put("personidentifikator", "${it.personidentifikator}")
             if (GroupBy.organisasjonsnummer in groupBy) put("organisasjonsnummer", it.organisasjonsnummer)
             if (GroupBy.grad in groupBy) put("grad", it.grad)

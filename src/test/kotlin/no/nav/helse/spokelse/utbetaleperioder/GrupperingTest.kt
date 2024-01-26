@@ -1,16 +1,29 @@
 package no.nav.helse.spokelse.utbetaleperioder
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.februar
 import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy
+import no.nav.helse.spokelse.utbetalteperioder.GroupBy.Companion.groupBy
 import no.nav.helse.spokelse.utbetalteperioder.Gruppering
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import org.intellij.lang.annotations.Language
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.skyscreamer.jsonassert.JSONAssert
 
 internal class GrupperingTest {
+
+    @Test
+    fun `hente grupperingsnøkler fra requesten`() {
+        assertEquals("oppløsning må settes i requesten. Men kan settes til en tom liste om man kun ønsker utbetalte perioder per person", assertThrows<IllegalStateException> { "{}".jsonNode.groupBy }.message)
+        assertEquals("No enum constant no.nav.helse.spokelse.utbetalteperioder.GroupBy.404", assertThrows<IllegalArgumentException> { """{"oppløsning":["grad", "404"]}""".jsonNode.groupBy }.message)
+        assertEquals(emptySet<GroupBy>(), """{"oppløsning":[]}""".jsonNode.groupBy)
+        assertEquals(setOf(GroupBy.organisasjonsnummer, GroupBy.grad), """{"oppløsning": ["organisasjonsnummer", "grad"]}""".jsonNode.groupBy)
+        assertEquals(setOf(GroupBy.organisasjonsnummer, GroupBy.grad, GroupBy.personidentifikator, GroupBy.kilde), """{"oppløsning":["organisasjonsnummer", "grad", "personidentifikator", "kilde"]}""".jsonNode.groupBy)
+    }
 
     @Test
     fun `Gir forskjellig response avhengig av hva det grupperes på`() {
@@ -70,5 +83,9 @@ internal class GrupperingTest {
         assertJsonEquals(forventetAlleGrupperinger, Gruppering(groupBy = GroupBy.values().toSet(), infotrygd = infotrygd, spleis = spleis).gruppér())
     }
 
-    private fun assertJsonEquals(forventet: String, faktisk: String) = JSONAssert.assertEquals(forventet, faktisk, true)
+    private companion object {
+        private fun assertJsonEquals(forventet: String, faktisk: String) = JSONAssert.assertEquals(forventet, faktisk, true)
+        private val objectMapper = jacksonObjectMapper()
+        private val String.jsonNode get() = objectMapper.readTree(this)
+    }
 }
