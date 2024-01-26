@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
 import no.nav.helse.spokelse.utbetalteperioder.Grupperingsnøkkel.Companion.grupperingsnøkkel
+import org.slf4j.LoggerFactory
 
 internal enum class GroupBy {
     organisasjonsnummer,
@@ -81,11 +82,18 @@ internal class Gruppering(
     }
 
     internal fun gruppér(): String {
+        loggRådataFørGruppering()
         if (GroupBy.kilde in groupBy) return (infotrygd.gruppér() + spleis.gruppér()).json() // Om vi grupperer på kilde gjøres gruppér på hver enkelt kilde
         return (infotrygd + spleis).gruppér().json() // Om ikke skal gruppere på kilde slår vi de samme før de grupperes
     }
 
+    private fun loggRådataFørGruppering() {
+        val rådata = (infotrygd + spleis).json()
+        sikkerlogg.info("/utbetalte-perioder:\nRådata:\n\t$rådata")
+    }
+
     private companion object {
         private val objectMapper = jacksonObjectMapper()
+        private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
     }
 }
