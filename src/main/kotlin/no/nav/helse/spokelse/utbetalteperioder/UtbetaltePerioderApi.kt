@@ -42,27 +42,12 @@ internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient:
             .takeUnless { it.isEmpty() } ?: throw IllegalArgumentException("Det må sendes med minst én personidentifikator")
         val fom = LocalDate.parse(request.path("fom").asText())
         val tom = LocalDate.parse(request.path("tom").asText())
-        val spleisPerioder = spleis.hent(personidentifikatorer, fom, tom)
-        val infotrygdPerioder = infotrygd.hent(personidentifikatorer, fom, tom)
-        val utbetaltePerioder = spleisPerioder + infotrygdPerioder
-        val response = utbetaltePerioder.response
+        val response = Gruppering(
+            groupBy = setOf(GroupBy.organisasjonsnummer, GroupBy.grad, GroupBy.personidentifikator),
+            infotrygd = infotrygd.hent(personidentifikatorer, fom, tom),
+            spleis = spleis.hent(personidentifikatorer, fom, tom)
+        ).gruppér()
         sikkerlogg.info("/utbetalte-perioder:\nRequest:\n\t$request\nResponse:\n\t$response")
         call.respondText(response, Json)
     }
-}
-
-private val List<SpøkelsePeriode>.response get(): String {
-    val utbetaltePerioder = map { objectMapper.createObjectNode().apply {
-        put("personidentifikator", "${it.personidentifikator}")
-        put("organisasjonsnummer", it.organisasjonsnummer)
-        put("fom", "${it.fom}")
-        put("tom", "${it.tom}")
-        put("grad", it.grad)
-        .apply {
-            putArray("tags").let { tags -> it.tags.forEach(tags::add) }
-        }
-    }}
-    return objectMapper.createObjectNode().apply {
-        putArray("utbetaltePerioder").addAll(utbetaltePerioder)
-    }.toString()
 }

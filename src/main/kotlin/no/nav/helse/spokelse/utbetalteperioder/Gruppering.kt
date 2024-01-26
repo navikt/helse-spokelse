@@ -1,7 +1,6 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.ktor.server.request.*
 import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
 import no.nav.helse.spokelse.utbetalteperioder.Grupperingsnøkkel.Companion.grupperingsnøkkel
 
@@ -10,14 +9,6 @@ internal enum class GroupBy {
     personidentifikator,
     grad,
     kilde;
-
-    internal companion object {
-        val default = setOf(organisasjonsnummer, personidentifikator, grad, kilde)
-        fun ApplicationRequest.groupBy(): Set<GroupBy> {
-            val groupBy = queryParameters.getAll("groupBy")?.takeUnless { it.isEmpty() } ?: return default
-            return groupBy.map { GroupBy.valueOf(it) }.toSet()
-        }
-    }
 }
 
 

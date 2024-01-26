@@ -57,7 +57,7 @@ internal class GrupperingTest {
         assertJsonEquals(forventetPersonidentifikatorGruppering, Gruppering(groupBy = setOf(GroupBy.personidentifikator), infotrygd = infotrygd, spleis = spleis).gruppér())
 
         @Language("JSON")
-        val forventetDefaultGruppering = """
+        val forventetAlleGrupperinger = """
         {
           "utbetaltePerioder": [
             { "personidentifikator": "11111111111", "organisasjonsnummer": "111111111", "grad": 100, "fom": "2018-01-01", "tom": "2018-01-10", "tags": ["IT1"] },
@@ -67,7 +67,7 @@ internal class GrupperingTest {
           ]
         }
         """
-        assertJsonEquals(forventetDefaultGruppering, Gruppering(groupBy = GroupBy.default, infotrygd = infotrygd, spleis = spleis).gruppér())
+        assertJsonEquals(forventetAlleGrupperinger, Gruppering(groupBy = GroupBy.values().toSet(), infotrygd = infotrygd, spleis = spleis).gruppér())
     }
 
     private fun assertJsonEquals(forventet: String, faktisk: String) = JSONAssert.assertEquals(forventet, faktisk, true)
