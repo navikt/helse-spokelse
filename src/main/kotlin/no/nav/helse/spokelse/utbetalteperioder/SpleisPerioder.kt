@@ -6,13 +6,6 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somSpøkelsePerioder
 import java.time.LocalDate
 
-
-internal class SpleisPerioder(private val spleis: Spleis, private val personidentifikatorer: Set<Personidentifikator>, private val fom: LocalDate, private val tom: LocalDate): Iterable<SpøkelsePeriode> {
-    override fun iterator(): Iterator<SpøkelsePeriode> {
-        return spleis.hent(personidentifikatorer, fom, tom).iterator()
-    }
-}
-
 internal class Spleis(private val tbdUtbetalingApi: TbdUtbetalingApi, private val hentVedtakDao: HentVedtakDao) {
     fun hent(personidentifikatorer: Set<Personidentifikator>, tidligsteSluttdato: LocalDate, senesteStartdato: LocalDate): List<SpøkelsePeriode> {
         return personidentifikatorer
