@@ -27,6 +27,8 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.utbetalinger.utbetalingerApi
+import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
+import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioderRiver
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -53,11 +55,13 @@ fun launchApplication(env: Map<String, String>) {
     val annulleringDao = AnnulleringDao(dataSource::dataSource)
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource::dataSource)
 
+    val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), vedtakDao)
+
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao)
         builder.withKtorModule { spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao)) }
         .build(factory = ConfiguredCIO)
         .apply {
-            registerRivers(annulleringDao, tbdUtbetalingDao)
+            registerRivers(annulleringDao, tbdUtbetalingDao, utbetaltePerioder)
             register(tbdUtbetalingConsumer)
             register(object : RapidsConnection.StatusListener {
                 override fun onStartup(rapidsConnection: RapidsConnection) {
@@ -70,10 +74,12 @@ fun launchApplication(env: Map<String, String>) {
 
 internal fun RapidsConnection.registerRivers(
     annulleringDao: AnnulleringDao,
-    tbdUtbetalingDao: TbdUtbetalingDao
+    tbdUtbetalingDao: TbdUtbetalingDao,
+    utbetaltePerioder: UtbetaltePerioder? = null
 ) {
     AnnulleringRiver(this, annulleringDao)
     HelsesjekkRiver(this, tbdUtbetalingDao)
+    utbetaltePerioder?.let { UtbetaltePerioderRiver(this, it) }
 }
 
 internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDao: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi) {
@@ -109,7 +115,7 @@ internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDa
         authenticate {
             grunnlagApi(vedtakDao, tbdUtbetalingApi)
             utbetalingerApi(vedtakDao, tbdUtbetalingApi)
-            utbetaltePerioderApi(env, httpClient, tbdUtbetalingApi, vedtakDao)
+            utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, vedtakDao))
         }
     }
 }

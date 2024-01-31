@@ -10,11 +10,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
-import no.nav.helse.spokelse.utbetalteperioder.GroupBy.Companion.groupBy
 import org.slf4j.LoggerFactory
-import java.time.LocalDate
 
 private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
 private val objectMapper = jacksonObjectMapper()
@@ -27,28 +23,14 @@ private val ApplicationCall.applicationId get() = this
     ?: throw IllegalStateException("Mangler 'azp' claim i access token")
 private val ApplicationCall.erSpapi get() = applicationId in setOf(SpapiDev, SpapiProd)
 
-internal fun Route.utbetaltePerioderApi(config: Map<String, String>, httpClient: HttpClient, tbdUtbetalingApi: TbdUtbetalingApi, hentVedtakDao: HentVedtakDao) {
-    val accessToken = Azure(config, httpClient)
-    val infotrygd = Infotrygd(httpClient, config.hent("INFOTRYGD_SCOPE"), accessToken, config.hent("INFOTRYGD_URL"))
-    val spleis = Spleis(tbdUtbetalingApi, hentVedtakDao)
+internal fun Route.utbetaltePerioderApi(utbetaltePerioder: UtbetaltePerioder) {
     post("/utbetalte-perioder") {
         if (!call.erSpapi) {
             sikkerlogg.error("Applikasjonen ${call.applicationId} har ikke tilgang")
             return@post call.respond(Forbidden)
         }
         val request = objectMapper.readTree(call.receiveText())
-        val personidentifikatorer = request.path("personidentifikatorer")
-            .map { Personidentifikator(it.asText()) }
-            .toSet()
-            .takeUnless { it.isEmpty() } ?: throw IllegalArgumentException("Det må sendes med minst én personidentifikator")
-        val fom = LocalDate.parse(request.path("fom").asText())
-        val tom = LocalDate.parse(request.path("tom").asText())
-        val response = Gruppering(
-            groupBy = request.groupBy,
-            infotrygd = infotrygd.hent(personidentifikatorer, fom, tom),
-            spleis = spleis.hent(personidentifikatorer, fom, tom)
-        ).gruppér()
-        sikkerlogg.info("/utbetalte-perioder:\nRequest:\n\t$request\nResponse:\n\t$response")
+        val response = utbetaltePerioder.hent(request)
         call.respondText(response, Json)
     }
 }
