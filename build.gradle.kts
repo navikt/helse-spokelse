@@ -16,7 +16,7 @@ plugins {
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:2024010209171704183456.6d035b91ffb4")
+    implementation("com.github.navikt:rapids-and-rivers:2024020421571707080262.b74e641fd6dd")
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-server-call-id:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
