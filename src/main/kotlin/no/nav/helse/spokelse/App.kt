@@ -59,7 +59,7 @@ fun launchApplication(env: Map<String, String>) {
 
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao)
         builder.withKtorModule { spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao)) }
-        .build(factory = ConfiguredCIO)
+        .build()
         .apply {
             registerRivers(annulleringDao, tbdUtbetalingDao, utbetaltePerioder)
             register(tbdUtbetalingConsumer)
