@@ -8,7 +8,6 @@ import io.ktor.http.HttpStatusCode.Companion.InternalServerError
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.callid.*
 import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.contentnegotiation.*
@@ -35,6 +34,7 @@ import org.slf4j.event.Level
 import java.util.*
 
 private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
+internal fun Map<String, String>.hent(key: String) = get(key) ?: throw IllegalStateException("Mangler config for $key")
 
 fun main() {
     launchApplication(System.getenv())
@@ -58,7 +58,7 @@ fun launchApplication(env: Map<String, String>) {
     val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), vedtakDao)
 
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao)
-        builder.withKtorModule { spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao)) }
+        builder.withKtorModule { spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao), ApplicationIdAllowlist) }
         .build()
         .apply {
             registerRivers(annulleringDao, tbdUtbetalingDao, utbetaltePerioder)
@@ -82,7 +82,7 @@ internal fun RapidsConnection.registerRivers(
     utbetaltePerioder?.let { UtbetaltePerioderRiver(this, it) }
 }
 
-internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDao: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi) {
+internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDao: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi, apiTilgangsstyring: ApiTilgangsstyring) {
     val httpClient = HttpClient(CIO)
     azureAdAppAuthentication(auth)
     requestResponseTracing(sikkerlogg)
@@ -113,19 +113,10 @@ internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDa
     }
     routing {
         authenticate {
-            grunnlagApi(vedtakDao, tbdUtbetalingApi)
-            utbetalingerApi(vedtakDao, tbdUtbetalingApi)
-            utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, vedtakDao))
+            grunnlagApi(vedtakDao, tbdUtbetalingApi, apiTilgangsstyring)
+            utbetalingerApi(vedtakDao, tbdUtbetalingApi, apiTilgangsstyring)
+            utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, vedtakDao), apiTilgangsstyring)
         }
     }
 }
 
-private fun ApplicationCall.applicationId() = try {
-    val jwt = (authentication.principal(provider = null, JWTPrincipal::class))!!
-    jwt.getClaim("azp", String::class) ?: jwt.getClaim("appid", String::class) ?: "n/a (fant ikke)"
-} catch (ex: Exception) {
-    sikkerlogg.error("Klarte ikke å utlede Application ID", ex)
-    "n/a (feil)"
-}
-
-internal fun ApplicationCall.logRequest() = sikkerlogg.info("Mottok request mot ${request.path()} fra ${applicationId()}")

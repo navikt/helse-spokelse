@@ -6,6 +6,7 @@ import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.OK
+import no.nav.helse.spokelse.hent
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.LocalDateTime

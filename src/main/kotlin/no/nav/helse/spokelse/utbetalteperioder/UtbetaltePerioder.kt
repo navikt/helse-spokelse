@@ -3,6 +3,7 @@ package no.nav.helse.spokelse.utbetalteperioder
 import com.fasterxml.jackson.databind.JsonNode
 import io.ktor.client.*
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
+import no.nav.helse.spokelse.hent
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy.Companion.groupBy
 import org.slf4j.LoggerFactory

@@ -6,9 +6,11 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
+import no.nav.helse.spokelse.ApplicationIdAllowlist.applicationId
 import no.nav.helse.spokelse.gamlevedtak.AnnulleringDao
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
@@ -87,7 +89,11 @@ internal abstract class AbstractE2ETest {
     ) {
         testApplication {
             this.application {
-                spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao))
+                spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao), object: ApiTilgangsstyring {
+                    override fun utbetaltePerioder(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
+                    override fun grunnlag(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
+                    override fun utbetalinger(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
+                })
             }
 
             Awaitility.await().atMost(timeout.toLong(), TimeUnit.SECONDS).untilAsserted {

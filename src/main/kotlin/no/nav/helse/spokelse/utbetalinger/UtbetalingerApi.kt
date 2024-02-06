@@ -4,9 +4,9 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import no.nav.helse.spokelse.ApiTilgangsstyring
 import no.nav.helse.spokelse.UtbetalingDTO
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
-import no.nav.helse.spokelse.logRequest
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import org.slf4j.LoggerFactory
 
@@ -17,9 +17,9 @@ private fun List<UtbetalingDTO>.unikeFnrMedEkteUtbetalinger() = this.filter {
     .toSet()
 
 
-internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi) {
+internal fun Route.utbetalingerApi(vedtakDAO: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi, tilgangsstyrings: ApiTilgangsstyring) {
     post("/utbetalinger") {
-        call.logRequest()
+        tilgangsstyrings.utbetalinger(call)
         val fødselsnumre = call.receive<List<String>>()
         val utbetalinger = fødselsnumre.flatMap { fødselsnummer ->
             val annulerteFagsystemIder = vedtakDAO.hentAnnuleringerForFødselsnummer(fødselsnummer)
