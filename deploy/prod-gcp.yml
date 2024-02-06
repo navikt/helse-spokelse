@@ -28,6 +28,10 @@ spec:
   replicas:
     min: 3
     max: 6
+  strategy:
+      rollingUpdate:
+        maxSurge: 2 # ruller ut to nye podder samtidig
+        maxUnavailable: 1 # terminerer en pod samtidig som de nye rulles ut
   prometheus:
     enabled: true
     path: /metrics
@@ -51,9 +55,7 @@ spec:
           namespace: teamforeldrepenger
           cluster: prod-fss
         - application: spissnok
-          namespace: tbd
         - application: spapi
-          namespace: tbd
         - application: k9-abakus
           namespace: k9saksbehandling
           cluster: prod-fss
