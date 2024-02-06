@@ -52,6 +52,9 @@ spec:
           namespace: tbd
         - application: spapi
           namespace: tbd
+        - application: k9-abakus
+          namespace: k9saksbehandling
+          cluster: dev-fss
     outbound:
       external:
         - host: sykepengeperioder-api.dev-fss-pub.nais.io
