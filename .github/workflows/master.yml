@@ -11,8 +11,8 @@ jobs:
     permissions:
         id-token: write
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-java@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17.x'
@@ -41,7 +41,7 @@ jobs:
          - dev-gcp
          - prod-gcp
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: deploy
       uses: nais/deploy/actions/deploy@v1
       env:
