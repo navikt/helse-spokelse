@@ -7,7 +7,7 @@ val jsonAssertVersion = "1.5.1"
 val hikariCPVersion = "5.1.0"
 val kotliqueryVersion="1.9.0"
 val flywayVersion = "9.22.3" // Finnes en major update 🤔
-val mockkVersion = "1.13.8"
+val mockkVersion = "1.13.9"
 val awaitilityVersion = "4.2.0"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
