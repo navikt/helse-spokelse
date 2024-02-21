@@ -1,5 +1,5 @@
 val ktorVersion = "2.3.8"
-val postgresqlVersion = "42.7.0"
+val postgresqlVersion = "42.7.2"
 val wiremockVersion = "3.3.1"
 val junitJupiterVersion = "5.10.2"
 val testcontainersVersion = "1.19.2"
