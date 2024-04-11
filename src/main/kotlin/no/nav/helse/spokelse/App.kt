@@ -25,7 +25,6 @@ import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
-import no.nav.helse.spokelse.utbetalinger.utbetalingerApi
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioderRiver
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
@@ -114,7 +113,6 @@ internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDa
     routing {
         authenticate {
             grunnlagApi(vedtakDao, tbdUtbetalingApi, apiTilgangsstyring)
-            utbetalingerApi(vedtakDao, tbdUtbetalingApi, apiTilgangsstyring)
             utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, vedtakDao), apiTilgangsstyring)
         }
     }

@@ -92,7 +92,6 @@ internal abstract class AbstractE2ETest {
                 spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao), object: ApiTilgangsstyring {
                     override fun utbetaltePerioder(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
                     override fun grunnlag(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
-                    override fun utbetalinger(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
                 })
             }
 

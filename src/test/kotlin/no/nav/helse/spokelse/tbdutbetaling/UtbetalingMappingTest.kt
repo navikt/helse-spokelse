@@ -2,12 +2,8 @@ package no.nav.helse.spokelse.tbdutbetaling
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.FpVedtak
-import no.nav.helse.spokelse.Refusjonstype.REFUSJON_TIL_ARBEIDSGIVER
-import no.nav.helse.spokelse.Refusjonstype.REFUSJON_TIL_PERSON
 import no.nav.helse.spokelse.Utbetalingsperiode
-import no.nav.helse.spokelse.UtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somFpVedtak
-import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somUtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.utbetaling
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -130,14 +126,6 @@ internal class UtbetalingMappingTest {
             ))
         )
         assertEquals(forventetFpVedtak, utbetalinger.somFpVedtak())
-
-        val forventetUtbetalingDTO = listOf(
-            UtbetalingDTO(fødselsnummer = "12345678901", fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5, gjenståendeSykedager = 178, utbetaltTidspunkt = sistUtbetalt, REFUSJON_TIL_ARBEIDSGIVER),
-            UtbetalingDTO(fødselsnummer = "12345678901", fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0, gjenståendeSykedager = 178, utbetaltTidspunkt = sistUtbetalt, REFUSJON_TIL_ARBEIDSGIVER),
-            UtbetalingDTO(fødselsnummer = "12345678901", fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0, gjenståendeSykedager = 178, utbetaltTidspunkt = sistUtbetalt, REFUSJON_TIL_PERSON)
-        )
-
-        assertEquals(forventetUtbetalingDTO, utbetalinger.somUtbetalingDTO())
     }
 
     private companion object {

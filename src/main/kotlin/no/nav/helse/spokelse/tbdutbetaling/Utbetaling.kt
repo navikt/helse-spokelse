@@ -3,10 +3,7 @@ package no.nav.helse.spokelse.tbdutbetaling
 import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.isMissingOrNull
 import no.nav.helse.spokelse.FpVedtak
-import no.nav.helse.spokelse.Refusjonstype
-import no.nav.helse.spokelse.Refusjonstype.*
 import no.nav.helse.spokelse.Utbetalingsperiode
-import no.nav.helse.spokelse.UtbetalingDTO
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
@@ -49,18 +46,6 @@ internal data class Utbetaling(
     )}
     private fun somFpVedtak() = listOfNotNull(arbeidsgiverOppdrag.somFpVedtak(), personOppdrag.somFpVedtak())
 
-    private fun Oppdrag?.somUtbetalingDTO(refusjonstype: Refusjonstype) = this?.let { oppdrag -> oppdrag.utbetalingslinjer.map { linje -> UtbetalingDTO(
-        fødselsnummer = fødselsnummer,
-        fom = linje.fom,
-        tom = linje.tom,
-        grad = linje.grad,
-        gjenståendeSykedager = gjenståendeSykedager,
-        utbetaltTidspunkt = sistUtbetalt,
-        refusjonstype = refusjonstype
-    )}} ?: emptyList()
-
-    private fun somUtbetalingDTO() = arbeidsgiverOppdrag.somUtbetalingDTO(REFUSJON_TIL_ARBEIDSGIVER) + personOppdrag.somUtbetalingDTO(REFUSJON_TIL_PERSON)
-
     private fun somSpøkelsePeriode() : List<SpøkelsePeriode> {
         val personidentifikator = Personidentifikator(fødselsnummer)
         val utbetalingslinjer = (arbeidsgiverOppdrag?.utbetalingslinjer ?: emptyList()) + (personOppdrag?.utbetalingslinjer ?: emptyList())
@@ -92,7 +77,6 @@ internal data class Utbetaling(
             )
         }
         internal fun List<Utbetaling>.somFpVedtak() = flatMap(Utbetaling::somFpVedtak)
-        internal fun List<Utbetaling>.somUtbetalingDTO() = flatMap(Utbetaling::somUtbetalingDTO)
         internal fun List<Utbetaling>.somSpøkelsePerioder() = flatMap(Utbetaling::somSpøkelsePeriode)
     }
 }

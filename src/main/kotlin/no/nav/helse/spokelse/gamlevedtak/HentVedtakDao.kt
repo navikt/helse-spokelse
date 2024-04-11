@@ -3,7 +3,6 @@ package no.nav.helse.spokelse.gamlevedtak
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.spokelse.FpVedtak
-import no.nav.helse.spokelse.Refusjonstype
 import no.nav.helse.spokelse.Utbetalingsperiode
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
@@ -82,82 +81,6 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
                         vedtattTidspunkt = value.first().utbetaltTidspunkt
                     )
                 }
-        }
-    }
-
-    data class UtbetalingRad(
-        val fagsystemId: String,
-        val fom: LocalDate,
-        val tom: LocalDate,
-        val grad: Double,
-        val gjenståendeSykedager: Int?,
-        val utbetaltTidspunkt: LocalDateTime?,
-        val refusjonstype: Refusjonstype
-    )
-
-    fun hentSpissnokUtbetalinger(fødselsnummer: String): List<UtbetalingRad> {
-        @Language("PostgreSQL")
-        val spørring = """
-        SELECT fagsystem_id,
-               fom,
-               tom,
-               grad,
-               gjenstaende_sykedager,
-               opprettet utbetalt_tidspunkt,
-               fagomrade
-        FROM gamle_utbetalinger
-        WHERE fodselsnummer = :fodselsnummer
-        UNION ALL
-        SELECT vo.fagsystemid           fagsystem_id,
-               u.fom                    fom,
-               u.tom                    tom,
-               u.grad                   grad,
-               vo.gjenstående_sykedager gjenstaende_sykedager,
-               vo.opprettet             utbetalt_tidspunkt,
-               vo.fagområde             fagomrade
-        FROM (
-                 SELECT DISTINCT ON (o.fagsystemid) o.fagsystemid,
-                                                    v.gjenstående_sykedager,
-                                                    v.opprettet,
-                                                    o.id AS oppdrag_id,
-                                                    o.fagområde
-                 FROM vedtak v
-                          INNER JOIN oppdrag o ON v.id = o.vedtak_id
-                 WHERE v.fodselsnummer = :fodselsnummer
-                 ORDER BY fagsystemid, opprettet DESC) AS vo
-                 INNER JOIN utbetaling u ON vo.oppdrag_id = u.oppdrag_id
-        UNION ALL
-        SELECT utbetalingsref        fagsystem_id,
-               fom                   fom,
-               tom                   tom,
-               grad                  grad,
-               gjenstående_sykedager gjenstaende_sykedager,
-               opprettet             utbetalt_tidspunkt,
-               'SPREF'               fagomrade
-        FROM (SELECT DISTINCT ON (utbetalingsref) utbetalingsref,
-                                                  gjenstående_sykedager,
-                                                  opprettet,
-                                                  id
-              FROM old_vedtak ov
-                       INNER JOIN vedtak_utbetalingsref vu ON ov.vedtaksperiode_id = vu.vedtaksperiode_id
-              WHERE fodselsnummer = :fodselsnummer
-              ORDER BY utbetalingsref, opprettet DESC
-             ) AS vo
-                 INNER JOIN old_utbetaling ON vedtak_id = vo.id;
-        """
-
-        return sessionOf(dataSource()).use { session ->
-            session.run(queryOf(spørring, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
-                UtbetalingRad(
-                    fagsystemId = row.string("fagsystem_id"),
-                    fom = row.localDate("fom"),
-                    tom = row.localDate("tom"),
-                    grad = row.double("grad"),
-                    gjenståendeSykedager = row.intOrNull("gjenstaende_sykedager"),
-                    utbetaltTidspunkt = row.localDateTimeOrNull("utbetalt_tidspunkt"),
-                    refusjonstype = Refusjonstype.fraFagområde(row.string("fagomrade"))
-                )
-            }.asList)
         }
     }
 
