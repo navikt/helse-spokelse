@@ -113,7 +113,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til arbeidsgiver ved full refusjon`() {
         lagreFullRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(ArbeidsgiverFagsystemId, null))
+        tbdUtbetalingObserver.annullering(annuleringsMeldingId, Annullering(ArbeidsgiverFagsystemId, null))
         assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
@@ -121,7 +121,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til person ved ingen refusjon`() {
         lagreNullRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(null, PersonFagsystemId))
+        tbdUtbetalingObserver.annullering(annuleringsMeldingId, Annullering(null, PersonFagsystemId))
         assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
@@ -129,7 +129,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til arbeidsgiver ved delvis refusjon`() {
         val utbetaling = lagreDelvisRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(ArbeidsgiverFagsystemId, null))
+        tbdUtbetalingObserver.annullering(annuleringsMeldingId, Annullering(ArbeidsgiverFagsystemId, null))
         assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(listOf(utbetaling.copy(arbeidsgiverOppdrag = null)), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
@@ -137,7 +137,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til person ved delvis refusjon`() {
         val utbetaling = lagreDelvisRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(null, PersonFagsystemId))
+        tbdUtbetalingObserver.annullering(annuleringsMeldingId, Annullering(null, PersonFagsystemId))
         assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(listOf(utbetaling.copy(personOppdrag = null)), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
@@ -145,7 +145,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til person og arbeidsgiver ved delvis refusjon`() {
         lagreDelvisRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annuller(annuleringsMeldingId, Annullering(ArbeidsgiverFagsystemId, PersonFagsystemId))
+        tbdUtbetalingObserver.annullering(annuleringsMeldingId, Annullering(ArbeidsgiverFagsystemId, PersonFagsystemId))
         assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
@@ -222,7 +222,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
             sistUtbetalt = nå(),
             organisasjonsnummer = Organisasjonsnummer
         )
-        tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
+        tbdUtbetalingObserver.utbetaling(meldingId, utbetaling)
         return utbetaling
     }
     private fun lagreNullRefusjon(
@@ -245,7 +245,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
             sistUtbetalt = nå(),
             organisasjonsnummer = Organisasjonsnummer
         )
-        tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
+        tbdUtbetalingObserver.utbetaling(meldingId, utbetaling)
         return utbetaling
     }
     private fun lagreDelvisRefusjon(
@@ -275,7 +275,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
             sistUtbetalt = nå(),
             organisasjonsnummer = Organisasjonsnummer
         )
-        tbdUtbetalingDao.lagreUtbetaling(meldingId, utbetaling)
+        tbdUtbetalingObserver.utbetaling(meldingId, utbetaling)
         return utbetaling
     }
 

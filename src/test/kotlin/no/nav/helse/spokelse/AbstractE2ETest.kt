@@ -15,6 +15,7 @@ import no.nav.helse.spokelse.gamlevedtak.AnnulleringDao
 import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingObserver
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -54,6 +55,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var lagreVedtakDao: LagreVedtakDao
     protected lateinit var annulleringDao: AnnulleringDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
+    protected lateinit var tbdUtbetalingObserver: TbdUtbetalingObserver
     protected lateinit var rapid: TestRapid
 
     @BeforeAll
@@ -66,6 +68,7 @@ internal abstract class AbstractE2ETest {
         lagreVedtakDao = LagreVedtakDao(dataSource)
         annulleringDao = AnnulleringDao(::dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
+        tbdUtbetalingObserver = tbdUtbetalingDao
 
         rapid = TestRapid().apply {
             registerRivers(annulleringDao, tbdUtbetalingDao)

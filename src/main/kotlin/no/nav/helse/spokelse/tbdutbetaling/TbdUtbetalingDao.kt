@@ -11,7 +11,7 @@ import javax.sql.DataSource
 
 internal class TbdUtbetalingDao(
     private val dataSource: () -> DataSource
-) {
+): TbdUtbetalingObserver {
     internal fun lagreMelding(melding: Melding): Long {
         return sessionOf(dataSource = dataSource(), returnGeneratedKey = true).use { session ->
             val parameters = mapOf(
@@ -26,7 +26,7 @@ internal class TbdUtbetalingDao(
         }
     }
 
-    internal fun lagreUtbetaling(meldingId: Long, utbetaling: Utbetaling) {
+    private fun lagreUtbetaling(meldingId: Long, utbetaling: Utbetaling) {
         sessionOf(dataSource()).use { session ->
             session.transaction { transactionalSession ->
                 // Sletter eventuell eksisterende utbetaling (og tilhørende utbetalingslinjer)
@@ -66,7 +66,7 @@ internal class TbdUtbetalingDao(
         }
     }
 
-    internal fun annuller(meldingId: Long, annullering: Annullering) {
+    private fun annuller(meldingId: Long, annullering: Annullering) {
         sessionOf(dataSource()).use { session ->
             session.transaction { transactionalSession ->
                 annullering.arbeidsgiverFagsystemId?.let { arbeidsgiverFagsystemId ->
@@ -202,4 +202,7 @@ internal class TbdUtbetalingDao(
             WHERE personFagsystemId = :fagsystemId
         """
     }
+
+    override fun annullering(meldingId: Long, annullering: Annullering) = annuller(meldingId, annullering)
+    override fun utbetaling(meldingId: Long, utbetaling: Utbetaling) = lagreUtbetaling(meldingId, utbetaling)
 }

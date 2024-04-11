@@ -5,7 +5,7 @@ import no.nav.helse.rapids_rivers.*
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 
-class AnnulleringRiver(
+internal class AnnulleringRiver(
     rapidsConnection: RapidsConnection,
     private val annulleringDao: AnnulleringDao
 ) : River.PacketListener {

@@ -29,7 +29,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 internal class TbdUtbetalingConsumer(
         env: Map<String, String>,
-        private val tbdUtbetalingDao: TbdUtbetalingDao
+        private val tbdUtbetalingDao: TbdUtbetalingDao,
+        private val observers: List<TbdUtbetalingObserver>
     ): Runnable, RapidsConnection.StatusListener {
 
     private val kafkaConsumer = KafkaConsumer(consumerProperties(env), StringDeserializer(), StringDeserializer())
@@ -80,13 +81,13 @@ internal class TbdUtbetalingConsumer(
     private fun håndterUtbetaling(json: JsonNode, meldingSendt: LocalDateTime) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         json.logg(meldingId)
-        tbdUtbetalingDao.lagreUtbetaling(meldingId, json.utbetaling(meldingSendt))
+        observers.forEach { it.utbetaling(meldingId, json.utbetaling(meldingSendt)) }
     }
 
     private fun håndteAnnullering(json: JsonNode, meldingSendt: LocalDateTime) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         json.logg(meldingId)
-        tbdUtbetalingDao.annuller(meldingId, json.annullering())
+        observers.forEach { it.annullering(meldingId, json.annullering()) }
     }
 
     private fun håndterUtbetalingUtenUtbetaling(json: JsonNode, meldingSendt: LocalDateTime) {
