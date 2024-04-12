@@ -4,16 +4,21 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.spokelse.FpVedtak
 import no.nav.helse.spokelse.Utbetalingsperiode
+import no.nav.helse.spokelse.tbdutbetaling.Annullering
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingObserver
+import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import org.intellij.lang.annotations.Language
+import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.sql.DataSource
 
-class HentVedtakDao(private val dataSource: () -> DataSource) {
+internal class HentVedtakDao(private val dataSource: () -> DataSource): TbdUtbetalingObserver {
 
     internal companion object {
+        private val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
         private val harDataTilOgMed = LocalDate.parse("2022-03-16")
         internal fun harData(fraOgMed: LocalDate?) = fraOgMed == null || fraOgMed <= harDataTilOgMed
         internal fun List<VedtakRow>.filtrer(fraOgMed: LocalDate?) = when (fraOgMed) {
@@ -162,6 +167,22 @@ class HentVedtakDao(private val dataSource: () -> DataSource) {
                     tags = setOf("Spleis", row.string("tag"))
                 )
             }.asList).toSet()
+        }
+    }
+
+    override fun utbetaling(meldingId: Long, utbetaling: Utbetaling) {
+        // Nye utbetalinger er ikke aktuelt å lagre, det er kun annulleringer av gamle utbetalinger som er viktig å få med seg.
+    }
+
+    override fun annullering(meldingId: Long, annullering: Annullering) {
+        @Language("PostgreSQL")
+        val sql = "INSERT INTO alle_annulleringer (fagsystem_id) VALUES(:fagsystem_id) ON CONFLICT DO NOTHING"
+
+        sessionOf(dataSource()).use { session ->
+            listOfNotNull(annullering.arbeidsgiverFagsystemId, annullering.personFagsystemId).forEach { fagsystemId ->
+                sikkerLogg.info("Lagrer annullering av fagsystemId $fagsystemId i tabellen alle_annulleringer")
+                session.run(queryOf(sql, mapOf("fagsystem_id" to fagsystemId)).asExecute)
+            }
         }
     }
 }
