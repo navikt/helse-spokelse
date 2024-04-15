@@ -39,6 +39,7 @@ jobs:
       matrix:
         cluster:
          - dev-gcp
+         - prod-gcp
     steps:
     - uses: actions/checkout@v4
     - name: deploy
