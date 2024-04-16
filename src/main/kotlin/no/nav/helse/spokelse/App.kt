@@ -50,14 +50,14 @@ fun launchApplication(env: Map<String, String>) {
 
     val dataSource = DataSourceBuilder()
 
-    val vedtakDao = GamleUtbetalingerDao(dataSource::dataSource)
+    val gamleUtbetalingerDao = GamleUtbetalingerDao(dataSource::dataSource)
     val annulleringDao = AnnulleringDao(dataSource::dataSource)
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource::dataSource)
 
-    val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), vedtakDao)
+    val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), gamleUtbetalingerDao)
 
-    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, observers = listOf(tbdUtbetalingDao, vedtakDao))
-        builder.withKtorModule { spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao), ApplicationIdAllowlist) }
+    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
+        builder.withKtorModule { spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), ApplicationIdAllowlist) }
         .build()
         .apply {
             registerRivers(annulleringDao, tbdUtbetalingDao, utbetaltePerioder)
@@ -81,7 +81,7 @@ internal fun RapidsConnection.registerRivers(
     utbetaltePerioder?.let { UtbetaltePerioderRiver(this, it) }
 }
 
-internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi, apiTilgangsstyring: ApiTilgangsstyring) {
+internal fun Application.spokelse(env: Map<String, String>, auth: Auth, gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi, apiTilgangsstyring: ApiTilgangsstyring) {
     val httpClient = HttpClient(CIO)
     azureAdAppAuthentication(auth)
     requestResponseTracing(sikkerlogg)
@@ -112,8 +112,8 @@ internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDa
     }
     routing {
         authenticate {
-            grunnlagApi(vedtakDao, tbdUtbetalingApi, apiTilgangsstyring)
-            utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, vedtakDao), apiTilgangsstyring)
+            grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi, apiTilgangsstyring)
+            utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, gamleUtbetalingerDao), apiTilgangsstyring)
         }
     }
 }

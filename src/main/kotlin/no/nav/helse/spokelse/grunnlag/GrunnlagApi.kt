@@ -16,7 +16,7 @@ private val logg: Logger = LoggerFactory.getLogger("spokelse")
 private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
 private fun String.asLocalDateOrNull() = kotlin.runCatching { LocalDate.parse(this) }.getOrNull()
 
-internal fun Route.grunnlagApi(vedtakDAO: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi, tilgangsstyrings: ApiTilgangsstyring) {
+internal fun Route.grunnlagApi(gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi, tilgangsstyrings: ApiTilgangsstyring) {
     get("/grunnlag") {
         tilgangsstyrings.grunnlag(call)
         val fødselsnummer = call.request.queryParameters["fodselsnummer"]
@@ -29,7 +29,7 @@ internal fun Route.grunnlagApi(vedtakDAO: GamleUtbetalingerDao, tbdUtbetalingApi
         }
         val time = measureTimeMillis {
             try {
-                val vedtak = vedtakDAO.hentFpVedtak(fødselsnummer, fom) + tbdUtbetalingApi.hentFpVedtak(fødselsnummer, fom)
+                val vedtak = gamleUtbetalingerDao.hentFpVedtak(fødselsnummer, fom) + tbdUtbetalingApi.hentFpVedtak(fødselsnummer, fom)
                 call.respond(HttpStatusCode.OK, vedtak)
             } catch (e: Exception) {
                 logg.error("Feil ved henting av vedtak", e)

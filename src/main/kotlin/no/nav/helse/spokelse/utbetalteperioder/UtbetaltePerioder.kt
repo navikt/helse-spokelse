@@ -11,8 +11,8 @@ import java.time.LocalDate
 
 internal class UtbetaltePerioder private constructor(private val spleis: Spleis, private val infotrygd: Infotrygd) {
 
-    internal constructor(config: Map<String, String>, httpClient: HttpClient, tbdUtbetalingApi: TbdUtbetalingApi, vedtakDao: GamleUtbetalingerDao): this(
-        spleis = Spleis(tbdUtbetalingApi = tbdUtbetalingApi, gamleUtbetalingerDao = vedtakDao),
+    internal constructor(config: Map<String, String>, httpClient: HttpClient, tbdUtbetalingApi: TbdUtbetalingApi, gamleUtbetalingerDao: GamleUtbetalingerDao): this(
+        spleis = Spleis(tbdUtbetalingApi = tbdUtbetalingApi, gamleUtbetalingerDao = gamleUtbetalingerDao),
         infotrygd = Infotrygd(
             httpClient = httpClient,
             scope = config.hent("INFOTRYGD_SCOPE"),
