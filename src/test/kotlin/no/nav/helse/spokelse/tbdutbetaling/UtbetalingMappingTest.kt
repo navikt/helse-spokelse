@@ -1,8 +1,8 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import no.nav.helse.spokelse.FpVedtak
-import no.nav.helse.spokelse.Utbetalingsperiode
+import no.nav.helse.spokelse.grunnlag.FpVedtak
+import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somFpVedtak
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.utbetaling
 import org.intellij.lang.annotations.Language

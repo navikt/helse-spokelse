@@ -1,8 +1,6 @@
 package no.nav.helse.spokelse
 
-import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao.Companion.filtrer
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao.Companion.harData
-import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao.VedtakRow
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -164,32 +162,5 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         assertTrue(harData(LocalDate.parse("2022-03-15")))
         assertTrue(harData(LocalDate.parse("2022-03-16")))
         assertFalse(harData(LocalDate.parse("2022-03-17")))
-    }
-
-    @Test
-    fun `filtrerer bort vedtak basert på fom`() {
-        var vedtak = listOf(vedtak(2.januar, 15.januar))
-        assertEquals(vedtak, vedtak.filtrer(null))
-        assertEquals(vedtak, vedtak.filtrer(1.januar))
-        assertEquals(vedtak, vedtak.filtrer(15.januar))
-        assertEquals(emptyList<VedtakRow>(), vedtak.filtrer(16.januar))
-        assertEquals(emptyList<VedtakRow>(), vedtak.filtrer(17.januar))
-
-        val januar = vedtak(1.januar, 31.januar)
-        val mars = vedtak(1.mars, 31.mars)
-        vedtak = listOf(januar, mars)
-
-        assertEquals(vedtak, vedtak.filtrer(null))
-        assertEquals(vedtak, vedtak.filtrer(LocalDate.parse("2017-12-31")))
-        assertEquals(vedtak, vedtak.filtrer(1.januar))
-        assertEquals(listOf(mars), vedtak.filtrer(1.februar))
-        assertEquals(listOf(mars), vedtak.filtrer(28.februar))
-        assertEquals(listOf(mars), vedtak.filtrer(1.mars))
-        assertEquals(listOf(mars), vedtak.filtrer(31.mars))
-        assertEquals(emptyList<VedtakRow>(), vedtak.filtrer(1.april))
-    }
-
-    private companion object {
-        private fun vedtak(fom: LocalDate, tom: LocalDate) = VedtakRow("fagsystemId", LocalDateTime.now(), fom, tom, 100.0)
     }
 }

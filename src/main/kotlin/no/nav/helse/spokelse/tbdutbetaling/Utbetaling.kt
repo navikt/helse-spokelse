@@ -2,8 +2,8 @@ package no.nav.helse.spokelse.tbdutbetaling
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.isMissingOrNull
-import no.nav.helse.spokelse.FpVedtak
-import no.nav.helse.spokelse.Utbetalingsperiode
+import no.nav.helse.spokelse.grunnlag.FpVedtak
+import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
@@ -43,7 +43,8 @@ internal data class Utbetaling(
         vedtaksreferanse = oppdrag.fagsystemId,
         utbetalinger = oppdrag.utbetalingslinjer.map { Utbetalingsperiode(it.fom, it.tom, it.grad) },
         vedtattTidspunkt = sistUtbetalt
-    )}
+    )
+    }
     private fun somFpVedtak() = listOfNotNull(arbeidsgiverOppdrag.somFpVedtak(), personOppdrag.somFpVedtak())
 
     private fun somSpøkelsePeriode() : List<SpøkelsePeriode> {

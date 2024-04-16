@@ -6,7 +6,9 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.spokelse.ApiTilgangsstyring
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
+import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somFpVedtak
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
+import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somFpVedtak
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
@@ -29,7 +31,7 @@ internal fun Route.grunnlagApi(gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUt
         }
         val time = measureTimeMillis {
             try {
-                val vedtak = gamleUtbetalingerDao.hentFpVedtak(fødselsnummer, fom) + tbdUtbetalingApi.hentFpVedtak(fødselsnummer, fom)
+                val vedtak: List<FpVedtak> = gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, fom).somFpVedtak() + tbdUtbetalingApi.utbetalinger(fødselsnummer, fom, null).somFpVedtak()
                 call.respond(HttpStatusCode.OK, vedtak)
             } catch (e: Exception) {
                 logg.error("Feil ved henting av vedtak", e)

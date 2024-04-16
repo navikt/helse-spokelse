@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse
+package no.nav.helse.spokelse.grunnlag
 
 import java.time.LocalDate
 import java.time.LocalDateTime
