@@ -18,14 +18,12 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
 
         private val harDataFraOgMed = LocalDate.parse("2019-10-25")
         private val harDataTilOgMed = LocalDate.parse("2022-03-16")
-        private fun etÅrFremFraNå() = LocalDate.now().plusYears(1)
         internal fun harData(fraOgMed: LocalDate?) = fraOgMed == null || fraOgMed <= harDataTilOgMed
     }
 
     internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate?): List<GammelUtbetaling> {
-        val benyttetFom = fom ?: harDataFraOgMed
-        val benyttetTom = maxOf(benyttetFom, etÅrFremFraNå())
-        return hentUtbetalinger(fødselsnummer, benyttetFom, benyttetTom)
+        if (!harData(fom)) return emptyList()
+        return hentUtbetalinger(fødselsnummer, fom ?: harDataFraOgMed, harDataTilOgMed)
     }
     internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate, tom: LocalDate): List<GammelUtbetaling> {
         if (!harData(fom)) return emptyList()
