@@ -9,9 +9,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
-import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.ApplicationIdAllowlist.applicationId
-import no.nav.helse.spokelse.gamleutbetalinger.AnnulleringDao
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
@@ -52,9 +50,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var utbetaltDao: UtbetaltDao
     protected lateinit var gamleUtbetalingerDao: GamleUtbetalingerDao
     protected lateinit var lagreVedtakDao: LagreVedtakDao
-    protected lateinit var annulleringDao: AnnulleringDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
-    protected lateinit var rapid: TestRapid
 
     @BeforeAll
     fun setup() {
@@ -64,17 +60,11 @@ internal abstract class AbstractE2ETest {
         utbetaltDao = UtbetaltDao(dataSource)
         gamleUtbetalingerDao = GamleUtbetalingerDao(::dataSource)
         lagreVedtakDao = LagreVedtakDao(dataSource)
-        annulleringDao = AnnulleringDao(::dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
-
-        rapid = TestRapid().apply {
-            registerRivers(annulleringDao, tbdUtbetalingDao)
-        }
     }
 
     @BeforeEach
     protected fun reset() {
-        rapid.reset()
         PgDb.reset()
     }
 

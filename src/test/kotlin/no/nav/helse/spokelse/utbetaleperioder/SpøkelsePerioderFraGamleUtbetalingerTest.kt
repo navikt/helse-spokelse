@@ -123,7 +123,6 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
     }
 
     private fun annuller(vararg fagsystemIder: String) {
-        fagsystemIder.forEach { annulleringDao.insertAnnullering(fødselsnummer, "Ja", it, LocalDate.now(), LocalDate.now(), "Ja") }
         fagsystemIder.forEach { gamleUtbetalingerDao.annullering(1L, Annullering(it, null)) }
     }
 }

@@ -17,8 +17,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
-import no.nav.helse.spokelse.gamleutbetalinger.AnnulleringDao
-import no.nav.helse.spokelse.gamleutbetalinger.AnnulleringRiver
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
@@ -51,7 +49,6 @@ fun launchApplication(env: Map<String, String>) {
     val dataSource = DataSourceBuilder()
 
     val gamleUtbetalingerDao = GamleUtbetalingerDao(dataSource::dataSource)
-    val annulleringDao = AnnulleringDao(dataSource::dataSource)
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource::dataSource)
 
     val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), gamleUtbetalingerDao)
@@ -60,7 +57,7 @@ fun launchApplication(env: Map<String, String>) {
         builder.withKtorModule { spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), ApplicationIdAllowlist) }
         .build()
         .apply {
-            registerRivers(annulleringDao, tbdUtbetalingDao, utbetaltePerioder)
+            registerRivers(tbdUtbetalingDao, utbetaltePerioder)
             register(tbdUtbetalingConsumer)
             register(object : RapidsConnection.StatusListener {
                 override fun onStartup(rapidsConnection: RapidsConnection) {
@@ -72,11 +69,9 @@ fun launchApplication(env: Map<String, String>) {
 }
 
 internal fun RapidsConnection.registerRivers(
-    annulleringDao: AnnulleringDao,
     tbdUtbetalingDao: TbdUtbetalingDao,
     utbetaltePerioder: UtbetaltePerioder? = null
 ) {
-    AnnulleringRiver(this, annulleringDao)
     HelsesjekkRiver(this, tbdUtbetalingDao)
     utbetaltePerioder?.let { UtbetaltePerioderRiver(this, it) }
 }
