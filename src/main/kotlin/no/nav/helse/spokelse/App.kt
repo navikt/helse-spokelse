@@ -17,9 +17,9 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
-import no.nav.helse.spokelse.gamlevedtak.AnnulleringDao
-import no.nav.helse.spokelse.gamlevedtak.AnnulleringRiver
-import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
+import no.nav.helse.spokelse.gamleutbetalinger.AnnulleringDao
+import no.nav.helse.spokelse.gamleutbetalinger.AnnulleringRiver
+import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
@@ -50,7 +50,7 @@ fun launchApplication(env: Map<String, String>) {
 
     val dataSource = DataSourceBuilder()
 
-    val vedtakDao = HentVedtakDao(dataSource::dataSource)
+    val vedtakDao = GamleUtbetalingerDao(dataSource::dataSource)
     val annulleringDao = AnnulleringDao(dataSource::dataSource)
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource::dataSource)
 
@@ -81,7 +81,7 @@ internal fun RapidsConnection.registerRivers(
     utbetaltePerioder?.let { UtbetaltePerioderRiver(this, it) }
 }
 
-internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDao: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi, apiTilgangsstyring: ApiTilgangsstyring) {
+internal fun Application.spokelse(env: Map<String, String>, auth: Auth, vedtakDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi, apiTilgangsstyring: ApiTilgangsstyring) {
     val httpClient = HttpClient(CIO)
     azureAdAppAuthentication(auth)
     requestResponseTracing(sikkerlogg)

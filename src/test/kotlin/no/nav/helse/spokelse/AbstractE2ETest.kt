@@ -11,8 +11,8 @@ import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
 import no.nav.helse.spokelse.ApplicationIdAllowlist.applicationId
-import no.nav.helse.spokelse.gamlevedtak.AnnulleringDao
-import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
+import no.nav.helse.spokelse.gamleutbetalinger.AnnulleringDao
+import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import org.awaitility.Awaitility
@@ -50,7 +50,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var dataSource: DataSource
     protected lateinit var dokumentDao: DokumentDao
     protected lateinit var utbetaltDao: UtbetaltDao
-    protected lateinit var vedtakDao: HentVedtakDao
+    protected lateinit var vedtakDao: GamleUtbetalingerDao
     protected lateinit var lagreVedtakDao: LagreVedtakDao
     protected lateinit var annulleringDao: AnnulleringDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
@@ -62,7 +62,7 @@ internal abstract class AbstractE2ETest {
         dataSource = PgDb.connection()
         dokumentDao = DokumentDao(dataSource)
         utbetaltDao = UtbetaltDao(dataSource)
-        vedtakDao = HentVedtakDao(::dataSource)
+        vedtakDao = GamleUtbetalingerDao(::dataSource)
         lagreVedtakDao = LagreVedtakDao(dataSource)
         annulleringDao = AnnulleringDao(::dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)

@@ -12,7 +12,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 
-internal class SpøkelsePerioderFraGamleVedtakTest : AbstractE2ETest() {
+internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
 
     @Test
     fun `hente utbetalte perioder fra gamle tabeller`() {

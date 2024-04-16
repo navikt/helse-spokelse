@@ -5,7 +5,7 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.spokelse.ApiTilgangsstyring
-import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
+import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -16,7 +16,7 @@ private val logg: Logger = LoggerFactory.getLogger("spokelse")
 private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
 private fun String.asLocalDateOrNull() = kotlin.runCatching { LocalDate.parse(this) }.getOrNull()
 
-internal fun Route.grunnlagApi(vedtakDAO: HentVedtakDao, tbdUtbetalingApi: TbdUtbetalingApi, tilgangsstyrings: ApiTilgangsstyring) {
+internal fun Route.grunnlagApi(vedtakDAO: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi, tilgangsstyrings: ApiTilgangsstyring) {
     get("/grunnlag") {
         tilgangsstyrings.grunnlag(call)
         val fødselsnummer = call.request.queryParameters["fodselsnummer"]

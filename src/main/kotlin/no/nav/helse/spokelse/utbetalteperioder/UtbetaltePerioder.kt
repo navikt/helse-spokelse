@@ -2,7 +2,7 @@ package no.nav.helse.spokelse.utbetalteperioder
 
 import com.fasterxml.jackson.databind.JsonNode
 import io.ktor.client.*
-import no.nav.helse.spokelse.gamlevedtak.HentVedtakDao
+import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.hent
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy.Companion.groupBy
@@ -11,8 +11,8 @@ import java.time.LocalDate
 
 internal class UtbetaltePerioder private constructor(private val spleis: Spleis, private val infotrygd: Infotrygd) {
 
-    internal constructor(config: Map<String, String>, httpClient: HttpClient, tbdUtbetalingApi: TbdUtbetalingApi, vedtakDao: HentVedtakDao): this(
-        spleis = Spleis(tbdUtbetalingApi = tbdUtbetalingApi, hentVedtakDao = vedtakDao),
+    internal constructor(config: Map<String, String>, httpClient: HttpClient, tbdUtbetalingApi: TbdUtbetalingApi, vedtakDao: GamleUtbetalingerDao): this(
+        spleis = Spleis(tbdUtbetalingApi = tbdUtbetalingApi, gamleUtbetalingerDao = vedtakDao),
         infotrygd = Infotrygd(
             httpClient = httpClient,
             scope = config.hent("INFOTRYGD_SCOPE"),

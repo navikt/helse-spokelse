@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse.gamlevedtak
+package no.nav.helse.spokelse.gamleutbetalinger
 
 import kotliquery.queryOf
 import kotliquery.sessionOf
@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 import javax.sql.DataSource
 import kotlin.time.measureTimedValue
 
-internal class HentVedtakDao(private val dataSource: () -> DataSource): TbdUtbetalingObserver {
+internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): TbdUtbetalingObserver {
 
     internal companion object {
         private val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
