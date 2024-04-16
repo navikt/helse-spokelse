@@ -88,17 +88,6 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
         }
     }
 
-    fun hentAnnuleringerForFødselsnummer(fødselsnummer: String): List<String> {
-        @Language("PostgreSQL")
-        val spørring = "SELECT fagsystem_id FROM annullering WHERE fodselsnummer = :fodselsnummer"
-
-        return sessionOf(dataSource()).use { session ->
-            session.run(queryOf(spørring, mapOf("fodselsnummer" to fødselsnummer)).map { row ->
-                row.string("fagsystem_id")
-            }.asList)
-        }
-    }
-
     internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate, tom: LocalDate): List<GammelUtbetaling> {
         if (!harData(fom)) return emptyList()
         return hentFraDb(fødselsnummer, fom, tom)
@@ -155,15 +144,13 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
 
             @Language("PostgreSQL")
             val sammenstiltQuery = """
-                $vedtakOppdragOgUtbetalingQuery UNION ALL $oldVedtakOgOldUtbetalingQuery UNION ALL $gamleUtbetalingerQuery
+                with alle_gamle_utbetalinger as ($vedtakOppdragOgUtbetalingQuery UNION ALL $oldVedtakOgOldUtbetalingQuery UNION ALL $gamleUtbetalingerQuery)
+                SELECT * FROM alle_gamle_utbetalinger agu LEFT JOIN alle_annulleringer aa ON agu.fagsystem_id = aa.fagsystem_id WHERE aa.fagsystem_id is null
             """
-
-            val annullerteFagsystemIder = hentAnnuleringerForFødselsnummer(fødselsnummer)
 
             sessionOf(dataSource()).use { session ->
                 session.run(queryOf(sammenstiltQuery, mapOf("fodselsnummer" to fødselsnummer, "fom" to fom, "tom" to tom)).map { row ->
-                    if (row.string("fagsystem_id") in annullerteFagsystemIder) null
-                    else GammelUtbetaling(
+                    GammelUtbetaling(
                         fødselsnummer = fødselsnummer,
                         fagsystemId = row.string("fagsystem_id"),
                         organisasjonsnummer = row.string("organisasjonsnummer"),

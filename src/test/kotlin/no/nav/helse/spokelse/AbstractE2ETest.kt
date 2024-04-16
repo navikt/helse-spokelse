@@ -50,7 +50,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var dataSource: DataSource
     protected lateinit var dokumentDao: DokumentDao
     protected lateinit var utbetaltDao: UtbetaltDao
-    protected lateinit var vedtakDao: GamleUtbetalingerDao
+    protected lateinit var gamleUtbetalingerDao: GamleUtbetalingerDao
     protected lateinit var lagreVedtakDao: LagreVedtakDao
     protected lateinit var annulleringDao: AnnulleringDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
@@ -62,7 +62,7 @@ internal abstract class AbstractE2ETest {
         dataSource = PgDb.connection()
         dokumentDao = DokumentDao(dataSource)
         utbetaltDao = UtbetaltDao(dataSource)
-        vedtakDao = GamleUtbetalingerDao(::dataSource)
+        gamleUtbetalingerDao = GamleUtbetalingerDao(::dataSource)
         lagreVedtakDao = LagreVedtakDao(dataSource)
         annulleringDao = AnnulleringDao(::dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
@@ -89,7 +89,7 @@ internal abstract class AbstractE2ETest {
     ) {
         testApplication {
             this.application {
-                spokelse(env, auth, vedtakDao, TbdUtbetalingApi(tbdUtbetalingDao), object: ApiTilgangsstyring {
+                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), object: ApiTilgangsstyring {
                     override fun utbetaltePerioder(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
                     override fun grunnlag(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
                 })
