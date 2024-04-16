@@ -7,8 +7,6 @@ import no.nav.helse.spokelse.Utbetalingsperiode
 import no.nav.helse.spokelse.tbdutbetaling.Annullering
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingObserver
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
-import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
@@ -101,12 +99,12 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
         }
     }
 
-    internal fun hentSpøkelsePerioder(fødselsnummer: String, fom: LocalDate, tom: LocalDate): Set<SpøkelsePeriode> {
-        if (!harData(fom)) return emptySet()
+    internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate, tom: LocalDate): List<GammelUtbetaling> {
+        if (!harData(fom)) return emptyList()
         return hentFraDb(fødselsnummer, fom, tom)
     }
 
-    private fun hentFraDb(fødselsnummer: String, fom: LocalDate, tom: LocalDate): Set<SpøkelsePeriode> {
+    private fun hentFraDb(fødselsnummer: String, fom: LocalDate, tom: LocalDate): List<GammelUtbetaling> {
         val (perioder, duration) = measureTimedValue {
             @Language("PostgreSQL")
             val vedtakOppdragOgUtbetalingQuery = """
@@ -116,7 +114,7 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
                     u.grad        grad,
                     v.opprettet   utbetalt_tidspunkt,
                     v.orgnummer   organisasjonsnummer,
-                    'VedtakOppdragOgUtbetaling' tag
+                    'VedtakOppdragOgUtbetaling' kilde
                 FROM vedtak v
                 INNER JOIN oppdrag o on v.id = o.vedtak_id
                 INNER JOIN utbetaling u on o.id = u.oppdrag_id
@@ -133,7 +131,7 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
                     ou.grad grad,
                     ov.opprettet utbetalt_tidspunkt,
                     ov.orgnummer organisasjonsnummer,
-                    'OldVedtakOgOldUtbetaling' tag
+                    'OldVedtakOgOldUtbetaling' kilde
                 FROM old_vedtak ov
                 INNER JOIN old_utbetaling ou on ov.id = ou.vedtak_id
                 WHERE ov.fodselsnummer = :fodselsnummer
@@ -149,7 +147,7 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
                     grad,
                     opprettet utbetalt_tidspunkt,
                     orgnummer organisasjonsnummer,
-                    'GamleUtbetalinger' tag
+                    'GamleUtbetalinger' kilde
                 FROM gamle_utbetalinger
                 WHERE fodselsnummer = :fodselsnummer
                 AND tom >= :fom AND NOT fom > :tom
@@ -165,15 +163,17 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
             sessionOf(dataSource()).use { session ->
                 session.run(queryOf(sammenstiltQuery, mapOf("fodselsnummer" to fødselsnummer, "fom" to fom, "tom" to tom)).map { row ->
                     if (row.string("fagsystem_id") in annullerteFagsystemIder) null
-                    else SpøkelsePeriode(
-                        personidentifikator = Personidentifikator(fødselsnummer),
+                    else GammelUtbetaling(
+                        fødselsnummer = fødselsnummer,
+                        fagsystemId = row.string("fagsystem_id"),
+                        organisasjonsnummer = row.string("organisasjonsnummer"),
                         fom = row.localDate("fom"),
                         tom = row.localDate("tom"),
                         grad = row.int("grad"),
-                        organisasjonsnummer = row.string("organisasjonsnummer"),
-                        tags = setOf("Spleis", row.string("tag"))
+                        kilde = row.string("kilde"),
+                        utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt")
                     )
-                }.asList).toSet()
+                }.asList)
             }
         }
         sikkerLogg.info("Oppslag mot gamle utbetalinger tok ${duration.inWholeMilliseconds}ms")
