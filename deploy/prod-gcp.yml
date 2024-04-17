@@ -54,7 +54,6 @@ spec:
         - application: fpabakus
           namespace: teamforeldrepenger
           cluster: prod-fss
-        - application: spissnok
         - application: spapi
         - application: k9-abakus
           namespace: k9saksbehandling

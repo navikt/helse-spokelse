@@ -48,8 +48,6 @@ spec:
         - application: fpabakus
           namespace: teamforeldrepenger
           cluster: dev-fss
-        - application: spissnok
-          namespace: tbd
         - application: spapi
           namespace: tbd
         - application: k9-abakus
