@@ -48,11 +48,11 @@ spec:
         - application: fpabakus
           namespace: teamforeldrepenger
           cluster: dev-fss
-        - application: spapi
-          namespace: tbd
         - application: k9-abakus
           namespace: k9saksbehandling
           cluster: dev-fss
+        - application: spapi
+        - application: spoken
     outbound:
       external:
         - host: sykepengeperioder-api.dev-fss-pub.nais.io
