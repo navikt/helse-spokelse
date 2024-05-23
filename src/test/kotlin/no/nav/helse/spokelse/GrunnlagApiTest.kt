@@ -1,5 +1,6 @@
 package no.nav.helse.spokelse
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao.Companion.harData
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
@@ -50,20 +51,19 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         """
 
         assertApiRequest(
-            path = "grunnlag?fodselsnummer=$fnr",
-            httpMethod = "GET",
+            fødselsnummer = fnr,
             forventetResponseBody = forventetFørAnnullering
         )
 
         assertApiRequest(
-            path = "grunnlag?fodselsnummer=$fnr&fom=2020-04-06",
-            httpMethod = "GET",
+            fødselsnummer = fnr,
+            fom = "2020-04-06",
             forventetResponseBody = forventetFørAnnullering
         )
 
         assertApiRequest(
-            path = "grunnlag?fodselsnummer=$fnr&fom=2020-04-07",
-            httpMethod = "GET",
+            fødselsnummer = fnr,
+            fom = "2020-04-07",
             forventetResponseBody = "[]"
         )
     }
@@ -97,8 +97,7 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         """
 
         assertApiRequest(
-            path = "grunnlag?fodselsnummer=$fnr",
-            httpMethod = "GET",
+            fødselsnummer = fnr,
             forventetResponseBody = forventetFørAnnullering
         )
     }
@@ -132,8 +131,7 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         """
 
         assertApiRequest(
-            path = "grunnlag?fodselsnummer=$fnr",
-            httpMethod = "GET",
+            fødselsnummer = fnr,
             forventetResponseBody = forventetFørAnnullering
         )
     }
@@ -141,8 +139,6 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
     @Test
     fun `kall til grunnlag uten fnr gir 400`() {
         assertApiRequest(
-            path = "grunnlag",
-            httpMethod = "GET",
             forventetHttpStatus = 400
         )
     }
@@ -150,8 +146,8 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
     @Test
     fun `kall til grunnlag med ugyldig fom gir 400`() {
         assertApiRequest(
-            path = "grunnlag?fodselsnummer=01010145679&fom=29.08.1990",
-            httpMethod = "GET",
+            fødselsnummer = "01010145679",
+            fom = "29.08.1990",
             forventetHttpStatus = 400
         )
     }
@@ -162,5 +158,26 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         assertTrue(harData(LocalDate.parse("2022-03-15")))
         assertTrue(harData(LocalDate.parse("2022-03-16")))
         assertFalse(harData(LocalDate.parse("2022-03-17")))
+    }
+
+    private fun assertApiRequest(fødselsnummer: String? = null, fom: String? = null, forventetResponseBody: String? = null, forventetHttpStatus: Int = 200) {
+        val parametre = mapOf("fodselsnummer" to fødselsnummer, "fom" to fom).filterValues { it != null }.mapValues { (_, verdi) -> verdi!! }
+        val queryString = if (parametre.isEmpty()) "" else parametre.entries.joinToString(separator = "&") { (key, value) -> "$key=$value" }.let { "?$it" }
+        val postBody = jacksonObjectMapper().writeValueAsString(parametre)
+
+        assertApiRequest(
+            path = "grunnlag$queryString",
+            httpMethod = "GET",
+            forventetResponseBody = forventetResponseBody,
+            forventetHttpStatus = forventetHttpStatus
+        )
+
+        assertApiRequest(
+            path = "grunnlag",
+            httpMethod = "POST",
+            requestBody = postBody,
+            forventetResponseBody = forventetResponseBody,
+            forventetHttpStatus = forventetHttpStatus
+        )
     }
 }
