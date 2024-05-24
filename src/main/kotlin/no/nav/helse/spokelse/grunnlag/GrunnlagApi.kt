@@ -39,18 +39,6 @@ internal fun Route.grunnlagApi(gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUt
         sikkerlogg.info("FP hentet vedtak for $fødselsnummer fra og med $fom ($time ms)")
     }
 
-    get("/grunnlag") {
-        val fødselsnummer = call.request.queryParameters["fodselsnummer"]
-            ?: run {
-                logg.error("/grunnlag Mangler fodselsnummer query param")
-                return@get call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer query param")
-            }
-        val fom = call.request.queryParameters["fom"]?.let {
-            it.asLocalDateOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest, "Ugyldig fom query param")
-        }
-        respond(fødselsnummer, fom)
-    }
-
     post("/grunnlag") {
         val request = objectMapper.readTree(call.receiveText())
         val fødselsnummer = request.path("fodselsnummer").takeUnless { it.isMissingOrNull() }?.asText()

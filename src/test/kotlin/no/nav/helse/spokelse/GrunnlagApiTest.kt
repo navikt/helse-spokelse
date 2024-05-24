@@ -162,16 +162,7 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
 
     private fun assertApiRequest(fødselsnummer: String? = null, fom: String? = null, forventetResponseBody: String? = null, forventetHttpStatus: Int = 200) {
         val parametre = mapOf("fodselsnummer" to fødselsnummer, "fom" to fom).filterValues { it != null }.mapValues { (_, verdi) -> verdi!! }
-        val queryString = if (parametre.isEmpty()) "" else parametre.entries.joinToString(separator = "&") { (key, value) -> "$key=$value" }.let { "?$it" }
         val postBody = jacksonObjectMapper().writeValueAsString(parametre)
-
-        assertApiRequest(
-            path = "grunnlag$queryString",
-            httpMethod = "GET",
-            forventetResponseBody = forventetResponseBody,
-            forventetHttpStatus = forventetHttpStatus
-        )
-
         assertApiRequest(
             path = "grunnlag",
             httpMethod = "POST",
