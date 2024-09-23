@@ -36,10 +36,23 @@ private data class Grupperingsnøkkel(
     }
 }
 
+internal sealed interface TagsFilter {
+    fun filter(tag: String): Boolean
+}
+
+internal data object AlleTags: TagsFilter {
+    override fun filter(tag: String) = true
+}
+
+internal data object KunEksterneTags: TagsFilter {
+    override fun filter(tag: String) = tag == "UsikkerGrad"
+}
+
 internal class Gruppering(
     private val groupBy: Set<GroupBy>,
     private val infotrygd: Iterable<SpøkelsePeriode>,
-    private val spleis: Iterable<SpøkelsePeriode>
+    private val spleis: Iterable<SpøkelsePeriode>,
+    private val tagsFilter: TagsFilter = AlleTags
 ) {
 
     private fun Iterable<SpøkelsePeriode>.gruppér(): List<SpøkelsePeriode> {
@@ -74,7 +87,7 @@ internal class Gruppering(
             if (GroupBy.grad in groupBy) put("grad", it.grad)
             put("fom", "${it.fom}")
             put("tom", "${it.tom}")
-            .apply { putArray("tags").let { tags -> it.tags.forEach(tags::add) } }
+            .apply { putArray("tags").let { tags -> it.tags.filter(tagsFilter::filter).forEach(tags::add) } }
         }}
         return objectMapper.createObjectNode().apply {
             putArray("utbetaltePerioder").addAll(utbetaltePerioder)

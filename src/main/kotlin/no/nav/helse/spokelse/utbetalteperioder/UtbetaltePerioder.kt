@@ -21,7 +21,7 @@ internal class UtbetaltePerioder private constructor(private val spleis: Spleis,
         )
     )
 
-    internal suspend fun hent(request: JsonNode): String {
+    internal suspend fun hent(request: JsonNode, groupBy: Set<GroupBy> = request.groupBy, tagsFilter: TagsFilter = AlleTags): String {
         val personidentifikatorer = request.path("personidentifikatorer")
             .map { Personidentifikator(it.asText()) }
             .toSet()
@@ -30,9 +30,10 @@ internal class UtbetaltePerioder private constructor(private val spleis: Spleis,
         val tom = LocalDate.parse(request.path("tom").asText())
         check(tom >= fom) { "Ugyldig periode $fom - $tom" }
         val response = Gruppering(
-            groupBy = request.groupBy,
+            groupBy = groupBy,
             infotrygd = infotrygd.hent(personidentifikatorer, fom, tom),
-            spleis = spleis.hent(personidentifikatorer, fom, tom)
+            spleis = spleis.hent(personidentifikatorer, fom, tom),
+            tagsFilter = tagsFilter
         ).gruppér()
         sikkerlogg.info("/utbetalte-perioder:\nRequest:\n\t$request\nResponse:\n\t$response")
         return response

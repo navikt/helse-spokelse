@@ -16,4 +16,10 @@ internal fun Route.utbetaltePerioderApi(utbetaltePerioder: UtbetaltePerioder, ti
         val response = utbetaltePerioder.hent(request)
         call.respondText(response, Json)
     }
+    post("/utbetalte-perioder-aap") {
+        tilgangsstyrings.utbetaltePerioderAap(call)
+        val request = objectMapper.readTree(call.receiveText())
+        val response = utbetaltePerioder.hent(request, groupBy = setOf(GroupBy.grad), tagsFilter = KunEksterneTags)
+        call.respondText(response, Json)
+    }
 }

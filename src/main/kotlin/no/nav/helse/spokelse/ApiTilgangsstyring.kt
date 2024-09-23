@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 
 interface ApiTilgangsstyring {
     fun utbetaltePerioder(call: ApplicationCall)
+    fun utbetaltePerioderAap(call: ApplicationCall)
     fun grunnlag(call: ApplicationCall)
 }
 
@@ -14,6 +15,9 @@ internal object ApplicationIdAllowlist: ApiTilgangsstyring {
     override fun utbetaltePerioder(call: ApplicationCall) =
         call.håndhevTilgangTil("utbetalte-perioder", AllowlistUtbetaltePerioder)
 
+    override fun utbetaltePerioderAap(call: ApplicationCall) {
+        call.håndhevTilgangTil("utbetalte-perioder-aap", AllowlistUtbetaltePerioderAap)
+    }
     override fun grunnlag(call: ApplicationCall) {
         call.håndhevTilgangTil("grunnlag", AllowlistGrunnlag)
     }
@@ -21,6 +25,10 @@ internal object ApplicationIdAllowlist: ApiTilgangsstyring {
     private val AllowlistUtbetaltePerioder = mapOf(
         "885a87c7-d4c4-4ace-8b1c-a8da50eb719c" to "spapi-dev",
         "11c3bc3d-1da7-4598-a8c4-73bead228a90" to "spapi-prod"
+    )
+
+    private val AllowlistUtbetaltePerioderAap = mapOf(
+        "5b4656d2-e8f0-4df1-9e10-269133df697f" to "behandlingsflyt-dev"
     )
 
     private val AllowlistGrunnlag = mapOf(

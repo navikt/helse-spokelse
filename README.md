@@ -5,7 +5,9 @@ Spøkelse [![Actions Status](https://github.com/navikt/helse-spokelse/workflows/
 
 ~~Den lytter på `tbd.utbetaling` og lagrer ned utbetalinger & annulleringer.~~
 
-Dette er en intern sy-sammen-data-tjeneste som henter spleis-sykepengeperioder over kafka og infotrygd-sykepengeperioder over {protokoll her}
+~~Dette er en intern sy-sammen-data-tjeneste som henter spleis-sykepengeperioder over kafka og infotrygd-sykepengeperioder over {protokoll her}~~
+
+Dette er en permanent applikasjon for å dele informasjon om utbetalte perioder med sykepenger.
 
 ```mermaid
 ---
