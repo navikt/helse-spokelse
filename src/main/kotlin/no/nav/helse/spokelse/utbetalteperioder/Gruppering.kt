@@ -37,15 +37,15 @@ private data class Grupperingsnøkkel(
 }
 
 internal sealed interface TagsFilter {
-    fun filter(tag: String): Boolean
+    fun filter(tags: Set<String>): Set<String>?
 }
 
 internal data object AlleTags: TagsFilter {
-    override fun filter(tag: String) = true
+    override fun filter(tags: Set<String>) = tags
 }
 
-internal data object KunEksterneTags: TagsFilter {
-    override fun filter(tag: String) = tag == "UsikkerGrad"
+internal data object IngenTags: TagsFilter {
+    override fun filter(tags: Set<String>) = null
 }
 
 internal class Gruppering(
@@ -87,7 +87,12 @@ internal class Gruppering(
             if (GroupBy.grad in groupBy) put("grad", it.grad)
             put("fom", "${it.fom}")
             put("tom", "${it.tom}")
-            .apply { putArray("tags").let { tags -> it.tags.filter(tagsFilter::filter).forEach(tags::add) } }
+
+            tagsFilter.filter(it.tags)?.let { filtrerteTags ->
+                putArray("tags").let { jsonTags ->
+                    filtrerteTags.forEach(jsonTags::add)
+                }
+            }
         }}
         return objectMapper.createObjectNode().apply {
             putArray("utbetaltePerioder").addAll(utbetaltePerioder)
