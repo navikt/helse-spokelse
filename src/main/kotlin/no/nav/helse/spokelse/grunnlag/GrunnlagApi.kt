@@ -1,13 +1,11 @@
 package no.nav.helse.spokelse.grunnlag
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.util.pipeline.*
-import no.nav.helse.rapids_rivers.isMissingOrNull
 import no.nav.helse.spokelse.ApiTilgangsstyring
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somFpVedtak
@@ -24,7 +22,7 @@ private val objectMapper = jacksonObjectMapper()
 private fun String.asLocalDateOrNull() = kotlin.runCatching { LocalDate.parse(this) }.getOrNull()
 
 internal fun Route.grunnlagApi(gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi, tilgangsstyrings: ApiTilgangsstyring) {
-    suspend fun PipelineContext<Unit, ApplicationCall>.respond(fødselsnummer: String, fom: LocalDate?) {
+    suspend fun RoutingContext.respond(fødselsnummer: String, fom: LocalDate?) {
         tilgangsstyrings.grunnlag(call)
         val time = measureTimeMillis {
             try {

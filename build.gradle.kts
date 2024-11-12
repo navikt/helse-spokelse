@@ -1,4 +1,6 @@
-val ktorVersion = "2.3.12"
+val rapidsAndRiversVersion = "2024111211071731406062.648687519469"
+val tbdLibsVersion = "2024.11.12-11.09-16cf2599"
+val ktorVersion = "3.0.1"
 val postgresqlVersion = "42.7.2"
 val wiremockVersion = "3.3.1"
 val junitJupiterVersion = "5.11.3"
@@ -16,18 +18,13 @@ plugins {
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:2024020509001707120042.dc369a80c1f8")
-    implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
-    implementation("io.ktor:ktor-server-call-id:$ktorVersion")
-    implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
+    implementation("com.github.navikt:rapids-and-rivers:$rapidsAndRiversVersion")
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion") {
         exclude(group = "junit")
     }
 
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
-    implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
-
     implementation("org.postgresql:postgresql:$postgresqlVersion")
     implementation("com.zaxxer:HikariCP:$hikariCPVersion")
     implementation("org.flywaydb:flyway-core:$flywayVersion")
@@ -41,13 +38,12 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
 
+
+    testImplementation("com.github.navikt.tbd-libs:naisful-test-app:$tbdLibsVersion")
+    testImplementation("org.skyscreamer:jsonassert:$jsonAssertVersion")
+
     testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
-    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
-        exclude(group = "org.eclipse.jetty")
-    }
-    testImplementation("org.skyscreamer:jsonassert:$jsonAssertVersion")
 }
 
 repositories {

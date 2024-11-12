@@ -1,5 +1,9 @@
 package no.nav.helse.spokelse
 
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.navikt.tbd_libs.naisful.test.naisfulTestApp
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
@@ -7,7 +11,8 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.testing.*
+import io.micrometer.prometheusmetrics.PrometheusConfig
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
 import no.nav.helse.spokelse.ApplicationIdAllowlist.applicationId
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
@@ -77,15 +82,17 @@ internal abstract class AbstractE2ETest {
         timeout: Int = 5,
         authorized: Boolean = true
     ) {
-        testApplication {
-            this.application {
+        naisfulTestApp(
+            testApplicationModule = {
                 spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), object: ApiTilgangsstyring {
                     override fun utbetaltePerioder(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
                     override fun utbetaltePerioderAap(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
                     override fun grunnlag(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
                 })
-            }
-
+            },
+            objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS),
+            meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT),
+        ) {
             Awaitility.await().atMost(timeout.toLong(), TimeUnit.SECONDS).untilAsserted {
                 val response = runBlocking {
                     client.request("/$path") {

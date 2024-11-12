@@ -2,8 +2,8 @@ package no.nav.helse.spokelse.tbdutbetaling
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import net.logstash.logback.argument.StructuredArguments.keyValue
-import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erAnnullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling

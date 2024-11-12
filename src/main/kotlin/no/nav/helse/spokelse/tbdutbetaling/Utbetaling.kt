@@ -1,7 +1,7 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
 import com.fasterxml.jackson.databind.JsonNode
-import no.nav.helse.rapids_rivers.isMissingOrNull
+import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
