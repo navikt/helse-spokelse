@@ -82,7 +82,7 @@ internal abstract class AbstractE2ETest {
         requestBody: String? = null,
         forventetHttpStatus: Int = 200,
         forventetResponseBody: String? = null,
-        timeout: Duration = Duration.ofSeconds(40),
+        timeout: Duration = Duration.ofSeconds(5),
         authorized: Boolean = true
     ) {
         naisfulTestApp(

@@ -75,7 +75,8 @@ tasks {
         testLogging {
             events("passed", "skipped", "failed")
         }
-        systemProperty("junit.jupiter.execution.parallel.enabled", "true")
+        val parallellDisabled = System.getenv("CI" ) == "true"
+        systemProperty("junit.jupiter.execution.parallel.enabled", parallellDisabled.not().toString())
         systemProperty("junit.jupiter.execution.parallel.mode.default", "concurrent")
         systemProperty("junit.jupiter.execution.parallel.config.strategy", "fixed")
         systemProperty("junit.jupiter.execution.parallel.config.fixed.parallelism", "8")
