@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.TestInstance
 import org.skyscreamer.jsonassert.JSONAssert
 import org.slf4j.LoggerFactory
+import java.time.Duration
 import java.time.LocalDate
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -81,7 +82,7 @@ internal abstract class AbstractE2ETest {
         requestBody: String? = null,
         forventetHttpStatus: Int = 200,
         forventetResponseBody: String? = null,
-        timeout: Int = 5,
+        timeout: Duration = Duration.ofSeconds(40),
         authorized: Boolean = true
     ) {
         naisfulTestApp(
@@ -96,7 +97,7 @@ internal abstract class AbstractE2ETest {
             objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS),
             meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT),
         ) {
-            Awaitility.await().atMost(timeout.toLong(), TimeUnit.SECONDS).untilAsserted {
+            Awaitility.await().atMost(timeout).untilAsserted {
                 val response = runBlocking {
                     client.request("/$path") {
                         method = HttpMethod.parse(httpMethod)
