@@ -3,11 +3,13 @@ package no.nav.helse.spokelse
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import no.nav.helse.spokelse.ApplicationIdAllowlist.applicationId
 import org.slf4j.LoggerFactory
 
 interface ApiTilgangsstyring {
     fun utbetaltePerioder(call: ApplicationCall)
     fun utbetaltePerioderAap(call: ApplicationCall)
+    fun utbetaltePerioderDagpenger(call: ApplicationCall)
     fun grunnlag(call: ApplicationCall)
 }
 
@@ -18,6 +20,11 @@ internal object ApplicationIdAllowlist: ApiTilgangsstyring {
     override fun utbetaltePerioderAap(call: ApplicationCall) {
         call.håndhevTilgangTil("utbetalte-perioder-aap", AllowlistUtbetaltePerioderAap)
     }
+
+    override fun utbetaltePerioderDagpenger(call: ApplicationCall) {
+        call.håndhevTilgangTil("utbetalte-perioder-dagpenger", "dagpenger-les")
+    }
+
     override fun grunnlag(call: ApplicationCall) {
         call.håndhevTilgangTil("grunnlag", AllowlistGrunnlag)
     }
@@ -57,5 +64,18 @@ internal object ApplicationIdAllowlist: ApiTilgangsstyring {
             }
         }
         sikkerlogg.info("Håndterer request til /$endepunkt fra $app ($applicationId)")
+    }
+
+    private val ApplicationCall.roles get() = this
+        .principal<JWTPrincipal>()?.getListClaim("roles", String::class)
+        ?: emptyList()
+
+    private fun ApplicationCall.håndhevTilgangTil(endepunkt: String, påkrevdRolle: String) {
+        if (!roles.contains(påkrevdRolle)) {
+            "Applikasjonen $applicationId har ikke tilgang til /$endepunkt".let {
+                sikkerlogg.error(it)
+                throw IllegalStateException(it)
+            }
+        }
     }
 }

@@ -22,4 +22,10 @@ internal fun Route.utbetaltePerioderApi(utbetaltePerioder: UtbetaltePerioder, ti
         val response = utbetaltePerioder.hent(request, groupBy = setOf(GroupBy.grad), tagsFilter = IngenTags)
         call.respondText(response, Json)
     }
+    post("/utbetalte-perioder-dagpenger") {
+        tilgangsstyrings.utbetaltePerioderDagpenger(call)
+        val request = objectMapper.readTree(call.receiveText())
+        val response = utbetaltePerioder.hent(request, groupBy = setOf(GroupBy.grad), tagsFilter = IngenTags)
+        call.respondText(response, Json)
+    }
 }

@@ -58,6 +58,9 @@ spec:
         - application: dp-oppslag-ytelser
           namespace: teamdagpenger
           cluster: dev-gcp
+          permissions:
+              roles:
+                  - "dagpenger-les"
     outbound:
       external:
         - host: sykepengeperioder-api.dev-fss-pub.nais.io
