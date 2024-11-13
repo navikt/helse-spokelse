@@ -43,6 +43,7 @@ fun launchApplication(env: Map<String, String>) {
     RapidApplication.create(
         env = env,
         builder = {
+            withCallIdHeader("x-callId")
             withKtorModule { spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), ApplicationIdAllowlist) }
         }
     )
