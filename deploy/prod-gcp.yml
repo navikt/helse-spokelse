@@ -58,6 +58,9 @@ spec:
         - application: k9-abakus
           namespace: k9saksbehandling
           cluster: prod-fss
+        - application: dp-oppslag-ytelser
+          namespace: teamdagpenger
+          cluster: prod-gcp
     outbound:
       external:
         - host: sykepengeperioder-api.prod-fss-pub.nais.io

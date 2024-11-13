@@ -55,6 +55,9 @@ spec:
         - application: behandlingsflyt
           namespace: aap
           cluster: dev-gcp
+        - application: dp-oppslag-ytelser
+          namespace: teamdagpenger
+          cluster: dev-gcp
     outbound:
       external:
         - host: sykepengeperioder-api.dev-fss-pub.nais.io
