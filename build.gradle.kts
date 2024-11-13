@@ -34,11 +34,8 @@ dependencies {
     testImplementation("org.wiremock:wiremock:$wiremockVersion")
 
     testImplementation("org.awaitility:awaitility:$awaitilityVersion")
-    testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
-    testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
-    testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
 
-
+    testImplementation("com.github.navikt.tbd-libs:postgres-testdatabaser:$tbdLibsVersion")
     testImplementation("com.github.navikt.tbd-libs:naisful-test-app:$tbdLibsVersion")
     testImplementation("org.skyscreamer:jsonassert:$jsonAssertVersion")
 
@@ -78,6 +75,10 @@ tasks {
         testLogging {
             events("passed", "skipped", "failed")
         }
+        systemProperty("junit.jupiter.execution.parallel.enabled", "true")
+        systemProperty("junit.jupiter.execution.parallel.mode.default", "concurrent")
+        systemProperty("junit.jupiter.execution.parallel.config.strategy", "fixed")
+        systemProperty("junit.jupiter.execution.parallel.config.fixed.parallelism", "8")
     }
 
     named<Jar>("jar") {

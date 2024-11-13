@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.navikt.tbd_libs.naisful.test.naisfulTestApp
+import com.github.navikt.tbd_libs.test_support.TestDataSource
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
@@ -19,6 +20,7 @@ import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import org.awaitility.Awaitility
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -31,7 +33,6 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal abstract class AbstractE2ETest {
     private val env = mapOf(
         "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "http://localhost",
@@ -51,17 +52,17 @@ internal abstract class AbstractE2ETest {
         audience = "spokelse_azure_ad_app_id"
     )
 
-    protected lateinit var dataSource: DataSource
+    protected lateinit var testDataSource: TestDataSource
+    protected val dataSource: DataSource get() = testDataSource.ds
     protected lateinit var dokumentDao: DokumentDao
     protected lateinit var utbetaltDao: UtbetaltDao
     protected lateinit var gamleUtbetalingerDao: GamleUtbetalingerDao
     protected lateinit var lagreVedtakDao: LagreVedtakDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
 
-    @BeforeAll
+    @BeforeEach
     fun setup() {
-        PgDb.start()
-        dataSource = PgDb.connection()
+        testDataSource = databaseContainer.nyTilkobling()
         dokumentDao = DokumentDao(dataSource)
         utbetaltDao = UtbetaltDao(dataSource)
         gamleUtbetalingerDao = GamleUtbetalingerDao(::dataSource)
@@ -69,9 +70,9 @@ internal abstract class AbstractE2ETest {
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
     }
 
-    @BeforeEach
+    @AfterEach
     protected fun reset() {
-        PgDb.reset()
+        databaseContainer.droppTilkobling(testDataSource)
     }
 
     protected fun assertApiRequest(
