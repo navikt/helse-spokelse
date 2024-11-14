@@ -25,17 +25,19 @@ internal class HelsesjekkRiver(
 
     init {
         River(rapidsConnection).apply {
+            precondition { it.requireValue("@event_name", "spokelse_helsesjekk") }
             validate {
-                it.demandValue("@event_name", "spokelse_helsesjekk")
                 it.requireKey("system_participating_services", "@opprettet")
                 it.interestedIn("ukedag")
             }
         }.register(this)
         River(rapidsConnection).apply {
+            precondition {
+                it.requireValue("@event_name", "halv_time")
+                it.forbidValues("ukedag", listOf("SATURDAY", "SUNDAY"))
+            }
             validate {
-                it.demandValue("@event_name", "halv_time")
                 it.requireKey("system_participating_services", "@opprettet")
-                it.rejectValues("ukedag", listOf("SATURDAY", "SUNDAY"))
             }
         }.register(this)
     }

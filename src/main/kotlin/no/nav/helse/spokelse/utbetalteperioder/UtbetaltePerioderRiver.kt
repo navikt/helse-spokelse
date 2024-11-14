@@ -17,8 +17,8 @@ internal class UtbetaltePerioderRiver(
 
     init {
         River(rapidsConnection).apply {
+            precondition { it.requireValue("@event_name", "utbetalte-perioder") }
             validate {
-                it.demandValue("@event_name", "utbetalte-perioder")
                 it.requireKey("@id","personidentifikatorer", "fom", "tom", "oppløsning")
             }
         }.register(this)
