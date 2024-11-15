@@ -1,13 +1,13 @@
 val rapidsAndRiversVersion = "2024111509181731658731.11009b44c672"
 val tbdLibsVersion = "2024.11.15-09.09-08ca346b"
 val ktorVersion = "3.0.1"
-val postgresqlVersion = "42.7.2"
+val postgresqlVersion = "42.7.4"
 val wiremockVersion = "3.9.2"
 val junitJupiterVersion = "5.11.3"
 val jsonAssertVersion = "1.5.1"
 val hikariCPVersion = "6.1.0"
 val kotliqueryVersion="1.9.0"
-val flywayVersion = "9.22.3" // Finnes en major update 🤔
+val flywayVersion = "10.21.0" // Finnes en major update 🤔
 val mockkVersion = "1.13.9"
 val awaitilityVersion = "4.2.0"
 val mainClass = "no.nav.helse.spokelse.AppKt"
@@ -26,7 +26,7 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("org.postgresql:postgresql:$postgresqlVersion")
     implementation("com.zaxxer:HikariCP:$hikariCPVersion")
-    implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
     implementation("com.github.seratch:kotliquery:$kotliqueryVersion")
 
     testImplementation("io.mockk:mockk:$mockkVersion")
