@@ -1,4 +1,4 @@
-val rapidsAndRiversVersion = "2024112511071732529266.253c42b70448"
+val rapidsAndRiversVersion = "2024112911471732877250.f6df6f41226b"
 val tbdLibsVersion = "2024.11.25-10.59-6f263a10"
 val ktorVersion = "3.0.1"
 val postgresqlVersion = "42.7.4"
@@ -18,6 +18,7 @@ plugins {
 
 dependencies {
     implementation("com.github.navikt:rapids-and-rivers:$rapidsAndRiversVersion")
+    implementation("com.github.navikt.tbd-libs:naisful-app:$tbdLibsVersion")
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion") {
         exclude(group = "junit")
     }
