@@ -1,4 +1,4 @@
-val rapidsAndRiversVersion = "2024120608421733470968.fc0a3d5e3685"
+val rapidsAndRiversVersion = "2025012712551737978926.de930d8e0feb"
 val tbdLibsVersion = "2024.11.25-10.59-6f263a10"
 val ktorVersion = "3.0.1"
 val postgresqlVersion = "42.7.4"
