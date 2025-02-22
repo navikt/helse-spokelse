@@ -66,7 +66,7 @@ spec:
         - host: sykepengeperioder-api.dev-fss-pub.nais.io
   gcp:
     sqlInstances:
-    - type: POSTGRES_16
+    - type: POSTGRES_17
       diskAutoresize: true
       pointInTimeRecovery: true
       tier: db-f1-micro
