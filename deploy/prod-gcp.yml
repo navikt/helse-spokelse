@@ -58,6 +58,9 @@ spec:
         - application: k9-abakus
           namespace: k9saksbehandling
           cluster: prod-fss
+        - application: behandlingsflyt
+          namespace: aap
+          cluster: prod-gcp
         - application: dp-oppslag-ytelser
           namespace: teamdagpenger
           cluster: prod-gcp
