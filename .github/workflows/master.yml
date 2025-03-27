@@ -34,6 +34,8 @@ jobs:
     name: deploy
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +47,6 @@ jobs:
     - name: deploy
       uses: nais/deploy/actions/deploy@v2
       env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           RESOURCE: deploy/${{ matrix.cluster }}.yml
           IMAGE: ${{ needs.build.outputs.image }}
           CLUSTER: ${{ matrix.cluster }}
