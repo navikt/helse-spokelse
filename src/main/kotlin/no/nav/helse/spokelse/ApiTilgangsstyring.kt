@@ -3,7 +3,6 @@ package no.nav.helse.spokelse
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import no.nav.helse.spokelse.ApplicationIdAllowlist.applicationId
 import org.slf4j.LoggerFactory
 
 interface ApiTilgangsstyring {
@@ -35,7 +34,8 @@ internal object ApplicationIdAllowlist: ApiTilgangsstyring {
     )
 
     private val AllowlistUtbetaltePerioderAap = mapOf(
-        "5b4656d2-e8f0-4df1-9e10-269133df697f" to "behandlingsflyt-dev"
+        "5b4656d2-e8f0-4df1-9e10-269133df697f" to "behandlingsflyt-dev",
+        "ead3bfb6-d403-43b3-bb45-dc184ce314b7" to "behandlingsflyt-prod",
     )
 
     private val AllowlistGrunnlag = mapOf(
