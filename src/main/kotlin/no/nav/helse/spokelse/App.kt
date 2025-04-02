@@ -16,7 +16,6 @@ import io.micrometer.core.instrument.Clock
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import io.prometheus.metrics.model.registry.PrometheusRegistry
-import no.nav.helse.rapids_rivers.NaisEndpoints
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
@@ -29,7 +28,6 @@ import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioderRiver
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
 import org.slf4j.LoggerFactory
 
-private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
 internal fun Map<String, String>.hent(key: String) = get(key) ?: throw IllegalStateException("Mangler config for $key")
 
 fun main() {
@@ -79,7 +77,7 @@ fun launchApplication(env: Map<String, String>) {
                     readyCheck = rapid::isReady,
                     preStopHook = preStopHook::handlePreStopRequest
                 ) {
-                    spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), ApplicationIdAllowlist)
+                    spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), RolleApiTilgangsstyring)
                 }
             }
         }

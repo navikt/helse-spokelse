@@ -12,77 +12,43 @@ interface ApiTilgangsstyring {
     fun grunnlag(call: ApplicationCall)
 }
 
-internal object ApplicationIdAllowlist: ApiTilgangsstyring {
+internal object RolleApiTilgangsstyring: ApiTilgangsstyring {
     override fun utbetaltePerioder(call: ApplicationCall) {
-        call.håndhevTilgangTil("utbetalte-perioder", AllowlistUtbetaltePerioder, setOf("spleiselaget-les"))
+        call.håndhevTilgangTil(endepunkt = "utbetalte-perioder", påkrevdRolle = "spleiselaget-les")
     }
 
     override fun utbetaltePerioderAap(call: ApplicationCall) {
-        call.håndhevTilgangTil("utbetalte-perioder-aap", AllowlistUtbetaltePerioderAap, setOf("aap-les"))
+        call.håndhevTilgangTil(endepunkt = "utbetalte-perioder-aap", påkrevdRolle = "aap-les")
     }
 
     override fun utbetaltePerioderDagpenger(call: ApplicationCall) {
-        call.håndhevTilgangTil("utbetalte-perioder-dagpenger", "dagpenger-les")
+        call.håndhevTilgangTil(endepunkt = "utbetalte-perioder-dagpenger", påkrevdRolle = "dagpenger-les")
     }
 
     override fun grunnlag(call: ApplicationCall) {
-        call.håndhevTilgangTil("grunnlag", AllowlistGrunnlag, setOf("foreldrepenger-les", "k9-les"))
+        call.håndhevTilgangTil(endepunkt = "grunnlag", enAvRollene = setOf("foreldrepenger-les", "k9-les"))
     }
-
-    private val AllowlistUtbetaltePerioder = mapOf(
-        "885a87c7-d4c4-4ace-8b1c-a8da50eb719c" to "spapi-dev",
-        "11c3bc3d-1da7-4598-a8c4-73bead228a90" to "spapi-prod"
-    )
-
-    private val AllowlistUtbetaltePerioderAap = mapOf(
-        "5b4656d2-e8f0-4df1-9e10-269133df697f" to "behandlingsflyt-dev",
-        "ead3bfb6-d403-43b3-bb45-dc184ce314b7" to "behandlingsflyt-prod",
-    )
-
-    private val AllowlistGrunnlag = mapOf(
-        "7533b639-ec49-4531-80fd-752f412c3b5a" to "k9-abakus-prod",
-        "0fc8e157-984d-46f8-911a-52f2b229fef9" to "fpabakus-prod",
-        "17f6b413-aba3-46be-bdde-793ad7081e28" to "fpsak-prod",
-        "6b779173-1246-41db-9f04-da4294a39a6c" to "fprisk-prod",
-        "650e72f0-19a1-40ea-849f-8a3e986dbce9" to "k9-abakus-dev",
-        "cb082ea5-4eec-4a1e-8bab-cf04181adaeb" to "fpabakus-dev",
-        "11815622-aad9-49b5-997e-5d3c5b9c12f7" to "fpsak-dev",
-        "dbaac815-e57c-41bf-9674-125b76e567c8" to "fprisk-dev",
-    )
-
-    private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
 
     internal val ApplicationCall.applicationId get() = this
         .principal<JWTPrincipal>()?.getClaim("azp", String::class)
         .takeUnless { it.isNullOrBlank() }
         ?: throw IllegalStateException("Mangler 'azp' claim i access token")
 
-    private fun ApplicationCall.håndhevTilgangTil(endepunkt: String, allowlist: Map<String, String>, enAvRollene: Set<String>) {
-        val app = allowlist.getOrElse(applicationId) {
-            "Applikasjonen $applicationId har ikke tilgang til /$endepunkt".let {
-                sikkerlogg.error(it)
-                throw IllegalStateException(it)
-            }
-        }
-
-        when (val rolle = enAvRollene.firstOrNull { it in roles }) {
-            null -> sikkerlogg.warn("$app ($applicationId) ville ikke funket med rollesjekk. Har ingen av rollene $enAvRollene")
-            else -> sikkerlogg.info("$app ($applicationId) hadde gått bra med rollesjekk. Har rollen $rolle")
-        }
-
-        sikkerlogg.info("Håndterer request til /$endepunkt fra $app ($applicationId)")
-    }
-
     private val ApplicationCall.roles get() = this
         .principal<JWTPrincipal>()?.getListClaim("roles", String::class)
         ?: emptyList()
 
-    private fun ApplicationCall.håndhevTilgangTil(endepunkt: String, påkrevdRolle: String) {
-        if (!roles.contains(påkrevdRolle)) {
-            "Applikasjonen $applicationId har ikke tilgang til /$endepunkt".let {
-                sikkerlogg.error(it)
-                throw IllegalStateException(it)
-            }
+    private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
+
+    private fun ApplicationCall.håndhevTilgangTil(endepunkt: String, enAvRollene: Set<String>) {
+        val rolle = enAvRollene.firstOrNull { it in roles } ?: run {
+            val feilmelding = "Applikasjonen $applicationId har ikke tilgang til /$endepunkt - Må ha en av rollene $enAvRollene, har bare $roles"
+            sikkerlogg.error(feilmelding)
+            throw IllegalStateException(feilmelding)
         }
+
+        sikkerlogg.info("Håndterer request til /$endepunkt fra $applicationId som har rolle $rolle")
     }
+
+    private fun ApplicationCall.håndhevTilgangTil(endepunkt: String, påkrevdRolle: String) = håndhevTilgangTil(endepunkt, setOf(påkrevdRolle))
 }

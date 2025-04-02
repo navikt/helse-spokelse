@@ -15,23 +15,19 @@ import io.ktor.server.application.*
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
-import no.nav.helse.spokelse.ApplicationIdAllowlist.applicationId
+import no.nav.helse.spokelse.RolleApiTilgangsstyring.applicationId
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.TestInstance
 import org.skyscreamer.jsonassert.JSONAssert
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.LocalDate
 import java.util.*
-import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
 
 internal abstract class AbstractE2ETest {
