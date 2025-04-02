@@ -42,25 +42,43 @@ spec:
         - application: fpsak
           namespace: teamforeldrepenger
           cluster: dev-fss
+          permissions:
+            roles:
+              - "foreldrepenger-les"
         - application: fprisk
           namespace: teamforeldrepenger
           cluster: dev-fss
+          permissions:
+            roles:
+              - "foreldrepenger-les"
         - application: fpabakus
           namespace: teamforeldrepenger
           cluster: dev-fss
+          permissions:
+            roles:
+              - "foreldrepenger-les"
         - application: k9-abakus
           namespace: k9saksbehandling
           cluster: dev-fss
+          permissions:
+            roles:
+              - "k9-les"
         - application: spapi
+          permissions:
+            roles:
+              - "spleiselaget-les"
         - application: behandlingsflyt
           namespace: aap
           cluster: dev-gcp
+          permissions:
+            roles:
+              - "aap-les"
         - application: dp-oppslag-ytelser
           namespace: teamdagpenger
           cluster: dev-gcp
           permissions:
-              roles:
-                  - "dagpenger-les"
+            roles:
+              - "dagpenger-les"
     outbound:
       external:
         - host: sykepengeperioder-api.dev-fss-pub.nais.io

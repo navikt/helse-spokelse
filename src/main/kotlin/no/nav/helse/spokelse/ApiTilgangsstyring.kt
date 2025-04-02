@@ -13,11 +13,12 @@ interface ApiTilgangsstyring {
 }
 
 internal object ApplicationIdAllowlist: ApiTilgangsstyring {
-    override fun utbetaltePerioder(call: ApplicationCall) =
-        call.håndhevTilgangTil("utbetalte-perioder", AllowlistUtbetaltePerioder)
+    override fun utbetaltePerioder(call: ApplicationCall) {
+        call.håndhevTilgangTil("utbetalte-perioder", AllowlistUtbetaltePerioder, setOf("spleiselaget-les"))
+    }
 
     override fun utbetaltePerioderAap(call: ApplicationCall) {
-        call.håndhevTilgangTil("utbetalte-perioder-aap", AllowlistUtbetaltePerioderAap)
+        call.håndhevTilgangTil("utbetalte-perioder-aap", AllowlistUtbetaltePerioderAap, setOf("aap-les"))
     }
 
     override fun utbetaltePerioderDagpenger(call: ApplicationCall) {
@@ -25,7 +26,7 @@ internal object ApplicationIdAllowlist: ApiTilgangsstyring {
     }
 
     override fun grunnlag(call: ApplicationCall) {
-        call.håndhevTilgangTil("grunnlag", AllowlistGrunnlag)
+        call.håndhevTilgangTil("grunnlag", AllowlistGrunnlag, setOf("foreldrepenger-les", "k9-les"))
     }
 
     private val AllowlistUtbetaltePerioder = mapOf(
@@ -56,13 +57,19 @@ internal object ApplicationIdAllowlist: ApiTilgangsstyring {
         .takeUnless { it.isNullOrBlank() }
         ?: throw IllegalStateException("Mangler 'azp' claim i access token")
 
-    private fun ApplicationCall.håndhevTilgangTil(endepunkt: String, allowlist: Map<String, String>) {
+    private fun ApplicationCall.håndhevTilgangTil(endepunkt: String, allowlist: Map<String, String>, enAvRollene: Set<String>) {
         val app = allowlist.getOrElse(applicationId) {
             "Applikasjonen $applicationId har ikke tilgang til /$endepunkt".let {
                 sikkerlogg.error(it)
                 throw IllegalStateException(it)
             }
         }
+
+        when (val rolle = enAvRollene.firstOrNull { it in roles }) {
+            null -> sikkerlogg.warn("$app ($applicationId) ville ikke funket med rollesjekk. Har ingen av rollene $enAvRollene")
+            else -> sikkerlogg.info("$app ($applicationId) hadde gått bra med rollesjekk. Har rollen $rolle")
+        }
+
         sikkerlogg.info("Håndterer request til /$endepunkt fra $app ($applicationId)")
     }
 
