@@ -4,18 +4,14 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.navikt.tbd_libs.naisful.test.naisfulTestApp
+import com.github.navikt.tbd_libs.signed_jwt_issuer_test.Issuer
 import com.github.navikt.tbd_libs.test_support.TestDataSource
-import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
-import no.nav.helse.spokelse.RolleApiTilgangsstyring.applicationId
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
@@ -29,7 +25,12 @@ import java.time.Duration
 import java.time.LocalDate
 import java.util.*
 import javax.sql.DataSource
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 
+@TestInstance(PER_CLASS)
 internal abstract class AbstractE2ETest {
     private val env = mapOf(
         "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "http://localhost",
@@ -38,24 +39,31 @@ internal abstract class AbstractE2ETest {
         "INFOTRYGD_URL" to "http://localhost",
         "INFOTRYGD_SCOPE" to "api://infotrygd"
     )
-    private val auth = Auth.auth(
-        name = "issuer",
-        clientId = "spokelse_azure_ad_app_id",
-        discoveryUrl = "${wireMockServer.baseUrl()}/config"
-    )
-    private val authorizationHeader = jwtStub.createTokenFor(
-        subject = "fp_object_id",
-        authorizedParty = "fp_object_id",
-        audience = "spokelse_azure_ad_app_id"
-    )
 
-    protected lateinit var testDataSource: TestDataSource
+    private lateinit var testDataSource: TestDataSource
     protected val dataSource: DataSource get() = testDataSource.ds
     protected lateinit var dokumentDao: DokumentDao
     protected lateinit var utbetaltDao: UtbetaltDao
     protected lateinit var gamleUtbetalingerDao: GamleUtbetalingerDao
     protected lateinit var lagreVedtakDao: LagreVedtakDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
+
+    private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
+    private val auth by lazy { Auth.auth(
+        name = "spokelse_issuer",
+        clientId = "spokelse_azure_ad_app_id",
+        discoveryUrl = issuer.wellKnownUri().toString()
+    ) }
+
+    @BeforeAll
+    fun beforeAll() {
+        issuer.start()
+    }
+
+    @AfterAll
+    fun afterAll() {
+        issuer.stop()
+    }
 
     @BeforeEach
     fun setup() {
@@ -74,21 +82,17 @@ internal abstract class AbstractE2ETest {
 
     protected fun assertApiRequest(
         path: String,
-        httpMethod: String = "GET",
+        httpMethod: String = "POST",
         requestBody: String? = null,
         forventetHttpStatus: Int = 200,
         forventetResponseBody: String? = null,
         timeout: Duration = Duration.ofSeconds(5),
-        authorized: Boolean = true
+        rolle: String?,
+        app: String?
     ) {
         naisfulTestApp(
             testApplicationModule = {
-                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), object: ApiTilgangsstyring {
-                    override fun utbetaltePerioder(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
-                    override fun utbetaltePerioderAap(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
-                    override fun utbetaltePerioderDagpenger(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
-                    override fun grunnlag(call: ApplicationCall) { check(call.applicationId == "fp_object_id") }
-                })
+                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), RolleApiTilgangsstyring)
             },
             objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS),
             meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT),
@@ -98,8 +102,11 @@ internal abstract class AbstractE2ETest {
                     client.request("/$path") {
                         method = HttpMethod.parse(httpMethod)
                         accept(ContentType.Application.Json)
-                        if (authorized) {
-                            bearerAuth(authorizationHeader)
+                        if (rolle != null || app != null) {
+                            bearerAuth(issuer.accessToken {
+                                app?.let { withClaim("azp", it) }
+                                rolle?.let { withArrayClaim("roles", arrayOf(it)) }
+                            })
                         }
                         if (requestBody != null) {
                             contentType(ContentType.Application.Json)
@@ -137,18 +144,7 @@ internal abstract class AbstractE2ETest {
 
     internal companion object {
         private val logg = LoggerFactory.getLogger(AbstractE2ETest::class.java)
-        private var jwtStub: JwtStub
-        private val wireMockServer = WireMockServer(WireMockConfiguration.options().dynamicPort()).apply { start() }
 
-        init {
-            jwtStub = JwtStub("Microsoft Azure AD", wireMockServer)
-            WireMock.stubFor(jwtStub.stubbedJwkProvider())
-            WireMock.stubFor(jwtStub.stubbedConfigProvider())
-
-            Runtime.getRuntime().addShutdownHook(Thread {
-                wireMockServer.stop()
-            })
-        }
         internal fun oppdrag(fødselsnummer: String, fagsystemId: String, fagområde: String, fom: LocalDate, tom: LocalDate) = Vedtak.Oppdrag(
             mottaker = fødselsnummer,
             fagområde = fagområde,

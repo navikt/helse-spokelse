@@ -1,8 +1,7 @@
 val rapidsAndRiversVersion = "2025033014191743337188.2f9d6b08d096"
-val tbdLibsVersion = "2025.03.30-14.11-a91ce546"
+val tbdLibsVersion = "2025.04.02-15.56-d34332c4"
 val ktorVersion = "3.1.2"
 val postgresqlVersion = "42.7.5"
-val wiremockVersion = "3.9.2"
 val junitJupiterVersion = "5.12.1"
 val jsonAssertVersion = "1.5.1"
 val hikariCPVersion = "6.3.0"
@@ -31,12 +30,12 @@ dependencies {
     implementation("com.github.seratch:kotliquery:$kotliqueryVersion")
 
     testImplementation("io.mockk:mockk:$mockkVersion")
-    testImplementation("org.wiremock:wiremock:$wiremockVersion")
 
     testImplementation("org.awaitility:awaitility:$awaitilityVersion")
 
     testImplementation("com.github.navikt.tbd-libs:postgres-testdatabaser:$tbdLibsVersion")
     testImplementation("com.github.navikt.tbd-libs:naisful-test-app:$tbdLibsVersion")
+    testImplementation("com.github.navikt.tbd-libs:signed-jwt-issuer-test:$tbdLibsVersion")
     testImplementation("org.skyscreamer:jsonassert:$jsonAssertVersion")
 
     testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")

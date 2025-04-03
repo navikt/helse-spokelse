@@ -160,12 +160,37 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         assertFalse(harData(LocalDate.parse("2022-03-17")))
     }
 
-    private fun assertApiRequest(fødselsnummer: String? = null, fom: String? = null, forventetResponseBody: String? = null, forventetHttpStatus: Int = 200) {
+    @Test
+    fun `ikke tilgang`() {
+        // Feil rolle
+        assertApiRequest(
+            fødselsnummer = "01010145679",
+            rolle = "aap-les",
+            forventetHttpStatus = 500 // burde jo vært noe annet da
+        )
+        // Ingen rolle
+        assertApiRequest(
+            fødselsnummer = "01010145679",
+            rolle = null,
+            forventetHttpStatus = 500 // burde jo vært noe annet da
+        )
+
+        // Ikke noe token
+        assertApiRequest(
+            fødselsnummer = "01010145679",
+            rolle = null,
+            app = null,
+            forventetHttpStatus = 401
+        )
+    }
+
+    private fun assertApiRequest(fødselsnummer: String? = null, fom: String? = null, forventetResponseBody: String? = null, forventetHttpStatus: Int = 200, rolle: String? = listOf("foreldrepenger-les", "k9-les").random(), app: String? = "fpsak") {
         val parametre = mapOf("fodselsnummer" to fødselsnummer, "fom" to fom).filterValues { it != null }.mapValues { (_, verdi) -> verdi!! }
         val postBody = jacksonObjectMapper().writeValueAsString(parametre)
         assertApiRequest(
             path = "grunnlag",
-            httpMethod = "POST",
+            rolle = rolle,
+            app = app,
             requestBody = postBody,
             forventetResponseBody = forventetResponseBody,
             forventetHttpStatus = forventetHttpStatus
