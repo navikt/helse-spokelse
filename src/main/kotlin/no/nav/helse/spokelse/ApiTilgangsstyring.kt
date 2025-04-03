@@ -5,31 +5,24 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import org.slf4j.LoggerFactory
 
-interface ApiTilgangsstyring {
-    fun utbetaltePerioder(call: ApplicationCall)
-    fun utbetaltePerioderAap(call: ApplicationCall)
-    fun utbetaltePerioderDagpenger(call: ApplicationCall)
-    fun grunnlag(call: ApplicationCall)
-}
-
-internal object RolleApiTilgangsstyring: ApiTilgangsstyring {
-    override fun utbetaltePerioder(call: ApplicationCall) {
+internal object Tilgangsstyring {
+    internal fun utbetaltePerioder(call: ApplicationCall) {
         call.håndhevTilgangTil(endepunkt = "utbetalte-perioder", påkrevdRolle = "spleiselaget-les")
     }
 
-    override fun utbetaltePerioderAap(call: ApplicationCall) {
+    internal fun utbetaltePerioderAap(call: ApplicationCall) {
         call.håndhevTilgangTil(endepunkt = "utbetalte-perioder-aap", påkrevdRolle = "aap-les")
     }
 
-    override fun utbetaltePerioderDagpenger(call: ApplicationCall) {
+    internal fun utbetaltePerioderDagpenger(call: ApplicationCall) {
         call.håndhevTilgangTil(endepunkt = "utbetalte-perioder-dagpenger", påkrevdRolle = "dagpenger-les")
     }
 
-    override fun grunnlag(call: ApplicationCall) {
+    internal fun grunnlag(call: ApplicationCall) {
         call.håndhevTilgangTil(endepunkt = "grunnlag", enAvRollene = setOf("foreldrepenger-les", "k9-les"))
     }
 
-    internal val ApplicationCall.applicationId get() = this
+    private val ApplicationCall.applicationId get() = this
         .principal<JWTPrincipal>()?.getClaim("azp", String::class)
         .takeUnless { it.isNullOrBlank() }
         ?: throw IllegalStateException("Mangler 'azp' claim i access token")

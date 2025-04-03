@@ -6,7 +6,6 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import no.nav.helse.spokelse.ApiTilgangsstyring
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somFpVedtak
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
@@ -15,15 +14,16 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
+import no.nav.helse.spokelse.Tilgangsstyring
 
 private val logg: Logger = LoggerFactory.getLogger("spokelse")
 private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
 private val objectMapper = jacksonObjectMapper()
 private fun String.asLocalDateOrNull() = kotlin.runCatching { LocalDate.parse(this) }.getOrNull()
 
-internal fun Route.grunnlagApi(gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi, tilgangsstyrings: ApiTilgangsstyring) {
+internal fun Route.grunnlagApi(gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi) {
     suspend fun RoutingContext.respond(fødselsnummer: String, fom: LocalDate?) {
-        tilgangsstyrings.grunnlag(call)
+        Tilgangsstyring.grunnlag(call)
         val time = measureTimeMillis {
             try {
                 val vedtak: List<FpVedtak> = gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, fom).somFpVedtak() + tbdUtbetalingApi.utbetalinger(fødselsnummer, fom, null).somFpVedtak()

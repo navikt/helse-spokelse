@@ -92,7 +92,7 @@ internal abstract class AbstractE2ETest {
     ) {
         naisfulTestApp(
             testApplicationModule = {
-                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), RolleApiTilgangsstyring)
+                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao))
             },
             objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS),
             meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT),

@@ -77,7 +77,7 @@ fun launchApplication(env: Map<String, String>) {
                     readyCheck = rapid::isReady,
                     preStopHook = preStopHook::handlePreStopRequest
                 ) {
-                    spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), RolleApiTilgangsstyring)
+                    spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao))
                 }
             }
         }
@@ -102,13 +102,13 @@ internal fun RapidsConnection.registerRivers(
     utbetaltePerioder?.let { UtbetaltePerioderRiver(this, it) }
 }
 
-internal fun Application.spokelse(env: Map<String, String>, auth: Auth, gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi, apiTilgangsstyring: ApiTilgangsstyring) {
+internal fun Application.spokelse(env: Map<String, String>, auth: Auth, gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi) {
     val httpClient = HttpClient(CIO)
     azureAdAppAuthentication(auth)
     routing {
         authenticate {
-            grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi, apiTilgangsstyring)
-            utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, gamleUtbetalingerDao), apiTilgangsstyring)
+            grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
+            utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, gamleUtbetalingerDao))
         }
     }
 }
