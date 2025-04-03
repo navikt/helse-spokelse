@@ -25,7 +25,12 @@ internal object Tilgangsstyring {
     private val ApplicationCall.applicationId get() = this
         .principal<JWTPrincipal>()?.getClaim("azp", String::class)
         .takeUnless { it.isNullOrBlank() }
-        ?: throw IllegalStateException("Mangler 'azp' claim i access token")
+        ?: "n/a"
+
+    private val ApplicationCall.applicationName get() = this
+        .principal<JWTPrincipal>()?.getClaim("azp_name", String::class)
+        .takeUnless { it.isNullOrBlank() }
+        ?: "n/a"
 
     private val ApplicationCall.roles get() = this
         .principal<JWTPrincipal>()?.getListClaim("roles", String::class)
@@ -35,12 +40,12 @@ internal object Tilgangsstyring {
 
     private fun ApplicationCall.håndhevTilgangTil(endepunkt: String, enAvRollene: Set<String>) {
         val rolle = enAvRollene.firstOrNull { it in roles } ?: run {
-            val feilmelding = "Applikasjonen $applicationId har ikke tilgang til /$endepunkt - Må ha en av rollene $enAvRollene, har bare $roles"
+            val feilmelding = "Applikasjonen $applicationName ($applicationId) har ikke tilgang til /$endepunkt - Må ha en av rollene $enAvRollene, har bare $roles"
             sikkerlogg.error(feilmelding)
             throw IllegalStateException(feilmelding)
         }
 
-        sikkerlogg.info("Håndterer request til /$endepunkt fra $applicationId som har rolle $rolle")
+        sikkerlogg.info("Håndterer request til /$endepunkt fra $applicationName ($applicationId) som har rolle $rolle")
     }
 
     private fun ApplicationCall.håndhevTilgangTil(endepunkt: String, påkrevdRolle: String) = håndhevTilgangTil(endepunkt, setOf(påkrevdRolle))
