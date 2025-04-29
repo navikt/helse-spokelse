@@ -1,0 +1,5 @@
+ALTER TABLE vedtak
+ALTER COLUMN orgnummer TYPE TEXT;
+
+ALTER TABLE old_vedtak
+ALTER COLUMN orgnummer TYPE TEXT;

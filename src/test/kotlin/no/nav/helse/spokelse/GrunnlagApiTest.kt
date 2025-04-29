@@ -103,6 +103,54 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
     }
 
     @Test
+    fun `lagrer gamle og nye vedtak med laaaaangt orgnummer`() {
+        val fnr = "01010145679"
+        val orgnummer = "123456789123456789"
+        val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
+        val fagsystemId = "VNDG2PFPMNB4FKMC4ORASZ2JJ5"
+        val fom = LocalDate.of(2020, 4, 1)
+        val tom = LocalDate.of(2020, 4, 6)
+        val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
+
+        utbetaltDao.opprett(Vedtak(
+            hendelseId = UUID.randomUUID(),
+            fødselsnummer = fnr,
+            orgnummer = orgnummer,
+            dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+            oppdrag = listOf(oppdrag(fnr, fagsystemId, "SPREF", fom, tom)),
+            fom = fom,
+            tom = tom,
+            forbrukteSykedager = 32,
+            gjenståendeSykedager = 216,
+            opprettet = vedtattTidspunkt
+        ))
+
+        lagreVedtakDao.save(
+            OldVedtak(
+                vedtaksperiodeId = UUID.randomUUID(),
+                fødselsnummer = fnr,
+                orgnummer = orgnummer,
+                opprettet = vedtattTidspunkt,
+                utbetalinger = listOf(
+                    OldUtbetaling(
+                        fom = fom,
+                        tom = tom,
+                        grad = 100.0,
+                        dagsats = 123,
+                        beløp = 321,
+                        totalbeløp = 456
+                    )
+                ),
+                forbrukteSykedager = 1,
+                gjenståendeSykedager = 2,
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding)
+            )
+        )
+
+    }
+
+
+    @Test
     fun `skriver vedtak til db uten inntektsmelding`() {
         val fnr = "01010145679"
         val orgnummer = "123456789"
