@@ -84,23 +84,26 @@ spec:
         - host: sykepengeperioder-api.dev-fss-pub.nais.io
   gcp:
     sqlInstances:
-    - type: POSTGRES_17
-      diskAutoresize: true
-      pointInTimeRecovery: true
-      tier: db-f1-micro
-      name: spokelse
-      databases:
-      - name: spokelse
-        envVarPrefix: DATABASE
+      - type: POSTGRES_17
+        diskAutoresize: true
+        pointInTimeRecovery: true
+        tier: db-f1-micro
+        name: spokelse
+        databases:
+          - name: spokelse
+            envVarPrefix: DATABASE
   env:
-  - name: KAFKA_RAPID_TOPIC
-    value: tbd.rapid.v1
-  - name: KAFKA_CONSUMER_GROUP_ID
-    value: tbd-spokelse-v1
-  - name: KAFKA_RESET_POLICY
-    value: earliest
-  - name: INFOTRYGD_SCOPE
-    value: api://dev-fss.tbd.sparkel-sykepengeperioder-api/.default
-  - name: INFOTRYGD_URL
-    value: https://sykepengeperioder-api.dev-fss-pub.nais.io
-
+    - name: KAFKA_RAPID_TOPIC
+      value: tbd.rapid.v1
+    - name: KAFKA_CONSUMER_GROUP_ID
+      value: tbd-spokelse-v1
+    - name: KAFKA_RESET_POLICY
+      value: earliest
+    - name: INFOTRYGD_SCOPE
+      value: api://dev-fss.tbd.sparkel-sykepengeperioder-api/.default
+    - name: INFOTRYGD_URL
+      value: https://sykepengeperioder-api.dev-fss-pub.nais.io
+  observability:
+    logging:
+      destinations:
+        - id: elastic

@@ -18,7 +18,7 @@ spec:
     http:
       path: /stop
   ingresses:
-  - https://spokelse.intern.nav.no
+    - https://spokelse.intern.nav.no
   resources:
     limits:
       memory: 1024Mi
@@ -90,22 +90,26 @@ spec:
         - host: sykepengeperioder-api.prod-fss-pub.nais.io
   gcp:
     sqlInstances:
-    - type: POSTGRES_17
-      diskAutoresize: true
-      pointInTimeRecovery: true
-      tier: db-custom-1-3840
-      name: spokelse
-      databases:
-      - name: spokelse
-        envVarPrefix: DATABASE
+      - type: POSTGRES_17
+        diskAutoresize: true
+        pointInTimeRecovery: true
+        tier: db-custom-1-3840
+        name: spokelse
+        databases:
+          - name: spokelse
+            envVarPrefix: DATABASE
   env:
-  - name: KAFKA_RAPID_TOPIC
-    value: tbd.rapid.v1
-  - name: KAFKA_CONSUMER_GROUP_ID
-    value: tbd-spokelse-v1
-  - name: KAFKA_RESET_POLICY
-    value: none
-  - name: INFOTRYGD_SCOPE
-    value: api://prod-fss.tbd.sparkel-sykepengeperioder-api/.default
-  - name: INFOTRYGD_URL
-    value: https://sykepengeperioder-api.prod-fss-pub.nais.io
+    - name: KAFKA_RAPID_TOPIC
+      value: tbd.rapid.v1
+    - name: KAFKA_CONSUMER_GROUP_ID
+      value: tbd-spokelse-v1
+    - name: KAFKA_RESET_POLICY
+      value: none
+    - name: INFOTRYGD_SCOPE
+      value: api://prod-fss.tbd.sparkel-sykepengeperioder-api/.default
+    - name: INFOTRYGD_URL
+      value: https://sykepengeperioder-api.prod-fss-pub.nais.io
+  observability:
+    logging:
+      destinations:
+        - id: elastic
