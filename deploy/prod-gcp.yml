@@ -86,6 +86,9 @@ spec:
             roles:
               - "dagpenger-les"
     outbound:
+      rules:
+        - application: logging
+          namespace: nais-system
       external:
         - host: sykepengeperioder-api.prod-fss-pub.nais.io
   gcp:
