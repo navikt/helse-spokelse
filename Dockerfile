@@ -1,4 +1,4 @@
-FROM gcr.io/distroless/java21-debian12:nonroot
+FROM europe-north1-docker.pkg.dev/cgr-nav/pull-through/nav.no/jre:openjdk-21
 
 COPY build/libs/*.jar /app/
 
@@ -7,4 +7,4 @@ ENV JAVA_OPTS='-XX:MaxRAMPercentage=90'
 
 WORKDIR /app
 
-CMD ["app.jar"]
+CMD ["-jar", "app.jar"]
