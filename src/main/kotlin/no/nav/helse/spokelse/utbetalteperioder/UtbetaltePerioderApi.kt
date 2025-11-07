@@ -28,4 +28,10 @@ internal fun Route.utbetaltePerioderApi(utbetaltePerioder: UtbetaltePerioder) {
         val response = utbetaltePerioder.hent(request, groupBy = setOf(GroupBy.grad), tagsFilter = IngenTags)
         call.respondText(response, Json)
     }
+    post("/utbetalte-perioder-personoversikt") {
+        Tilgangsstyring.utbetaltePerioderPersonoversikt(call)
+        val request = objectMapper.readTree(call.receiveText())
+        val response = utbetaltePerioder.hent(request, groupBy = setOf(GroupBy.grad, GroupBy.organisasjonsnummer), tagsFilter = IngenTags)
+        call.respondText(response, Json)
+    }
 }

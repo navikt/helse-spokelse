@@ -85,6 +85,12 @@ spec:
           permissions:
             roles:
               - "dagpenger-les"
+        - application: modiapersonoversikt-api
+          namespace: personoversikt
+          cluster: prod-gcp
+          permissions:
+            roles:
+              - "personoversikt-les"
     outbound:
       rules:
         - application: logging

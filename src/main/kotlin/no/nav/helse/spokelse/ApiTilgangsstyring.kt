@@ -18,6 +18,10 @@ internal object Tilgangsstyring {
         call.håndhevTilgangTil(endepunkt = "utbetalte-perioder-dagpenger", påkrevdRolle = "dagpenger-les")
     }
 
+    internal fun utbetaltePerioderPersonoversikt(call: ApplicationCall) {
+        call.håndhevTilgangTil(endepunkt = "utbetalte-perioder-personoversikt", påkrevdRolle = "personoversikt-les")
+    }
+
     internal fun grunnlag(call: ApplicationCall) {
         call.håndhevTilgangTil(endepunkt = "grunnlag", enAvRollene = setOf("foreldrepenger-les", "k9-les"))
     }
