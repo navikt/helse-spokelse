@@ -17,6 +17,6 @@ spec:
         retentionHours: 48
     acl:
         - team: tbd
-          application: sparkel-forsikring
+          application: helse-spokelse
           access: readwrite
 
