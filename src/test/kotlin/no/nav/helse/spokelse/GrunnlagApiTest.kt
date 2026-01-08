@@ -7,9 +7,15 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.*
 
 internal class GrunnlagApiTest : AbstractE2ETest() {
+
+    @Test
+    fun fen() {
+        ZoneId.getAvailableZoneIds().forEach { println(it) }
+    }
 
     @Test
     fun `skriver gammelt vedtak til db`() {

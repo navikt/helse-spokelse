@@ -1,0 +1,22 @@
+---
+apiVersion: kafka.nais.io/v1
+kind: Topic
+metadata:
+    name: boo
+    namespace: tbd
+    labels:
+        team: tbd
+spec:
+    pool: nav-dev
+    config:
+        cleanupPolicy: delete
+        minimumInSyncReplicas: 1
+        partitions: 6
+        replication: 3
+        retentionBytes: -1
+        retentionHours: 48
+    acl:
+        - team: tbd
+          application: sparkel-forsikring
+          access: readwrite
+

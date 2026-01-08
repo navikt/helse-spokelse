@@ -3,6 +3,8 @@ package no.nav.helse.spokelse
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.navikt.tbd_libs.kafka.AivenConfig
+import com.github.navikt.tbd_libs.kafka.ConsumerProducerFactory
 import com.github.navikt.tbd_libs.naisful.naisApp
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.ktor.client.*
@@ -46,9 +48,12 @@ fun launchApplication(env: Map<String, String>) {
     val gamleUtbetalingerDao = GamleUtbetalingerDao(dataSource::dataSource)
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource::dataSource)
 
+    val aivenFactory = ConsumerProducerFactory(AivenConfig.default)
+    val utbetalingVarsel = UtbetalingVarsel(aivenFactory.createProducer())
+
     val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), gamleUtbetalingerDao)
 
-    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
+    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     RapidApplication.create(
         env = env,

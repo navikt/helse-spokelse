@@ -1,0 +1,34 @@
+name: Aiven config for de andre topicene våre
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'deploy/aiven-boo-dev.yml'
+      - 'deploy/aiven-boo-prod.yml'
+
+jobs:
+  deployDev:
+    name: apply dev-gcp
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: deploy/aiven-teknisk-topic-dev.yml,deploy/aiven-subsumsjon-topic-dev.yml
+
+  deployProd:
+    name: apply prod-gcp
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: prod-gcp
+          RESOURCE: deploy/aiven-teknisk-topic-prod.yml,deploy/aiven-subsumsjon-topic-prod.yml
