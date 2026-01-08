@@ -20,15 +20,3 @@ jobs:
         env:
           CLUSTER: dev-gcp
           RESOURCE: deploy/boo-dev.yml
-
-  deployProd:
-    name: apply prod-gcp
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: prod-gcp
-          RESOURCE: deploy/boo-prod.yml
