@@ -14,7 +14,7 @@ spec:
         partitions: 6
         replication: 3
         retentionBytes: -1
-        retentionHours: 48
+        retentionHours: 47
     acl:
         - team: tbd
           application: helse-spokelse
