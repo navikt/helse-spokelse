@@ -19,4 +19,7 @@ spec:
         - team: tbd
           application: helse-spokelse
           access: readwrite
+        - team: aap
+          application: behandlingsflyt
+          access: read
 
