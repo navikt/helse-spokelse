@@ -30,8 +30,6 @@ spec:
     path: /metrics
   kafka:
     pool: nav-dev
-  secureLogs:
-    enabled: true
   azure:
     application:
       enabled: true
