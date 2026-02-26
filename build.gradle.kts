@@ -12,7 +12,7 @@ val awaitilityVersion = "4.2.0"
 val mainClass = "no.nav.helse.spokelse.AppKt"
 
 plugins {
-    kotlin("jvm") version "2.2.21"
+    kotlin("jvm") version "2.3.0"
 }
 
 dependencies {
