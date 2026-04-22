@@ -10,17 +10,17 @@ internal class AnnulleringMappingTest {
 
     @Test
     fun `annullering begge oppdrag`() {
-        assertEquals(Annullering("XI2MMEZAJZBVJL2E4K7UM4BQBY", "L52NYV4KE5BEPILU4L2ERGAVYU"), jsonAnnulleringBeggeOppdrag.annullering())
+        assertEquals(Annullering("12345678901", "XI2MMEZAJZBVJL2E4K7UM4BQBY", "L52NYV4KE5BEPILU4L2ERGAVYU"), jsonAnnulleringBeggeOppdrag.annullering())
     }
 
     @Test
     fun `annullering arbeidsgiveroppdrag`() {
-        assertEquals(Annullering("XI2MMEZAJZBVJL2E4K7UM4BQBY", null), jsonAnnulleringArbeidsgiveroppdrag.annullering())
+        assertEquals(Annullering("12345678901", "XI2MMEZAJZBVJL2E4K7UM4BQBY", null), jsonAnnulleringArbeidsgiveroppdrag.annullering())
     }
 
     @Test
     fun `annullering personoppdrag`() {
-        assertEquals(Annullering(null, "L52NYV4KE5BEPILU4L2ERGAVYU"), jsonAnnulleringPersonoppdrag.annullering())
+        assertEquals(Annullering("12345678901", null, "L52NYV4KE5BEPILU4L2ERGAVYU"), jsonAnnulleringPersonoppdrag.annullering())
     }
 
     private companion object {
@@ -32,7 +32,7 @@ internal class AnnulleringMappingTest {
           "event": "utbetaling_annullert",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",
           "korrelasjonsId": "a43696c7-e824-4140-b8a7-348efe7128cc",
-          "fødselsnummer": "<string>",
+          "fødselsnummer": "12345678901",
           "organisasjonsnummer": "999263550",
           "orgnummer": "999263550",
           "tidsstempel": "2022-06-10T19:06:26.765",
@@ -49,7 +49,7 @@ internal class AnnulleringMappingTest {
           "event": "utbetaling_annullert",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",
           "korrelasjonsId": "a43696c7-e824-4140-b8a7-348efe7128cc",
-          "fødselsnummer": "<string>",
+          "fødselsnummer": "12345678901",
           "organisasjonsnummer": "999263550",
           "orgnummer": "999263550",
           "tidsstempel": "2022-06-10T19:06:26.765",
@@ -66,7 +66,7 @@ internal class AnnulleringMappingTest {
           "event": "utbetaling_annullert",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",
           "korrelasjonsId": "a43696c7-e824-4140-b8a7-348efe7128cc",
-          "fødselsnummer": "<string>",
+          "fødselsnummer": "12345678901",
           "organisasjonsnummer": "999263550",
           "orgnummer": "999263550",
           "tidsstempel": "2022-06-10T19:06:26.765",

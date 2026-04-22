@@ -6,24 +6,24 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingObserver
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
 /*
     dings som legger fnr og timestamp på en helt egen topic hver gang spøkelse får vite om en utbetaling
  */
 internal class UtbetalingVarsel(private val producer: KafkaProducer<String, String>, private val topic: String = "tbd.boo"): TbdUtbetalingObserver {
-    private val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
 
     override fun utbetaling(meldingId: Long, utbetaling: Utbetaling) {
-        noeHarSkjedd(utbetaling.fødselsnummer)
+        noeHarSkjedd(utbetaling.fødselsnummer, "utbetaling")
     }
 
     override fun annullering(meldingId: Long, annullering: Annullering) {
-        // gjør ingenting fordi Annullering-objektet inneholder ikke nok informasjon
-        // TODO: hadde nok vært fint å få fødselsnummer her, ja..
+        noeHarSkjedd(annullering.fødselsnummer, "annullering")
     }
 
-    private fun noeHarSkjedd(personidentifikator: String) {
+    private fun noeHarSkjedd(personidentifikator: String, pga: String) {
+        @Language("JSON")
         val melding = """
             {
                 "personidentifikator": "$personidentifikator",
@@ -31,6 +31,10 @@ internal class UtbetalingVarsel(private val producer: KafkaProducer<String, Stri
             }
         """.trimIndent()
         producer.send(ProducerRecord(topic, melding))
-        sikkerLogg.info("Pinger endring for $personidentifikator")
+        sikkerLogg.info("Sier bø! som følge av en $pga for $personidentifikator:\n$melding")
+    }
+
+    private companion object {
+        val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
     }
 }

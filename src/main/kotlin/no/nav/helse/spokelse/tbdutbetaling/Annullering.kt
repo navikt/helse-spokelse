@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erAnnullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
 
 internal data class Annullering(
+    internal val fødselsnummer: String,
     internal val arbeidsgiverFagsystemId: String?,
     internal val personFagsystemId: String?
 ) {
@@ -19,6 +21,7 @@ internal data class Annullering(
         internal fun JsonNode.annullering(): Annullering {
             require(erAnnullering) { "Kan ikke mappe event $event til annullering" }
             return Annullering(
+                fødselsnummer = fødselsnummer,
                 arbeidsgiverFagsystemId = path("arbeidsgiverFagsystemId").takeUnless { it.isMissingOrNull() }?.asText(),
                 personFagsystemId = path("personFagsystemId").takeUnless { it.isMissingOrNull() }?.asText()
             )
