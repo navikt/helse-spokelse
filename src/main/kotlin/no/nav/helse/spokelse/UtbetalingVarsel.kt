@@ -23,6 +23,10 @@ internal class UtbetalingVarsel(private val producer: KafkaProducer<String, Stri
         noeHarSkjedd(annullering.fødselsnummer, annullering.fom, "annullering")
     }
 
+    fun nyInformasjonIInfotrygd(fødselsnummer: String, fom: LocalDate?) {
+        noeHarSkjedd(fødselsnummer, fom, "infotrygd")
+    }
+
     private fun noeHarSkjedd(personidentifikator: String, fraOgMed: LocalDate?, pga: String) {
         val melding = lagMelding(personidentifikator, fraOgMed)
         producer.send(ProducerRecord(topic, melding))

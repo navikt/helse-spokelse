@@ -21,6 +21,8 @@ import io.prometheus.metrics.model.registry.PrometheusRegistry
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
+import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver
+import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisKjennerTilRiver
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
@@ -88,7 +90,7 @@ fun launchApplication(env: Map<String, String>) {
         }
     )
         .apply {
-            registerRivers(tbdUtbetalingDao, utbetaltePerioder)
+            registerRivers(tbdUtbetalingDao, utbetaltePerioder, utbetalingVarsel)
             register(tbdUtbetalingConsumer)
             register(object : RapidsConnection.StatusListener {
                 override fun onStartup(rapidsConnection: RapidsConnection) {
@@ -101,10 +103,14 @@ fun launchApplication(env: Map<String, String>) {
 
 internal fun RapidsConnection.registerRivers(
     tbdUtbetalingDao: TbdUtbetalingDao,
-    utbetaltePerioder: UtbetaltePerioder? = null
+    utbetaltePerioder: UtbetaltePerioder,
+    utbetalingVarsel: UtbetalingVarsel
+
 ) {
     HelsesjekkRiver(this, tbdUtbetalingDao)
-    utbetaltePerioder?.let { UtbetaltePerioderRiver(this, it) }
+    UtbetaltePerioderRiver(this, utbetaltePerioder)
+    NyInformasjonIInfotrygdPåPersonSpleisKjennerTilRiver(this, utbetalingVarsel)
+    NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver(this, utbetalingVarsel)
 }
 
 internal fun Application.spokelse(env: Map<String, String>, auth: Auth, gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi) {
