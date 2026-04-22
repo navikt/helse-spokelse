@@ -113,7 +113,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til arbeidsgiver ved full refusjon`() {
         lagreFullRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, ArbeidsgiverFagsystemId, null))
+        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, 1.januar, ArbeidsgiverFagsystemId, null))
         assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
@@ -121,7 +121,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til person ved ingen refusjon`() {
         lagreNullRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, null, PersonFagsystemId))
+        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, 1.januar,null, PersonFagsystemId))
         assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
@@ -129,7 +129,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til arbeidsgiver ved delvis refusjon`() {
         val utbetaling = lagreDelvisRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, ArbeidsgiverFagsystemId, null))
+        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, 1.januar, ArbeidsgiverFagsystemId, null))
         assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(listOf(utbetaling.copy(arbeidsgiverOppdrag = null)), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
@@ -137,7 +137,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til person ved delvis refusjon`() {
         val utbetaling = lagreDelvisRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, null, PersonFagsystemId))
+        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, 1.januar,null, PersonFagsystemId))
         assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(listOf(utbetaling.copy(personOppdrag = null)), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
@@ -145,7 +145,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     fun `annullerer utbetaling til person og arbeidsgiver ved delvis refusjon`() {
         lagreDelvisRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, ArbeidsgiverFagsystemId, PersonFagsystemId))
+        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, 1.januar, ArbeidsgiverFagsystemId, PersonFagsystemId))
         assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))

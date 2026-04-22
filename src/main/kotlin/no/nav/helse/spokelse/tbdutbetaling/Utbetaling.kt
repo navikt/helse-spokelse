@@ -38,13 +38,14 @@ internal data class Utbetaling(
             "Hverken arbeidsgiverOppdrag eller personOppdrag er satt."
         }
     }
+    val fom = listOfNotNull(arbeidsgiverOppdrag, personOppdrag).flatMap { it.utbetalingslinjer }.minOfOrNull { it.fom }
 
     private fun Oppdrag?.somFpVedtak() = this?.let { oppdrag -> FpVedtak(
         vedtaksreferanse = oppdrag.fagsystemId,
         utbetalinger = oppdrag.utbetalingslinjer.map { Utbetalingsperiode(it.fom, it.tom, it.grad) },
         vedtattTidspunkt = sistUtbetalt
-    )
-    }
+    )}
+
     private fun somFpVedtak() = listOfNotNull(arbeidsgiverOppdrag.somFpVedtak(), personOppdrag.somFpVedtak())
 
     private fun somSpøkelsePeriode() : List<SpøkelsePeriode> {
