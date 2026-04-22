@@ -22,4 +22,6 @@ spec:
         - team: aap
           application: behandlingsflyt
           access: read
-
+        - team: teamforeldrepenger
+          application: fpsak
+          access: read
