@@ -71,6 +71,12 @@ spec:
           permissions:
             roles:
               - "aap-les"
+        - application: postmottak-backend
+          namespace: aap
+          cluster: dev-gcp
+          permissions:
+            roles:
+              - "aap-les"
         - application: dp-oppslag-ytelser
           namespace: teamdagpenger
           cluster: dev-gcp
