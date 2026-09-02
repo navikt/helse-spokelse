@@ -111,6 +111,7 @@ spec:
         databases:
           - name: spokelse
             envVarPrefix: DATABASE
+        flags:
           - name: cloudsql.enable_pgaudit
             value: "on"
           - name: pgaudit.log
