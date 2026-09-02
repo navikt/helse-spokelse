@@ -111,6 +111,14 @@ spec:
         databases:
           - name: spokelse
             envVarPrefix: DATABASE
+          - name: cloudsql.enable_pgaudit
+            value: "on"
+          - name: pgaudit.log
+            value: "write,ddl,role"
+          - name: pgaudit.log_parameter
+            value: "on"
+          - name: pgaudit.log_relation
+            value: "on"
   env:
     - name: KAFKA_RAPID_TOPIC
       value: tbd.rapid.v1
