@@ -12,7 +12,7 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio" }
 ktor-client-core = { module = "io.ktor:ktor-client-core" }
 ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt" }
 mockk = "io.mockk:mockk:1.13.17"
-postgresql = "org.postgresql:postgresql:42.7.7"
+postgresql = "org.postgresql:postgresql:42.7.12"
 rapidsAndRivers = "com.github.navikt:rapids-and-rivers:2026011411051768385145.e8ebad1177b4"
 tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", version.ref = "tbdLibs" }
 tbdLibs-naisfulTestApp = { module = "com.github.navikt.tbd-libs:naisful-test-app", version.ref = "tbdLibs" }
