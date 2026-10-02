@@ -1,5 +1,7 @@
 [versions]
 tbdLibs = "2026.01.22-09.16-1d3f6039"
+# Nyere versjon bruker wiremock-jetty12, som kreves av Jetty 12-BOM-en i sykepenger-pluginen
+tbdLibsSignedJwtIssuerTest = "20261002.1227"
 sykepengerGradlePlugins = "20261001.1830"
 
 [libraries]
@@ -17,7 +19,7 @@ rapidsAndRivers = "com.github.navikt:rapids-and-rivers:2026011411051768385145.e8
 tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", version.ref = "tbdLibs" }
 tbdLibs-naisfulTestApp = { module = "com.github.navikt.tbd-libs:naisful-test-app", version.ref = "tbdLibs" }
 tbdLibs-postgresTestdatabaser = { module = "com.github.navikt.tbd-libs:postgres-testdatabaser", version.ref = "tbdLibs" }
-tbdLibs-signedJwtIssuerTest = { module = "com.github.navikt.tbd-libs:signed-jwt-issuer-test", version.ref = "tbdLibs" }
+tbdLibs-signedJwtIssuerTest = { module = "com.github.navikt.tbd-libs:signed-jwt-issuer-test", version.ref = "tbdLibsSignedJwtIssuerTest" }
 
 [plugins]
 sykepenger-deployable = { id = "no.nav.sykepenger.deployable", version.ref = "sykepengerGradlePlugins" }
