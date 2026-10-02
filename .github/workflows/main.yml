@@ -1,52 +1,76 @@
-name: main
+name: main - Bygg, test og deploy
 
 on:
   push:
     branches:
-    - main
+      - main
+    paths:
+      # Generelt oppsett - alt unntatt dokumentasjon / urelatert oppsett
+      - '**'
+      - '!**.md'
+      - '!CODEOWNERS'
+      - '!LICENSE'
+      - '!docs/**'
+      - '!.nais/**'
+      - '!.github/workflows/standard-dependabot-auto-merge.yml'
+      - '!.github/workflows/standard-dependency-submission.yml'
+      - '!.github/workflows/standard-pr.yml'
+      - '!.github/workflows/topics.yml'
+      # Ressursene som deployes av denne workflowen
+      - '.nais/spokelse.yaml'
+      - '.nais/spokelse.*.yaml'
   schedule:
-    - cron: '0 3 * * 3'
+    - cron: '0 4 * * 3'
       timezone: 'Europe/Oslo'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read # for sarif
+  contents: read
+  security-events: write # push sarif to github security
+  id-token: write # for nais login
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  bygg-og-test:
+    name: Bygg og test
+    uses: navikt/sykepenger-github-workflows/.github/workflows/bygg-og-test-med-gradle.yml@77c349d62b631cf0fedc02278c68abd33bc8ea5b # v1.0.10
     permissions:
-        id-token: write
-    steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-java@v5
-      with:
-        distribution: 'temurin'
-        java-version: '17.x'
-        cache: 'gradle'
-    - name: test and build
-      run: ./gradlew test build
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: build docker image
-      uses: nais/docker-build-push@v0
-      id: docker-build-push
-      with:
-        team: tbd
-    outputs:
-      image: ${{ steps.docker-build-push.outputs.image }}
-  deploy:
-    name: deploy
-    needs: build
-    runs-on: ubuntu-latest
+      contents: read
+
+  bygg-image:
+    name: Bygg image
+    needs: bygg-og-test
+    uses: navikt/sykepenger-github-workflows/.github/workflows/bygg-image-med-jib.yml@77c349d62b631cf0fedc02278c68abd33bc8ea5b # v1.0.10
     permissions:
-      id-token: write
-    strategy:
-      fail-fast: false
-      matrix:
-        cluster:
-         - dev-gcp
-         - prod-gcp
-    steps:
-    - uses: actions/checkout@v6
-    - name: deploy
-      uses: nais/deploy/actions/deploy@v2
-      env:
-          RESOURCE: deploy/${{ matrix.cluster }}.yml
-          IMAGE: ${{ needs.build.outputs.image }}
-          CLUSTER: ${{ matrix.cluster }}
+      actions: read # for sarif upload on private repos
+      contents: read
+      id-token: write # for nais login
+      security-events: write # push sarif to github security
+
+  deploy-dev:
+    name: Deploy til dev
+    needs: bygg-image
+    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy-v2.yml@77c349d62b631cf0fedc02278c68abd33bc8ea5b # v1.0.10
+    with:
+      manifest: .nais/spokelse.yaml
+      environment: dev-gcp
+      image: ${{ needs.bygg-image.outputs.image_ref }}
+    permissions:
+      contents: read
+      id-token: write # for nais login
+
+  deploy-prod:
+    name: Deploy til prod
+    needs: bygg-image
+    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy-v2.yml@77c349d62b631cf0fedc02278c68abd33bc8ea5b # v1.0.10
+    with:
+      manifest: .nais/spokelse.yaml
+      environment: prod-gcp
+      image: ${{ needs.bygg-image.outputs.image_ref }}
+    permissions:
+      contents: read
+      id-token: write # for nais login

@@ -5,30 +5,36 @@ on:
     branches:
       - main
     paths:
-      - 'deploy/boo-dev.yml'
-      - 'deploy/boo-prod.yml'
+      - '.nais/boo.yaml'
+      - '.nais/boo.*.yaml'
+      - '.github/workflows/topics.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write # for nais login
 
 jobs:
-  deployDev:
-    name: apply dev-gcp
-    runs-on: ubuntu-latest
+  deploy-dev:
+    name: Deploy til dev
+    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy-v2.yml@77c349d62b631cf0fedc02278c68abd33bc8ea5b # v1.0.10
+    with:
+      manifest: .nais/boo.yaml
+      environment: dev-gcp
     permissions:
-      id-token: write
-    steps:
-      - uses: actions/checkout@v6
-      - uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: dev-gcp
-          RESOURCE: deploy/boo-dev.yml
+      contents: read
+      id-token: write # for nais login
 
-  deployProd:
-    name: apply prod-gcp
-    runs-on: ubuntu-latest
+  deploy-prod:
+    name: Deploy til prod
+    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy-v2.yml@77c349d62b631cf0fedc02278c68abd33bc8ea5b # v1.0.10
+    with:
+      manifest: .nais/boo.yaml
+      environment: prod-gcp
     permissions:
-      id-token: write
-    steps:
-      - uses: actions/checkout@v6
-      - uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: prod-gcp
-          RESOURCE: deploy/boo-prod.yml
+      contents: read
+      id-token: write # for nais login
