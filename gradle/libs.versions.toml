@@ -7,7 +7,7 @@ awaitility = "org.awaitility:awaitility:4.2.0"
 flyway-database-postgresql = "org.flywaydb:flyway-database-postgresql:11.5.0"
 hikaricp = "com.zaxxer:HikariCP:6.3.0"
 jsonassert = "org.skyscreamer:jsonassert:1.5.1"
-kotliquery = "com.github.seratch:kotliquery:1.9.0"
+kotliquery = "com.github.seratch:kotliquery:1.9.1"
 ktor-client-cio = { module = "io.ktor:ktor-client-cio" }
 ktor-client-core = { module = "io.ktor:ktor-client-core" }
 ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt" }
