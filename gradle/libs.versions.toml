@@ -1,21 +1,21 @@
 [versions]
-tbdLibs = "2026.01.22-09.16-1d3f6039"
+tbdLibs = "20261002.1227"
 # Nyere versjon bruker wiremock-jetty12, som kreves av Jetty 12-BOM-en i sykepenger-pluginen
 tbdLibsSignedJwtIssuerTest = "20261002.1227"
 sykepengerGradlePlugins = "20261001.1830"
 
 [libraries]
-awaitility = "org.awaitility:awaitility:4.2.0"
-flyway-database-postgresql = "org.flywaydb:flyway-database-postgresql:11.5.0"
-hikaricp = "com.zaxxer:HikariCP:6.3.0"
-jsonassert = "org.skyscreamer:jsonassert:1.5.1"
-kotliquery = "com.github.seratch:kotliquery:1.9.0"
+awaitility = "org.awaitility:awaitility:4.3.0"
+flyway-database-postgresql = "org.flywaydb:flyway-database-postgresql:13.8.0"
+hikaricp = "com.zaxxer:HikariCP:7.1.0"
+jsonassert = "org.skyscreamer:jsonassert:1.5.3"
+kotliquery = "com.github.seratch:kotliquery:1.9.1"
 ktor-client-cio = { module = "io.ktor:ktor-client-cio" }
 ktor-client-core = { module = "io.ktor:ktor-client-core" }
 ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt" }
-mockk = "io.mockk:mockk:1.13.17"
-postgresql = "org.postgresql:postgresql:42.7.7"
-rapidsAndRivers = "com.github.navikt:rapids-and-rivers:2026011411051768385145.e8ebad1177b4"
+mockk = "io.mockk:mockk:1.14.11"
+postgresql = "org.postgresql:postgresql:42.7.13"
+rapidsAndRivers = "com.github.navikt:rapids-and-rivers:2026091610031789545782"
 tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", version.ref = "tbdLibs" }
 tbdLibs-naisfulTestApp = { module = "com.github.navikt.tbd-libs:naisful-test-app", version.ref = "tbdLibs" }
 tbdLibs-postgresTestdatabaser = { module = "com.github.navikt.tbd-libs:postgres-testdatabaser", version.ref = "tbdLibs" }
