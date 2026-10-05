@@ -2,8 +2,8 @@ package no.nav.helse.spokelse
 
 import com.auth0.jwk.JwkProvider
 import com.auth0.jwk.JwkProviderBuilder
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.databind.JsonNode
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.server.auth.jwt.*
 import java.io.InputStream
 import java.net.HttpURLConnection

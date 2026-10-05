@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.utbetaleperioder
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.februar
 import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy

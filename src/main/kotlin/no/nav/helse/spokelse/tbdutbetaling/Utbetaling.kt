@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
@@ -59,7 +59,7 @@ internal data class Utbetaling(
     internal companion object {
         private fun JsonNode.oppdrag(path:String) = path(path).takeUnless { it.isMissingOrNull() || it.path("utbetalingslinjer").isEmpty }?.let { Oppdrag(
             fagsystemId = it.path("fagsystemId").asText(),
-            utbetalingslinjer = it.path("utbetalingslinjer").map { linje -> linje.utbetalingslinje() }
+            utbetalingslinjer = it.path("utbetalingslinjer").values().map { linje -> linje.utbetalingslinje() }
         )}
         internal fun JsonNode.utbetaling(sistUtbetalt: LocalDateTime): Utbetaling {
             require(erUtbetaling) { "Kan ikke mappe event $event til utbetaling" }
