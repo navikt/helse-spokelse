@@ -1,7 +1,7 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.databind.JsonNode
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import io.ktor.client.*
 import io.ktor.client.request.*
@@ -37,7 +37,7 @@ internal class Infotrygd(private val httpClient: HttpClient, private val scope :
     }
 
     private fun JsonNode.perioder(): List<SpøkelsePeriode> =
-        path("utbetaltePerioder").map { it.somPeriode() }
+        path("utbetaltePerioder").values().map { it.somPeriode() }
     private fun JsonNode.somPeriode(): SpøkelsePeriode {
         return SpøkelsePeriode(
             personidentifikator = Personidentifikator(path("personidentifikator").asText()),
@@ -45,7 +45,7 @@ internal class Infotrygd(private val httpClient: HttpClient, private val scope :
             tom = LocalDate.parse(path("tom").asText()),
             grad = path("grad").asInt(),
             organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asText(),
-            tags = (path("tags").map { it.asText() } + "Infotrygd").toSet()
+            tags = (path("tags").values().map { it.asText() } + "Infotrygd").toSet()
         )
     }
     private companion object {

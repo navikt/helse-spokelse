@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao.Companion.harData
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*

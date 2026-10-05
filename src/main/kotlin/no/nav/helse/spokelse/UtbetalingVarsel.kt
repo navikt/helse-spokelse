@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import no.nav.helse.spokelse.tbdutbetaling.Annullering

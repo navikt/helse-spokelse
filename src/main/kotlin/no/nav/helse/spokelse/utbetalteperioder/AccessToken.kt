@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*

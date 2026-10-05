@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import com.github.navikt.tbd_libs.rapids_and_rivers.asLocalDate
 import java.time.LocalDate
 

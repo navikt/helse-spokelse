@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import java.time.LocalDateTime
 
 internal class Melding(

@@ -1,8 +1,6 @@
 package no.nav.helse.spokelse
 
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.github.navikt.tbd_libs.naisful.test.naisfulTestApp
 import com.github.navikt.tbd_libs.signed_jwt_issuer_test.Issuer
 import com.github.navikt.tbd_libs.test_support.TestDataSource
@@ -94,7 +92,7 @@ internal abstract class AbstractE2ETest {
             testApplicationModule = {
                 spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao))
             },
-            objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS),
+            objectMapper = jacksonObjectMapper(),
             meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT),
         ) {
             Awaitility.await().atMost(timeout).untilAsserted {
