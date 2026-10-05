@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.grunnlag
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import io.ktor.http.*
 import io.ktor.server.request.*

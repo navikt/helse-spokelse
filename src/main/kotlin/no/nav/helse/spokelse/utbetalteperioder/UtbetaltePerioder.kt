@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import io.ktor.client.*
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.hent
@@ -23,7 +23,7 @@ internal class UtbetaltePerioder private constructor(private val spleis: Spleis,
 
     internal suspend fun hent(request: JsonNode, groupBy: Set<GroupBy> = request.groupBy, tagsFilter: TagsFilter = AlleTags): String {
         val personidentifikatorer = request.path("personidentifikatorer")
-            .map { Personidentifikator(it.asText()) }
+            .values().map { Personidentifikator(it.asText()) }
             .toSet()
             .takeUnless { it.isEmpty() } ?: throw IllegalArgumentException("Det må sendes med minst én personidentifikator")
         val fom = LocalDate.parse(request.path("fom").asText())

@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somFpVedtak

@@ -1,7 +1,7 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.databind.JsonNode
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
 import no.nav.helse.spokelse.utbetalteperioder.Grupperingsnøkkel.Companion.grupperingsnøkkel
 import org.slf4j.LoggerFactory
@@ -16,7 +16,7 @@ internal enum class GroupBy {
         internal val JsonNode.groupBy get(): Set<GroupBy> {
             val oppløsning = path("oppløsning").takeIf { it.isArray }
                 ?: throw IllegalStateException("oppløsning må settes i requesten. Men kan settes til en tom liste om man kun ønsker utbetalte perioder per person")
-            return oppløsning.map { GroupBy.valueOf(it.asText()) }.toSet()
+            return oppløsning.values().map { GroupBy.valueOf(it.asText()) }.toSet()
         }
     }
 }

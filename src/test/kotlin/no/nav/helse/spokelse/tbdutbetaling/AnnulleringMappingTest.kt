@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
 import org.intellij.lang.annotations.Language

@@ -1,8 +1,6 @@
 package no.nav.helse.spokelse
 
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.github.navikt.tbd_libs.kafka.AivenConfig
 import com.github.navikt.tbd_libs.kafka.ConsumerProducerFactory
 import com.github.navikt.tbd_libs.naisful.naisApp
@@ -64,7 +62,7 @@ fun launchApplication(env: Map<String, String>) {
             withKtor { preStopHook, rapid ->
                 naisApp(
                     meterRegistry = meterRegistry,
-                    objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS),
+                    objectMapper = jacksonObjectMapper(),
                     applicationLogger = LoggerFactory.getLogger("no.nav.helse.spokelse.App"),
                     callLogger = LoggerFactory.getLogger("no.nav.helse.spokelse.CallLogging"),
                     naisEndpoints = com.github.navikt.tbd_libs.naisful.NaisEndpoints.Default,
