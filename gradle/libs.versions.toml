@@ -1,7 +1,7 @@
 [versions]
-tbdLibs = "20261002.1227"
+tbdLibs = "20261005.1432"
 # Nyere versjon bruker wiremock-jetty12, som kreves av Jetty 12-BOM-en i sykepenger-pluginen
-tbdLibsSignedJwtIssuerTest = "20261002.1227"
+tbdLibsSignedJwtIssuerTest = "20261005.1432"
 sykepengerGradlePlugins = "20261001.1830"
 
 [libraries]
