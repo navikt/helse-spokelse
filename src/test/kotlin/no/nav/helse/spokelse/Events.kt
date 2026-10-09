@@ -16,9 +16,8 @@ internal object Events {
         arbeidsgiverFagsystemId: String?,
         personFagsystemId: String? = null,
         fom: LocalDate,
-        tom: LocalDate
-    ) =
-        """{
+        tom: LocalDate,
+    ) = """{
             "fødselsnummer": "$fødselsnummer",
             "organisasjonsnummer": "$orgnummer",
             "arbeidsgiverFagsystemId": ${if (arbeidsgiverFagsystemId != null) "\"$arbeidsgiverFagsystemId\"" else null},

@@ -14,15 +14,15 @@ import org.skyscreamer.jsonassert.JSONAssert
 import org.skyscreamer.jsonassert.JSONCompareMode
 
 internal class GrupperingFellesordningenForAfpTest {
-
     @Test
     fun `Sammenhengende perioder hos samme arbeidsgiver med samme grad blir slått sammen til én periode`() {
-        val perioder = listOf(
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 100, "111111111", setOf("2")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 100, "111111111", setOf("3")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 100, "111111111", setOf("4")),
-        )
+        val perioder =
+            listOf(
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 100, "111111111", setOf("2")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 100, "111111111", setOf("3")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 100, "111111111", setOf("4")),
+            )
 
         @Language("JSON")
         val forventet = """
@@ -38,12 +38,13 @@ internal class GrupperingFellesordningenForAfpTest {
 
     @Test
     fun `Sammenhengende perioder hos samme arbeidsgiver med samme grad blir slått sammen til én periode ved personidentifkatorbytte`() {
-        val perioder = listOf(
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
-            SpøkelsePeriode(Personidentifikator("11111111112"), 1.januar, 20.januar, 100, "111111111", setOf("2")),
-            SpøkelsePeriode(Personidentifikator("11111111113"), 1.januar, 31.januar, 100, "111111111", setOf("3")),
-            SpøkelsePeriode(Personidentifikator("11111111114"), 1.januar, 10.februar, 100, "111111111", setOf("4")),
-        )
+        val perioder =
+            listOf(
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
+                SpøkelsePeriode(Personidentifikator("11111111112"), 1.januar, 20.januar, 100, "111111111", setOf("2")),
+                SpøkelsePeriode(Personidentifikator("11111111113"), 1.januar, 31.januar, 100, "111111111", setOf("3")),
+                SpøkelsePeriode(Personidentifikator("11111111114"), 1.januar, 10.februar, 100, "111111111", setOf("4")),
+            )
 
         @Language("JSON")
         val forventet = """
@@ -59,12 +60,13 @@ internal class GrupperingFellesordningenForAfpTest {
 
     @Test
     fun `Sammenhengende perioder hos forskjellige arbeidsgivere med samme grad blir ikke slått sammen til én periode`() {
-        val perioder = listOf(
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 100, "111111112", setOf("2")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 100, "111111113", setOf("3")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 100, "111111114", setOf("4")),
-        )
+        val perioder =
+            listOf(
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 100, "111111112", setOf("2")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 100, "111111113", setOf("3")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 100, "111111114", setOf("4")),
+            )
 
         @Language("JSON")
         val forventet = """
@@ -83,12 +85,14 @@ internal class GrupperingFellesordningenForAfpTest {
 
     @Test
     fun `Sammenhengende perioder hos samme arbeidsgiver med forskjellig grad blir ikke slått sammen til én periode`() {
-        val perioder = listOf(
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 99, "111111111", setOf("2")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 98, "111111111", setOf("3")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 97, "111111111", setOf("4")),
-        )
+        val perioder =
+            listOf(
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 99, "111111111", setOf("2")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 98, "111111111", setOf("3")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 97, "111111111", setOf("4")),
+            )
+
         @Language("JSON")
         val forventet = """
             {
@@ -106,12 +110,13 @@ internal class GrupperingFellesordningenForAfpTest {
 
     @Test
     fun `Sammenhengende perioder med innslag av frilanseri med samme grad slår kun sammen periodene på samme organisasjonsnummer`() {
-        val perioder = listOf(
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 100, null, setOf("2")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 100, "111111111", setOf("3")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 100, null, setOf("4")),
-        )
+        val perioder =
+            listOf(
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 100, null, setOf("2")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 100, "111111111", setOf("3")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 100, null, setOf("4")),
+            )
 
         @Language("JSON")
         val forventet = """
@@ -129,13 +134,14 @@ internal class GrupperingFellesordningenForAfpTest {
 
     @Test
     fun `Kant-i-kant perioder på samme arbeidsgiver og samme grad slås sammen til én`() {
-        val perioder = listOf(
-            SpøkelsePeriode(personidentifikator, 17.januar, 31.januar, 100, "111111111", setOf("1")),
-            SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 100, "111111111", setOf("2")),
-            SpøkelsePeriode(personidentifikator, 1.februar, 28.februar, 100, "111111111", setOf("3")),
-            SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 100, "111111111", setOf("4")),
-            SpøkelsePeriode(personidentifikator, 1.april, 30.april, 100, "111111111", setOf("5"))
-        )
+        val perioder =
+            listOf(
+                SpøkelsePeriode(personidentifikator, 17.januar, 31.januar, 100, "111111111", setOf("1")),
+                SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 100, "111111111", setOf("2")),
+                SpøkelsePeriode(personidentifikator, 1.februar, 28.februar, 100, "111111111", setOf("3")),
+                SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 100, "111111111", setOf("4")),
+                SpøkelsePeriode(personidentifikator, 1.april, 30.april, 100, "111111111", setOf("5")),
+            )
 
         @Language("JSON")
         val forventet = """
@@ -151,10 +157,11 @@ internal class GrupperingFellesordningenForAfpTest {
 
     @Test
     fun `Delvis overlappende perioder slås sammen til én`() {
-        val perioder = listOf(
-            SpøkelsePeriode(personidentifikator, 17.januar, 31.januar, 100, "111111111", setOf("1")),
-            SpøkelsePeriode(personidentifikator, 20.januar, 31.mars, 100, "111111111", setOf("2")),
-        )
+        val perioder =
+            listOf(
+                SpøkelsePeriode(personidentifikator, 17.januar, 31.januar, 100, "111111111", setOf("1")),
+                SpøkelsePeriode(personidentifikator, 20.januar, 31.mars, 100, "111111111", setOf("2")),
+            )
 
         @Language("JSON")
         val forventet = """
@@ -171,9 +178,13 @@ internal class GrupperingFellesordningenForAfpTest {
     private val personidentifikator = Personidentifikator("11111111111")
 
     private val FellesordningenForAfpGroupBy = setOf(GroupBy.organisasjonsnummer, GroupBy.grad)
-    private fun assertEquals(forventet: String, perioder: List<SpøkelsePeriode>) {
+
+    private fun assertEquals(
+        forventet: String,
+        perioder: List<SpøkelsePeriode>,
+    ) {
         // Bare stokker periodene med en partalls-tag som Spleis og oddetall som Infotrygd. Ettersom det ikke grupperes på kilde skal det ikke ha noe å si
-        val (spleis, infotrygd) = perioder.partition { it.tags.mapNotNull { tag-> tag.toIntOrNull() }.any { int -> int % 2 == 0 }}
+        val (spleis, infotrygd) = perioder.partition { it.tags.mapNotNull { tag -> tag.toIntOrNull() }.any { int -> int % 2 == 0 } }
         val faktisk = Gruppering(FellesordningenForAfpGroupBy, infotrygd, spleis).gruppér()
         JSONAssert.assertEquals(forventet, faktisk, JSONCompareMode.NON_EXTENSIBLE)
     }

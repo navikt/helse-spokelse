@@ -1,17 +1,16 @@
 package no.nav.helse.spokelse
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao.Companion.harData
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
 
 internal class GrunnlagApiTest : AbstractE2ETest() {
-
     @Test
     fun fen() {
         ZoneId.getAvailableZoneIds().forEach { println(it) }
@@ -35,20 +34,21 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
                 fødselsnummer = fnr,
                 orgnummer = orgnummer,
                 opprettet = vedtattTidspunkt,
-                utbetalinger = listOf(
-                    OldUtbetaling(
-                        fom = fom,
-                        tom = tom,
-                        grad = grad,
-                        dagsats = 123,
-                        beløp = 321,
-                        totalbeløp = 456
-                    )
-                ),
+                utbetalinger =
+                    listOf(
+                        OldUtbetaling(
+                            fom = fom,
+                            tom = tom,
+                            grad = grad,
+                            dagsats = 123,
+                            beløp = 321,
+                            totalbeløp = 456,
+                        ),
+                    ),
                 forbrukteSykedager = 1,
                 gjenståendeSykedager = 2,
-                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding)
-            )
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+            ),
         )
 
         @Language("JSON")
@@ -58,19 +58,19 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
 
         assertApiRequest(
             fødselsnummer = fnr,
-            forventetResponseBody = forventetFørAnnullering
+            forventetResponseBody = forventetFørAnnullering,
         )
 
         assertApiRequest(
             fødselsnummer = fnr,
             fom = "2020-04-06",
-            forventetResponseBody = forventetFørAnnullering
+            forventetResponseBody = forventetFørAnnullering,
         )
 
         assertApiRequest(
             fødselsnummer = fnr,
             fom = "2020-04-07",
-            forventetResponseBody = "[]"
+            forventetResponseBody = "[]",
         )
     }
 
@@ -84,18 +84,20 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         val tom = LocalDate.of(2020, 4, 6)
         val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
 
-        utbetaltDao.opprett(Vedtak(
-            hendelseId = UUID.randomUUID(),
-            fødselsnummer = fnr,
-            orgnummer = orgnummer,
-            dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
-            oppdrag = listOf(oppdrag(fnr, fagsystemId, "SPREF", fom, tom)),
-            fom = fom,
-            tom = tom,
-            forbrukteSykedager = 32,
-            gjenståendeSykedager = 216,
-            opprettet = vedtattTidspunkt
-        ))
+        utbetaltDao.opprett(
+            Vedtak(
+                hendelseId = UUID.randomUUID(),
+                fødselsnummer = fnr,
+                orgnummer = orgnummer,
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+                oppdrag = listOf(oppdrag(fnr, fagsystemId, "SPREF", fom, tom)),
+                fom = fom,
+                tom = tom,
+                forbrukteSykedager = 32,
+                gjenståendeSykedager = 216,
+                opprettet = vedtattTidspunkt,
+            ),
+        )
 
         @Language("JSON")
         val forventetFørAnnullering = """
@@ -104,7 +106,7 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
 
         assertApiRequest(
             fødselsnummer = fnr,
-            forventetResponseBody = forventetFørAnnullering
+            forventetResponseBody = forventetFørAnnullering,
         )
     }
 
@@ -118,18 +120,20 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         val tom = LocalDate.of(2020, 4, 6)
         val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
 
-        utbetaltDao.opprett(Vedtak(
-            hendelseId = UUID.randomUUID(),
-            fødselsnummer = fnr,
-            orgnummer = orgnummer,
-            dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
-            oppdrag = listOf(oppdrag(fnr, fagsystemId, "SPREF", fom, tom)),
-            fom = fom,
-            tom = tom,
-            forbrukteSykedager = 32,
-            gjenståendeSykedager = 216,
-            opprettet = vedtattTidspunkt
-        ))
+        utbetaltDao.opprett(
+            Vedtak(
+                hendelseId = UUID.randomUUID(),
+                fødselsnummer = fnr,
+                orgnummer = orgnummer,
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+                oppdrag = listOf(oppdrag(fnr, fagsystemId, "SPREF", fom, tom)),
+                fom = fom,
+                tom = tom,
+                forbrukteSykedager = 32,
+                gjenståendeSykedager = 216,
+                opprettet = vedtattTidspunkt,
+            ),
+        )
 
         lagreVedtakDao.save(
             OldVedtak(
@@ -137,24 +141,23 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
                 fødselsnummer = fnr,
                 orgnummer = orgnummer,
                 opprettet = vedtattTidspunkt,
-                utbetalinger = listOf(
-                    OldUtbetaling(
-                        fom = fom,
-                        tom = tom,
-                        grad = 100.0,
-                        dagsats = 123,
-                        beløp = 321,
-                        totalbeløp = 456
-                    )
-                ),
+                utbetalinger =
+                    listOf(
+                        OldUtbetaling(
+                            fom = fom,
+                            tom = tom,
+                            grad = 100.0,
+                            dagsats = 123,
+                            beløp = 321,
+                            totalbeløp = 456,
+                        ),
+                    ),
                 forbrukteSykedager = 1,
                 gjenståendeSykedager = 2,
-                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding)
-            )
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+            ),
         )
-
     }
-
 
     @Test
     fun `skriver vedtak til db uten inntektsmelding`() {
@@ -166,18 +169,20 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         val tom = LocalDate.of(2020, 4, 6)
         val vedtattTidspunkt = LocalDateTime.of(2020, 4, 11, 10, 0)
 
-        utbetaltDao.opprett(Vedtak(
-            hendelseId = UUID.randomUUID(),
-            fødselsnummer = fnr,
-            orgnummer = orgnummer,
-            dokumenter = Dokumenter(sykmelding, søknad, null),
-            oppdrag = listOf(oppdrag(fnr, fagsystemId, "SPREF", fom, tom)),
-            fom = fom,
-            tom = tom,
-            forbrukteSykedager = 32,
-            gjenståendeSykedager = 216,
-            opprettet = vedtattTidspunkt
-        ))
+        utbetaltDao.opprett(
+            Vedtak(
+                hendelseId = UUID.randomUUID(),
+                fødselsnummer = fnr,
+                orgnummer = orgnummer,
+                dokumenter = Dokumenter(sykmelding, søknad, null),
+                oppdrag = listOf(oppdrag(fnr, fagsystemId, "SPREF", fom, tom)),
+                fom = fom,
+                tom = tom,
+                forbrukteSykedager = 32,
+                gjenståendeSykedager = 216,
+                opprettet = vedtattTidspunkt,
+            ),
+        )
 
         @Language("JSON")
         val forventetFørAnnullering = """
@@ -186,14 +191,14 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
 
         assertApiRequest(
             fødselsnummer = fnr,
-            forventetResponseBody = forventetFørAnnullering
+            forventetResponseBody = forventetFørAnnullering,
         )
     }
 
     @Test
     fun `kall til grunnlag uten fnr gir 400`() {
         assertApiRequest(
-            forventetHttpStatus = 400
+            forventetHttpStatus = 400,
         )
     }
 
@@ -202,7 +207,7 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         assertApiRequest(
             fødselsnummer = "01010145679",
             fom = "29.08.1990",
-            forventetHttpStatus = 400
+            forventetHttpStatus = 400,
         )
     }
 
@@ -220,13 +225,13 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         assertApiRequest(
             fødselsnummer = "01010145679",
             rolle = "aap-les",
-            forventetHttpStatus = 500 // burde jo vært noe annet da
+            forventetHttpStatus = 500, // burde jo vært noe annet da
         )
         // Ingen rolle
         assertApiRequest(
             fødselsnummer = "01010145679",
             rolle = null,
-            forventetHttpStatus = 500 // burde jo vært noe annet da
+            forventetHttpStatus = 500, // burde jo vært noe annet da
         )
 
         // Ikke noe token
@@ -234,11 +239,18 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
             fødselsnummer = "01010145679",
             rolle = null,
             app = null,
-            forventetHttpStatus = 401
+            forventetHttpStatus = 401,
         )
     }
 
-    private fun assertApiRequest(fødselsnummer: String? = null, fom: String? = null, forventetResponseBody: String? = null, forventetHttpStatus: Int = 200, rolle: String? = listOf("foreldrepenger-les", "k9-les").random(), app: String? = "fpsak") {
+    private fun assertApiRequest(
+        fødselsnummer: String? = null,
+        fom: String? = null,
+        forventetResponseBody: String? = null,
+        forventetHttpStatus: Int = 200,
+        rolle: String? = listOf("foreldrepenger-les", "k9-les").random(),
+        app: String? = "fpsak",
+    ) {
         val parametre = mapOf("fodselsnummer" to fødselsnummer, "fom" to fom).filterValues { it != null }.mapValues { (_, verdi) -> verdi!! }
         val postBody = jacksonObjectMapper().writeValueAsString(parametre)
         assertApiRequest(
@@ -247,7 +259,7 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
             app = app,
             requestBody = postBody,
             forventetResponseBody = forventetResponseBody,
-            forventetHttpStatus = forventetHttpStatus
+            forventetHttpStatus = forventetHttpStatus,
         )
     }
 }

@@ -1,11 +1,11 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.http.ContentType.Application.Json
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.helse.spokelse.Tilgangsstyring
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 private val objectMapper = jacksonObjectMapper()
 

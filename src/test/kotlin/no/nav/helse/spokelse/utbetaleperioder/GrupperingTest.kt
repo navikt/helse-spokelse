@@ -1,6 +1,5 @@
 package no.nav.helse.spokelse.utbetaleperioder
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.februar
 import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy
@@ -13,9 +12,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.skyscreamer.jsonassert.JSONAssert
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 internal class GrupperingTest {
-
     @Test
     fun `hente grupperingsnøkler fra requesten`() {
         assertEquals("oppløsning må settes i requesten. Men kan settes til en tom liste om man kun ønsker utbetalte perioder per person", assertThrows<IllegalStateException> { "{}".jsonNode.groupBy }.message)
@@ -27,14 +26,16 @@ internal class GrupperingTest {
 
     @Test
     fun `Gir forskjellig response avhengig av hva det grupperes på`() {
-        val infotrygd = listOf(
-            SpøkelsePeriode(Personidentifikator("11111111111"), 1.januar, 10.januar, 100, "111111111", setOf("IT1")),
-            SpøkelsePeriode(Personidentifikator("11111111112"), 11.januar, 20.januar, 99, "111111112", setOf("IT2")),
-        )
-        val spleis = listOf(
-            SpøkelsePeriode(Personidentifikator("11111111113"), 19.januar, 31.januar, 98, "111111113", setOf("S1")),
-            SpøkelsePeriode(Personidentifikator("11111111114"), 1.februar, 10.februar, 97, "111111114", setOf("S2")),
-        )
+        val infotrygd =
+            listOf(
+                SpøkelsePeriode(Personidentifikator("11111111111"), 1.januar, 10.januar, 100, "111111111", setOf("IT1")),
+                SpøkelsePeriode(Personidentifikator("11111111112"), 11.januar, 20.januar, 99, "111111112", setOf("IT2")),
+            )
+        val spleis =
+            listOf(
+                SpøkelsePeriode(Personidentifikator("11111111113"), 19.januar, 31.januar, 98, "111111113", setOf("S1")),
+                SpøkelsePeriode(Personidentifikator("11111111114"), 1.februar, 10.februar, 97, "111111114", setOf("S2")),
+            )
 
         @Language("JSON")
         val forventetIngenGruppering = """
@@ -84,7 +85,11 @@ internal class GrupperingTest {
     }
 
     private companion object {
-        private fun assertJsonEquals(forventet: String, faktisk: String) = JSONAssert.assertEquals(forventet, faktisk, true)
+        private fun assertJsonEquals(
+            forventet: String,
+            faktisk: String,
+        ) = JSONAssert.assertEquals(forventet, faktisk, true)
+
         private val objectMapper = jacksonObjectMapper()
         private val String.jsonNode get() = objectMapper.readTree(this)
     }

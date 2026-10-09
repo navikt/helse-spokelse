@@ -19,27 +19,31 @@ internal class DataSourceBuilder {
 
     private val dbUrl = String.format("jdbc:postgresql://%s:%s/%s", databaseHost, databasePort, databaseName)
 
-    private val hikariConfig = HikariConfig().apply {
-        jdbcUrl = dbUrl
-        username = databaseUsername
-        password = databasePassword
-        connectionTimeout = Duration.ofSeconds(30).toMillis()
-        initializationFailTimeout = Duration.ofMinutes(30).toMillis()
-        maximumPoolSize = 5
-    }
-
-    internal val dataSource by lazy { HikariDataSource(hikariConfig) }
-
-    fun migrate() {
-        logger.info("Migrerer database")
-        HikariDataSource(HikariConfig().apply {
+    private val hikariConfig =
+        HikariConfig().apply {
             jdbcUrl = dbUrl
             username = databaseUsername
             password = databasePassword
             connectionTimeout = Duration.ofSeconds(30).toMillis()
             initializationFailTimeout = Duration.ofMinutes(30).toMillis()
-        }).use { migrateDataSource ->
-            Flyway.configure()
+            maximumPoolSize = 5
+        }
+
+    internal val dataSource by lazy { HikariDataSource(hikariConfig) }
+
+    fun migrate() {
+        logger.info("Migrerer database")
+        HikariDataSource(
+            HikariConfig().apply {
+                jdbcUrl = dbUrl
+                username = databaseUsername
+                password = databasePassword
+                connectionTimeout = Duration.ofSeconds(30).toMillis()
+                initializationFailTimeout = Duration.ofMinutes(30).toMillis()
+            },
+        ).use { migrateDataSource ->
+            Flyway
+                .configure()
                 .dataSource(migrateDataSource)
                 .lockRetryCount(-1)
                 .load()

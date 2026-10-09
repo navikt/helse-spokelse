@@ -16,35 +16,38 @@ import java.time.LocalDateTime
 import java.util.*
 
 internal class UtbetalingTilSpøkelsePerioderTest {
-
     @Test
     fun `endring i refusjon`() {
         val personidentifikator = Personidentifikator("11111111111")
         val organisasjonsnummer = "111111111"
 
-        val utbetaling = Utbetaling(
-            fødselsnummer = "$personidentifikator",
-            organisasjonsnummer = organisasjonsnummer,
-            korrelasjonsId = UUID.randomUUID(),
-            gjenståendeSykedager = 1,
-            sistUtbetalt = LocalDateTime.now(),
-            arbeidsgiverOppdrag = Oppdrag(
-                fagsystemId = "ARBEIDSGIVER",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(17.januar, 31.januar, 100.0),
-                    Utbetalingslinje(1.mars, 31.mars, 100.0)
-                )
-            ),
-            personOppdrag = Oppdrag(
-                fagsystemId = "PERSON",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(1.februar, 28.februar, 100.0),
-                    Utbetalingslinje(1.mars, 31.mars, 100.0),
-                    Utbetalingslinje(1.april, 30.april, 100.0)
-                )
+        val utbetaling =
+            Utbetaling(
+                fødselsnummer = "$personidentifikator",
+                organisasjonsnummer = organisasjonsnummer,
+                korrelasjonsId = UUID.randomUUID(),
+                gjenståendeSykedager = 1,
+                sistUtbetalt = LocalDateTime.now(),
+                arbeidsgiverOppdrag =
+                    Oppdrag(
+                        fagsystemId = "ARBEIDSGIVER",
+                        utbetalingslinjer =
+                            listOf(
+                                Utbetalingslinje(17.januar, 31.januar, 100.0),
+                                Utbetalingslinje(1.mars, 31.mars, 100.0),
+                            ),
+                    ),
+                personOppdrag =
+                    Oppdrag(
+                        fagsystemId = "PERSON",
+                        utbetalingslinjer =
+                            listOf(
+                                Utbetalingslinje(1.februar, 28.februar, 100.0),
+                                Utbetalingslinje(1.mars, 31.mars, 100.0),
+                                Utbetalingslinje(1.april, 30.april, 100.0),
+                            ),
+                    ),
             )
-        )
-
 
         assertEquals(
             listOf(
@@ -54,7 +57,7 @@ internal class UtbetalingTilSpøkelsePerioderTest {
                 SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 100, organisasjonsnummer, setOf("Spleis", "TbdUtbetaling")),
                 SpøkelsePeriode(personidentifikator, 1.april, 30.april, 100, organisasjonsnummer, setOf("Spleis", "TbdUtbetaling")),
             ),
-            listOf(utbetaling).somSpøkelsePerioder()
+            listOf(utbetaling).somSpøkelsePerioder(),
         )
     }
 
@@ -63,32 +66,37 @@ internal class UtbetalingTilSpøkelsePerioderTest {
         val personidentifikator = Personidentifikator("11111111111")
         val organisasjonsnummer = "111111111"
 
-        val utbetaling = Utbetaling(
-            fødselsnummer = "$personidentifikator",
-            organisasjonsnummer = organisasjonsnummer,
-            korrelasjonsId = UUID.randomUUID(),
-            gjenståendeSykedager = 1,
-            sistUtbetalt = LocalDateTime.now(),
-            arbeidsgiverOppdrag = Oppdrag(
-                fagsystemId = "ARBEIDSGIVER",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(17.januar, 31.januar, 100.0)
-                )
-            ),
-            personOppdrag = Oppdrag(
-                fagsystemId = "PERSON",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(10.februar, 28.februar, 100.0)
-                )
+        val utbetaling =
+            Utbetaling(
+                fødselsnummer = "$personidentifikator",
+                organisasjonsnummer = organisasjonsnummer,
+                korrelasjonsId = UUID.randomUUID(),
+                gjenståendeSykedager = 1,
+                sistUtbetalt = LocalDateTime.now(),
+                arbeidsgiverOppdrag =
+                    Oppdrag(
+                        fagsystemId = "ARBEIDSGIVER",
+                        utbetalingslinjer =
+                            listOf(
+                                Utbetalingslinje(17.januar, 31.januar, 100.0),
+                            ),
+                    ),
+                personOppdrag =
+                    Oppdrag(
+                        fagsystemId = "PERSON",
+                        utbetalingslinjer =
+                            listOf(
+                                Utbetalingslinje(10.februar, 28.februar, 100.0),
+                            ),
+                    ),
             )
-        )
 
         assertEquals(
             listOf(
                 SpøkelsePeriode(personidentifikator, 17.januar, 31.januar, 100, organisasjonsnummer, setOf("Spleis", "TbdUtbetaling")),
-                SpøkelsePeriode(personidentifikator, 10.februar, 28.februar, 100, organisasjonsnummer, setOf("Spleis", "TbdUtbetaling"))
+                SpøkelsePeriode(personidentifikator, 10.februar, 28.februar, 100, organisasjonsnummer, setOf("Spleis", "TbdUtbetaling")),
             ),
-            listOf(utbetaling).somSpøkelsePerioder()
+            listOf(utbetaling).somSpøkelsePerioder(),
         )
     }
 }

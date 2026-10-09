@@ -12,7 +12,7 @@ class OldVedtak(
     val opprettet: LocalDateTime,
     val forbrukteSykedager: Int,
     val gjenståendeSykedager: Int?,
-    val dokumenter: Dokumenter
+    val dokumenter: Dokumenter,
 )
 
 class OldUtbetaling(
@@ -21,7 +21,7 @@ class OldUtbetaling(
     val grad: Double,
     val dagsats: Int,
     val beløp: Int,
-    val totalbeløp: Int
+    val totalbeløp: Int,
 )
 
 data class Vedtak(
@@ -34,14 +34,14 @@ data class Vedtak(
     val tom: LocalDate,
     val forbrukteSykedager: Int,
     val gjenståendeSykedager: Int,
-    val opprettet: LocalDateTime
+    val opprettet: LocalDateTime,
 ) {
     data class Oppdrag(
         val mottaker: String,
         val fagområde: String,
         val fagsystemId: String,
         val totalbeløp: Int,
-        val utbetalingslinjer: List<Utbetalingslinje>
+        val utbetalingslinjer: List<Utbetalingslinje>,
     ) {
         data class Utbetalingslinje(
             val fom: LocalDate,
@@ -49,7 +49,7 @@ data class Vedtak(
             val dagsats: Int,
             val beløp: Int,
             val grad: Double,
-            val sykedager: Int
+            val sykedager: Int,
         )
     }
 }

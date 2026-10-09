@@ -2,8 +2,11 @@ package no.nav.helse.spokelse
 
 import java.time.LocalDate
 
-internal class Periode(fom: LocalDate, tom: LocalDate): ClosedRange<LocalDate>, Iterable<LocalDate> {
-
+internal class Periode(
+    fom: LocalDate,
+    tom: LocalDate,
+) : ClosedRange<LocalDate>,
+    Iterable<LocalDate> {
     override val start: LocalDate = fom
     override val endInclusive: LocalDate = tom
 
@@ -27,17 +30,16 @@ internal class Periode(fom: LocalDate, tom: LocalDate): ClosedRange<LocalDate>, 
         return this
     }
 
-    override operator fun iterator() = object : Iterator<LocalDate> {
-        private var currentDate: LocalDate = start
+    override operator fun iterator() =
+        object : Iterator<LocalDate> {
+            private var currentDate: LocalDate = start
 
-        override fun hasNext() = endInclusive >= currentDate
+            override fun hasNext() = endInclusive >= currentDate
 
-        override fun next() =
-            currentDate.also { currentDate = it.plusDays(1) }
-    }
+            override fun next() = currentDate.also { currentDate = it.plusDays(1) }
+        }
 
-    operator fun contains(other: Periode) =
-        this.start <= other.start && this.endInclusive >= other.endInclusive
+    operator fun contains(other: Periode) = this.start <= other.start && this.endInclusive >= other.endInclusive
 
     operator fun plus(annen: Periode?): Periode {
         if (annen == null) return this
@@ -45,6 +47,7 @@ internal class Periode(fom: LocalDate, tom: LocalDate): ClosedRange<LocalDate>, 
     }
 
     override fun equals(other: Any?) = other is Periode && this.start == other.start && this.endInclusive == other.endInclusive
+
     override fun hashCode() = start.hashCode() * 37 + endInclusive.hashCode()
 
     internal companion object {
@@ -53,9 +56,11 @@ internal class Periode(fom: LocalDate, tom: LocalDate): ClosedRange<LocalDate>, 
             val sortert = sortedBy { it.start }
             sortert.forEachIndexed { index, periode ->
                 if (resultat.any { champion -> periode in champion }) return@forEachIndexed // en annen periode har spist opp denne
-                resultat.add(sortert.subList(index, sortert.size).reduce { champion, challenger ->
-                    champion.merge(challenger)
-                })
+                resultat.add(
+                    sortert.subList(index, sortert.size).reduce { champion, challenger ->
+                        champion.merge(challenger)
+                    },
+                )
             }
             return resultat
         }

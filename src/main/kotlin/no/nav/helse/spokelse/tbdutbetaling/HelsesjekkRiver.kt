@@ -1,6 +1,5 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import tools.jackson.databind.JsonNode
 import com.github.navikt.tbd_libs.rapids_and_rivers.JsonMessage
 import com.github.navikt.tbd_libs.rapids_and_rivers.River
 import com.github.navikt.tbd_libs.rapids_and_rivers.asLocalDateTime
@@ -13,6 +12,7 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import org.slf4j.event.Level.ERROR
 import org.slf4j.event.Level.INFO
+import tools.jackson.databind.JsonNode
 import java.time.DayOfWeek
 import java.time.DayOfWeek.THURSDAY
 import java.time.temporal.ChronoUnit.HOURS
@@ -20,29 +20,35 @@ import java.time.temporal.ChronoUnit.WEEKS
 
 internal class HelsesjekkRiver(
     rapidsConnection: RapidsConnection,
-    private val dao: TbdUtbetalingDao
-): River.PacketListener {
-
+    private val dao: TbdUtbetalingDao,
+) : River.PacketListener {
     init {
-        River(rapidsConnection).apply {
-            precondition { it.requireValue("@event_name", "spokelse_helsesjekk") }
-            validate {
-                it.requireKey("system_participating_services", "@opprettet")
-                it.interestedIn("ukedag")
-            }
-        }.register(this)
-        River(rapidsConnection).apply {
-            precondition {
-                it.requireValue("@event_name", "halv_time")
-                it.forbidValues("ukedag", listOf("SATURDAY", "SUNDAY"))
-            }
-            validate {
-                it.requireKey("system_participating_services", "@opprettet")
-            }
-        }.register(this)
+        River(rapidsConnection)
+            .apply {
+                precondition { it.requireValue("@event_name", "spokelse_helsesjekk") }
+                validate {
+                    it.requireKey("system_participating_services", "@opprettet")
+                    it.interestedIn("ukedag")
+                }
+            }.register(this)
+        River(rapidsConnection)
+            .apply {
+                precondition {
+                    it.requireValue("@event_name", "halv_time")
+                    it.forbidValues("ukedag", listOf("SATURDAY", "SUNDAY"))
+                }
+                validate {
+                    it.requireKey("system_participating_services", "@opprettet")
+                }
+            }.register(this)
     }
 
-    override fun onPacket(packet: JsonMessage, context: MessageContext, metadata: MessageMetadata, meterRegistry: MeterRegistry) {
+    override fun onPacket(
+        packet: JsonMessage,
+        context: MessageContext,
+        metadata: MessageMetadata,
+        meterRegistry: MeterRegistry,
+    ) {
         if (!packet.utførHelsesjekk) return
 
         val systemParticipatingServices = packet["system_participating_services"]
@@ -60,7 +66,11 @@ internal class HelsesjekkRiver(
         private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
         private val JsonMessage.utførHelsesjekk get() = get("@opprettet").asLocalDateTime().let { it.hour == 8 && it.minute == 30 } || get("@event_name").asText() == "spokelse_helsesjekk"
 
-        class Helsesjekk(dao: TbdUtbetalingDao, private val systemParticipatingServices: JsonNode, ukedag: DayOfWeek) {
+        class Helsesjekk(
+            dao: TbdUtbetalingDao,
+            private val systemParticipatingServices: JsonNode,
+            ukedag: DayOfWeek,
+        ) {
             private val arbeidsgiverutbetalinger = dao.arbeidsgiverutbetalinger(arbeidsgiverutbetalingerTidsrom)
             private val arbeidsgiverannulleringer = dao.arbeidsgiverannulleringer(arbeidsgiverAnnulleringerTidsrom)
             private val personutbetalinger = dao.personutbetalinger(personutbetalingerTidsrom)
@@ -102,14 +112,25 @@ $oppsummering
                 return null
             }
 
-            private fun lagSlackmelding(level: Level, melding: String) = JsonMessage.newMessage("slackmelding", mapOf(
-                "melding" to melding,
-                "level" to level.name,
-                "system_participating_services" to systemParticipatingServices
-            )).toJson().also {
-                if (level == ERROR) sikkerlogg.error("Kan se ut til at Spøkelse har problemer, sender alarm på slack:\n\t${it}")
-                else sikkerlogg.info("Sender gladmelding på slack:\n\t${it}")
-            }
+            private fun lagSlackmelding(
+                level: Level,
+                melding: String,
+            ) = JsonMessage
+                .newMessage(
+                    "slackmelding",
+                    mapOf(
+                        "melding" to melding,
+                        "level" to level.name,
+                        "system_participating_services" to systemParticipatingServices,
+                    ),
+                ).toJson()
+                .also {
+                    if (level == ERROR) {
+                        sikkerlogg.error("Kan se ut til at Spøkelse har problemer, sender alarm på slack:\n\t$it")
+                    } else {
+                        sikkerlogg.info("Sender gladmelding på slack:\n\t$it")
+                    }
+                }
 
             private companion object {
                 private val arbeidsgiverutbetalingerTidsrom = 1 to HOURS

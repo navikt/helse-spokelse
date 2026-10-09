@@ -5,7 +5,7 @@ import java.util.*
 data class Dokumenter(
     val sykmelding: Hendelse,
     val søknad: Hendelse,
-    val inntektsmelding: Hendelse?
+    val inntektsmelding: Hendelse?,
 ) {
     init {
         require(sykmelding.type == Dokument.Sykmelding)
@@ -15,11 +15,13 @@ data class Dokumenter(
 }
 
 enum class Dokument {
-    Sykmelding, Inntektsmelding, Søknad
+    Sykmelding,
+    Inntektsmelding,
+    Søknad,
 }
 
 data class Hendelse(
     val dokumentId: UUID,
     val hendelseId: UUID,
-    val type: Dokument
+    val type: Dokument,
 )

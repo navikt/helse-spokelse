@@ -1,6 +1,5 @@
 package no.nav.helse.spokelse
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.github.navikt.tbd_libs.kafka.AivenConfig
 import com.github.navikt.tbd_libs.kafka.ConsumerProducerFactory
 import com.github.navikt.tbd_libs.naisful.naisApp
@@ -29,6 +28,7 @@ import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioderRiver
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
 import org.slf4j.LoggerFactory
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 internal fun Map<String, String>.hent(key: String) = get(key) ?: throw IllegalStateException("Mangler config for $key")
 
@@ -37,11 +37,12 @@ fun main() {
 }
 
 fun launchApplication(env: Map<String, String>) {
-    val auth = Auth.auth(
-        name = "ourissuer",
-        clientId = env.getValue("AZURE_APP_CLIENT_ID"),
-        discoveryUrl = env.getValue("AZURE_APP_WELL_KNOWN_URL")
-    )
+    val auth =
+        Auth.auth(
+            name = "ourissuer",
+            clientId = env.getValue("AZURE_APP_CLIENT_ID"),
+            discoveryUrl = env.getValue("AZURE_APP_WELL_KNOWN_URL"),
+        )
 
     val dataSource = DataSourceBuilder()
 
@@ -55,55 +56,56 @@ fun launchApplication(env: Map<String, String>) {
 
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
-    RapidApplication.create(
-        env = env,
-        meterRegistry = meterRegistry,
-        builder = {
-            withKtor { preStopHook, rapid ->
-                naisApp(
-                    meterRegistry = meterRegistry,
-                    objectMapper = jacksonObjectMapper(),
-                    applicationLogger = LoggerFactory.getLogger("no.nav.helse.spokelse.App"),
-                    callLogger = LoggerFactory.getLogger("no.nav.helse.spokelse.CallLogging"),
-                    naisEndpoints = com.github.navikt.tbd_libs.naisful.NaisEndpoints.Default,
-                    callIdHeaderName = "x-callId",
-                    timersConfig = { call, _ ->
-                        this
-                            .tag("azp_name", call.principal<JWTPrincipal>()?.get("azp_name") ?: "n/a")
-                            // https://github.com/linkerd/polixy/blob/main/DESIGN.md#l5d-client-id-client-id
-                            // eksempel: <APP>.<NAMESPACE>.serviceaccount.identity.linkerd.cluster.local
-                            .tag("konsument", call.request.header("L5d-Client-Id") ?: "n/a")
-                    },
-                    mdcEntries = mapOf(
-                        "azp_name" to { call: ApplicationCall -> call.principal<JWTPrincipal>()?.get("azp_name") },
-                        "konsument" to { call: ApplicationCall -> call.request.header("L5d-Client-Id") }
-                    ),
-                    aliveCheck = rapid::isReady,
-                    readyCheck = rapid::isReady,
-                    preStopHook = preStopHook::handlePreStopRequest
-                ) {
-                    spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao))
+    RapidApplication
+        .create(
+            env = env,
+            meterRegistry = meterRegistry,
+            builder = {
+                withKtor { preStopHook, rapid ->
+                    naisApp(
+                        meterRegistry = meterRegistry,
+                        objectMapper = jacksonObjectMapper(),
+                        applicationLogger = LoggerFactory.getLogger("no.nav.helse.spokelse.App"),
+                        callLogger = LoggerFactory.getLogger("no.nav.helse.spokelse.CallLogging"),
+                        naisEndpoints = com.github.navikt.tbd_libs.naisful.NaisEndpoints.Default,
+                        callIdHeaderName = "x-callId",
+                        timersConfig = { call, _ ->
+                            this
+                                .tag("azp_name", call.principal<JWTPrincipal>()?.get("azp_name") ?: "n/a")
+                                // https://github.com/linkerd/polixy/blob/main/DESIGN.md#l5d-client-id-client-id
+                                // eksempel: <APP>.<NAMESPACE>.serviceaccount.identity.linkerd.cluster.local
+                                .tag("konsument", call.request.header("L5d-Client-Id") ?: "n/a")
+                        },
+                        mdcEntries =
+                            mapOf(
+                                "azp_name" to { call: ApplicationCall -> call.principal<JWTPrincipal>()?.get("azp_name") },
+                                "konsument" to { call: ApplicationCall -> call.request.header("L5d-Client-Id") },
+                            ),
+                        aliveCheck = rapid::isReady,
+                        readyCheck = rapid::isReady,
+                        preStopHook = preStopHook::handlePreStopRequest,
+                    ) {
+                        spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao))
+                    }
                 }
-            }
-        }
-    )
-        .apply {
+            },
+        ).apply {
             registerRivers(tbdUtbetalingDao, utbetaltePerioder, utbetalingVarsel)
             register(tbdUtbetalingConsumer)
-            register(object : RapidsConnection.StatusListener {
-                override fun onStartup(rapidsConnection: RapidsConnection) {
-                    dataSource.migrate()
-                }
-            })
-        }
-        .start()
+            register(
+                object : RapidsConnection.StatusListener {
+                    override fun onStartup(rapidsConnection: RapidsConnection) {
+                        dataSource.migrate()
+                    }
+                },
+            )
+        }.start()
 }
 
 internal fun RapidsConnection.registerRivers(
     tbdUtbetalingDao: TbdUtbetalingDao,
     utbetaltePerioder: UtbetaltePerioder,
-    utbetalingVarsel: UtbetalingVarsel
-
+    utbetalingVarsel: UtbetalingVarsel,
 ) {
     HelsesjekkRiver(this, tbdUtbetalingDao)
     UtbetaltePerioderRiver(this, utbetaltePerioder)
@@ -111,7 +113,12 @@ internal fun RapidsConnection.registerRivers(
     NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver(this, utbetalingVarsel)
 }
 
-internal fun Application.spokelse(env: Map<String, String>, auth: Auth, gamleUtbetalingerDao: GamleUtbetalingerDao, tbdUtbetalingApi: TbdUtbetalingApi) {
+internal fun Application.spokelse(
+    env: Map<String, String>,
+    auth: Auth,
+    gamleUtbetalingerDao: GamleUtbetalingerDao,
+    tbdUtbetalingApi: TbdUtbetalingApi,
+) {
     val httpClient = HttpClient(CIO)
     azureAdAppAuthentication(auth)
     routing {
@@ -121,4 +128,3 @@ internal fun Application.spokelse(env: Map<String, String>, auth: Auth, gamleUtb
         }
     }
 }
-

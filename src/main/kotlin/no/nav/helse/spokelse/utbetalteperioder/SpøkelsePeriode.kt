@@ -9,9 +9,10 @@ class SpøkelsePeriode(
     val tom: LocalDate,
     val grad: Int,
     val organisasjonsnummer: String?,
-    val tags: Set<String>
+    val tags: Set<String>,
 ) {
     internal val periode = Periode(fom, tom)
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -36,7 +37,5 @@ class SpøkelsePeriode(
         return result
     }
 
-    override fun toString(): String {
-        return "SpøkelsePeriode(personidentifikator=$personidentifikator, fom=$fom, tom=$tom, grad=$grad, organisasjonsnummer=$organisasjonsnummer, tags=$tags)"
-    }
+    override fun toString(): String = "SpøkelsePeriode(personidentifikator=$personidentifikator, fom=$fom, tom=$tom, grad=$grad, organisasjonsnummer=$organisasjonsnummer, tags=$tags)"
 }

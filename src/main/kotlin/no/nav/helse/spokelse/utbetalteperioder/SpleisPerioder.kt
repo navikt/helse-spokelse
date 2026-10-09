@@ -6,14 +6,21 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somSpøkelsePerioder
 import java.time.LocalDate
 
-internal class Spleis(private val tbdUtbetalingApi: TbdUtbetalingApi, private val gamleUtbetalingerDao: GamleUtbetalingerDao) {
-    fun hent(personidentifikatorer: Set<Personidentifikator>, tidligsteSluttdato: LocalDate, senesteStartdato: LocalDate): List<SpøkelsePeriode> {
-        return personidentifikatorer
+internal class Spleis(
+    private val tbdUtbetalingApi: TbdUtbetalingApi,
+    private val gamleUtbetalingerDao: GamleUtbetalingerDao,
+) {
+    fun hent(
+        personidentifikatorer: Set<Personidentifikator>,
+        tidligsteSluttdato: LocalDate,
+        senesteStartdato: LocalDate,
+    ): List<SpøkelsePeriode> =
+        personidentifikatorer
             .associateWith { tbdUtbetalingApi.utbetalinger(it.toString(), tidligsteSluttdato, senesteStartdato) }
             .mapValues { (_, utbetalinger) ->
                 utbetalinger.somSpøkelsePerioder()
             }.mapValues { (personidentifikator, spøkelsePerioder) ->
                 spøkelsePerioder + gamleUtbetalingerDao.hentUtbetalinger(personidentifikator.toString(), tidligsteSluttdato, senesteStartdato).somSpøkelsePerioder()
-            }.values.flatten()
-    }
+            }.values
+            .flatten()
 }

@@ -10,22 +10,27 @@ import no.nav.helse.spokelse.UtbetalingVarsel
 
 internal class NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver(
     rapidsConnection: RapidsConnection,
-    private val utbetalingVarsel: UtbetalingVarsel
-): River.PacketListener {
-
+    private val utbetalingVarsel: UtbetalingVarsel,
+) : River.PacketListener {
     init {
-        River(rapidsConnection).apply {
-            precondition {
-                it.requireValue("@event_name", "melding_om_melding_ikke_håndtert_fordi_person_ikke_funnet")
-                it.requireValue("originalt_event_name", "infotrygdendring")
-            }
-            validate {
-                it.requireKey("fødselsnummer")
-            }
-        }.register(this)
+        River(rapidsConnection)
+            .apply {
+                precondition {
+                    it.requireValue("@event_name", "melding_om_melding_ikke_håndtert_fordi_person_ikke_funnet")
+                    it.requireValue("originalt_event_name", "infotrygdendring")
+                }
+                validate {
+                    it.requireKey("fødselsnummer")
+                }
+            }.register(this)
     }
 
-    override fun onPacket(packet: JsonMessage, context: MessageContext, metadata: MessageMetadata, meterRegistry: MeterRegistry) {
+    override fun onPacket(
+        packet: JsonMessage,
+        context: MessageContext,
+        metadata: MessageMetadata,
+        meterRegistry: MeterRegistry,
+    ) {
         utbetalingVarsel.nyInformasjonIInfotrygd(packet["fødselsnummer"].asText(), null)
     }
 }

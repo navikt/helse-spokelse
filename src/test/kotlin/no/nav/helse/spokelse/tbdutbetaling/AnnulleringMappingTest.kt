@@ -1,34 +1,34 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 internal class AnnulleringMappingTest {
-
     @Test
     fun `annullering begge oppdrag`() {
-        assertEquals(Annullering("12345678901", 1.januar,"XI2MMEZAJZBVJL2E4K7UM4BQBY", "L52NYV4KE5BEPILU4L2ERGAVYU"), jsonAnnulleringBeggeOppdrag.annullering())
+        assertEquals(Annullering("12345678901", 1.januar, "XI2MMEZAJZBVJL2E4K7UM4BQBY", "L52NYV4KE5BEPILU4L2ERGAVYU"), jsonAnnulleringBeggeOppdrag.annullering())
     }
 
     @Test
     fun `annullering arbeidsgiveroppdrag`() {
-        assertEquals(Annullering("12345678901", 1.januar,"XI2MMEZAJZBVJL2E4K7UM4BQBY", null), jsonAnnulleringArbeidsgiveroppdrag.annullering())
+        assertEquals(Annullering("12345678901", 1.januar, "XI2MMEZAJZBVJL2E4K7UM4BQBY", null), jsonAnnulleringArbeidsgiveroppdrag.annullering())
     }
 
     @Test
     fun `annullering personoppdrag`() {
-        assertEquals(Annullering("12345678901", 1.januar,null, "L52NYV4KE5BEPILU4L2ERGAVYU"), jsonAnnulleringPersonoppdrag.annullering())
+        assertEquals(Annullering("12345678901", 1.januar, null, "L52NYV4KE5BEPILU4L2ERGAVYU"), jsonAnnulleringPersonoppdrag.annullering())
     }
 
     private companion object {
         private val jackson = jacksonObjectMapper()
 
         @Language("JSON")
-        val jsonAnnulleringBeggeOppdrag = """
+        val jsonAnnulleringBeggeOppdrag =
+            """
         {
           "event": "utbetaling_annullert",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",
@@ -45,7 +45,8 @@ internal class AnnulleringMappingTest {
         """.let { jackson.readTree(it) }
 
         @Language("JSON")
-        val jsonAnnulleringArbeidsgiveroppdrag = """
+        val jsonAnnulleringArbeidsgiveroppdrag =
+            """
         {
           "event": "utbetaling_annullert",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",
@@ -62,7 +63,8 @@ internal class AnnulleringMappingTest {
         """.let { jackson.readTree(it) }
 
         @Language("JSON")
-        val jsonAnnulleringPersonoppdrag = """
+        val jsonAnnulleringPersonoppdrag =
+            """
         {
           "event": "utbetaling_annullert",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",

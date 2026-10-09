@@ -11,29 +11,44 @@ import java.time.LocalDate
 import javax.sql.DataSource
 import kotlin.time.measureTimedValue
 
-internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): TbdUtbetalingObserver {
-
+internal class GamleUtbetalingerDao(
+    private val dataSource: () -> DataSource,
+) : TbdUtbetalingObserver {
     internal companion object {
         private val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
 
         private val harDataFraOgMed = LocalDate.parse("2019-10-25")
         private val harDataTilOgMed = LocalDate.parse("2022-03-16")
+
         internal fun harData(fraOgMed: LocalDate?) = fraOgMed == null || fraOgMed <= harDataTilOgMed
     }
 
-    internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate?): List<GammelUtbetaling> {
+    internal fun hentUtbetalinger(
+        fødselsnummer: String,
+        fom: LocalDate?,
+    ): List<GammelUtbetaling> {
         if (!harData(fom)) return emptyList()
         return hentUtbetalinger(fødselsnummer, fom ?: harDataFraOgMed, harDataTilOgMed)
     }
-    internal fun hentUtbetalinger(fødselsnummer: String, fom: LocalDate, tom: LocalDate): List<GammelUtbetaling> {
+
+    internal fun hentUtbetalinger(
+        fødselsnummer: String,
+        fom: LocalDate,
+        tom: LocalDate,
+    ): List<GammelUtbetaling> {
         if (!harData(fom)) return emptyList()
         return hentFraDb(fødselsnummer, fom, tom)
     }
 
-    private fun hentFraDb(fødselsnummer: String, fom: LocalDate, tom: LocalDate): List<GammelUtbetaling> {
-        val (perioder, duration) = measureTimedValue {
-            @Language("PostgreSQL")
-            val vedtakOppdragOgUtbetalingQuery = """
+    private fun hentFraDb(
+        fødselsnummer: String,
+        fom: LocalDate,
+        tom: LocalDate,
+    ): List<GammelUtbetaling> {
+        val (perioder, duration) =
+            measureTimedValue {
+                @Language("PostgreSQL")
+                val vedtakOppdragOgUtbetalingQuery = """
                 SELECT o.fagsystemid fagsystem_id,
                     u.fom         fom,
                     u.tom         tom,
@@ -48,8 +63,8 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
                 AND u.tom >= :fom AND NOT u.fom > :tom
             """
 
-            @Language("PostgreSQL")
-            val oldVedtakOgOldUtbetalingQuery = """
+                @Language("PostgreSQL")
+                val oldVedtakOgOldUtbetalingQuery = """
                 SELECT
                     (SELECT distinct vu.utbetalingsref FROM vedtak_utbetalingsref vu WHERE vu.vedtaksperiode_id = ov.vedtaksperiode_id) fagsystem_id,
                     ou.fom fom,
@@ -64,8 +79,8 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
                 AND ou.tom >= :fom AND NOT ou.fom > :tom
             """
 
-            @Language("PostgreSQL")
-            val gamleUtbetalingerQuery = """
+                @Language("PostgreSQL")
+                val gamleUtbetalingerQuery = """
                 SELECT
                     fagsystem_id,
                     fom,
@@ -79,36 +94,45 @@ internal class GamleUtbetalingerDao(private val dataSource: () -> DataSource): T
                 AND tom >= :fom AND NOT fom > :tom
             """
 
-            @Language("PostgreSQL")
-            val sammenstiltQuery = """
+                @Language("PostgreSQL")
+                val sammenstiltQuery = """
                 with alle_gamle_utbetalinger as ($vedtakOppdragOgUtbetalingQuery UNION ALL $oldVedtakOgOldUtbetalingQuery UNION ALL $gamleUtbetalingerQuery)
                 SELECT * FROM alle_gamle_utbetalinger agu LEFT JOIN alle_annulleringer aa ON agu.fagsystem_id = aa.fagsystem_id WHERE aa.fagsystem_id is null
             """
 
-            sessionOf(dataSource()).use { session ->
-                session.run(queryOf(sammenstiltQuery, mapOf("fodselsnummer" to fødselsnummer, "fom" to fom, "tom" to tom)).map { row ->
-                    GammelUtbetaling(
-                        fødselsnummer = fødselsnummer,
-                        fagsystemId = row.string("fagsystem_id"),
-                        organisasjonsnummer = row.string("organisasjonsnummer"),
-                        fom = row.localDate("fom"),
-                        tom = row.localDate("tom"),
-                        grad = row.int("grad"),
-                        kilde = row.string("kilde"),
-                        utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt")
+                sessionOf(dataSource()).use { session ->
+                    session.run(
+                        queryOf(sammenstiltQuery, mapOf("fodselsnummer" to fødselsnummer, "fom" to fom, "tom" to tom))
+                            .map { row ->
+                                GammelUtbetaling(
+                                    fødselsnummer = fødselsnummer,
+                                    fagsystemId = row.string("fagsystem_id"),
+                                    organisasjonsnummer = row.string("organisasjonsnummer"),
+                                    fom = row.localDate("fom"),
+                                    tom = row.localDate("tom"),
+                                    grad = row.int("grad"),
+                                    kilde = row.string("kilde"),
+                                    utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
+                                )
+                            }.asList,
                     )
-                }.asList)
+                }
             }
-        }
         sikkerLogg.info("Oppslag mot gamle utbetalinger tok ${duration.inWholeMilliseconds}ms")
         return perioder
     }
 
-    override fun utbetaling(meldingId: Long, utbetaling: Utbetaling) {
+    override fun utbetaling(
+        meldingId: Long,
+        utbetaling: Utbetaling,
+    ) {
         // Nye utbetalinger er ikke aktuelt å lagre, det er kun annulleringer av gamle utbetalinger som er viktig å få med seg.
     }
 
-    override fun annullering(meldingId: Long, annullering: Annullering) {
+    override fun annullering(
+        meldingId: Long,
+        annullering: Annullering,
+    ) {
         @Language("PostgreSQL")
         val sql = "INSERT INTO alle_annulleringer (fagsystem_id) VALUES(:fagsystem_id) ON CONFLICT DO NOTHING"
 

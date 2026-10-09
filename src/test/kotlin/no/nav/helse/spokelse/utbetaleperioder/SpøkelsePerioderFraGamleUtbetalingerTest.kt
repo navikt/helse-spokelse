@@ -15,7 +15,6 @@ import java.time.LocalDateTime
 import java.util.*
 
 internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
-
     @Test
     fun `hente utbetalte perioder fra gamle tabeller`() {
         lagreOldVedtakOgOldUtbetaling(1.januar, 31.januar, fagsystemId1)
@@ -25,8 +24,9 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
             setOf(
                 SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.januar, tom = 31.januar, grad = 100, organisasjonsnummer = organisasjonsnummer, setOf("Spleis", "OldVedtakOgOldUtbetaling")),
                 SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.februar, tom = 28.februar, grad = 100, organisasjonsnummer = organisasjonsnummer, setOf("Spleis", "VedtakOppdragOgUtbetaling")),
-                SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.mars, tom = 31.mars, grad = 100, organisasjonsnummer = organisasjonsnummer,setOf("Spleis", "GamleUtbetalinger"))
-            ), gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, 1.januar, 31.mars).somSpøkelsePerioder()
+                SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.mars, tom = 31.mars, grad = 100, organisasjonsnummer = organisasjonsnummer, setOf("Spleis", "GamleUtbetalinger")),
+            ),
+            gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, 1.januar, 31.mars).somSpøkelsePerioder(),
         )
     }
 
@@ -46,7 +46,7 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
         lagreGammelUtbetaling(1.mars, 31.mars, fagsystemId3)
         assertEquals(
             SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.februar, tom = 28.februar, grad = 100, organisasjonsnummer = organisasjonsnummer, tags = setOf("Spleis", "VedtakOppdragOgUtbetaling")),
-            gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, 1.februar, 28.februar).somSpøkelsePerioder().single()
+            gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, 1.februar, 28.februar).somSpøkelsePerioder().single(),
         )
     }
 
@@ -58,7 +58,7 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
 
         assertEquals(
             SpøkelsePeriode(personidentifikator = Personidentifikator(fødselsnummer), fom = 1.januar, tom = 31.januar, grad = 100, organisasjonsnummer = organisasjonsnummer, tags = setOf("Spleis")),
-            gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, 1.januar, 31.januar).somSpøkelsePerioder().single()
+            gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, 1.januar, 31.januar).somSpøkelsePerioder().single(),
         )
     }
 
@@ -67,7 +67,12 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
     private val fagsystemId3 = "FAG3"
     private val fødselsnummer = "11111111111"
     private val organisasjonsnummer = "999999999"
-    private fun lagreOldVedtakOgOldUtbetaling(fom: LocalDate, tom: LocalDate, fagsystemId: String) {
+
+    private fun lagreOldVedtakOgOldUtbetaling(
+        fom: LocalDate,
+        tom: LocalDate,
+        fagsystemId: String,
+    ) {
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
         val vedtaksperiodeId = UUID.randomUUID()
         dokumentDao.lagre(vedtaksperiodeId, fagsystemId)
@@ -76,25 +81,30 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
                 vedtaksperiodeId = vedtaksperiodeId,
                 fødselsnummer = fødselsnummer,
                 orgnummer = organisasjonsnummer,
-                utbetalinger = listOf(
-                    OldUtbetaling(
-                        fom = fom,
-                        tom = tom,
-                        grad = 100.0,
-                        dagsats = 1,
-                        totalbeløp = 1,
-                        beløp = 1
-                    )
-                ),
+                utbetalinger =
+                    listOf(
+                        OldUtbetaling(
+                            fom = fom,
+                            tom = tom,
+                            grad = 100.0,
+                            dagsats = 1,
+                            totalbeløp = 1,
+                            beløp = 1,
+                        ),
+                    ),
                 opprettet = LocalDateTime.now(),
                 forbrukteSykedager = 1,
                 gjenståendeSykedager = 1,
-                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding)
-            )
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+            ),
         )
     }
 
-    private fun lagreVedtakOppdragOgUtbetaling(fom: LocalDate, tom: LocalDate, fagsystemId: String) {
+    private fun lagreVedtakOppdragOgUtbetaling(
+        fom: LocalDate,
+        tom: LocalDate,
+        fagsystemId: String,
+    ) {
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
         utbetaltDao.opprett(
             Vedtak(
@@ -102,17 +112,21 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
                 fødselsnummer = fødselsnummer,
                 orgnummer = organisasjonsnummer,
                 dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
-                oppdrag = listOf(Vedtak.Oppdrag("mottaker", "bjeff", fagsystemId,1, listOf(Vedtak.Oppdrag.Utbetalingslinje(fom, tom, 1, 1,100.0, 1)))),
+                oppdrag = listOf(Vedtak.Oppdrag("mottaker", "bjeff", fagsystemId, 1, listOf(Vedtak.Oppdrag.Utbetalingslinje(fom, tom, 1, 1, 100.0, 1)))),
                 fom = fom,
                 tom = tom,
                 forbrukteSykedager = 1,
                 gjenståendeSykedager = 1,
-                opprettet = LocalDateTime.now()
-            )
+                opprettet = LocalDateTime.now(),
+            ),
         )
     }
 
-    private fun lagreGammelUtbetaling(fom: LocalDate, tom: LocalDate, fagsystemId: String) {
+    private fun lagreGammelUtbetaling(
+        fom: LocalDate,
+        tom: LocalDate,
+        fagsystemId: String,
+    ) {
         sessionOf(dataSource).use { session ->
             val query = """
                 INSERT INTO gamle_utbetalinger (fodselsnummer, orgnummer, opprettet, fom, tom, grad, fagsystem_id, fagomrade, gjenstaende_sykedager)
@@ -123,6 +137,6 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
     }
 
     private fun annuller(vararg fagsystemIder: String) {
-        fagsystemIder.forEach { gamleUtbetalingerDao.annullering(1L, Annullering(fødselsnummer, 1.januar,it, null)) }
+        fagsystemIder.forEach { gamleUtbetalingerDao.annullering(1L, Annullering(fødselsnummer, 1.januar, it, null)) }
     }
 }

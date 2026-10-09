@@ -1,6 +1,5 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import tools.jackson.databind.JsonNode
 import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
@@ -10,12 +9,13 @@ import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje.Companion.utbetalingslinje
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
+import tools.jackson.databind.JsonNode
 import java.time.LocalDateTime
 import java.util.*
 
 internal data class Oppdrag(
     internal val fagsystemId: String,
-    internal val utbetalingslinjer: List<Utbetalingslinje>
+    internal val utbetalingslinjer: List<Utbetalingslinje>,
 ) {
     init {
         require(utbetalingslinjer.isNotEmpty()) {
@@ -31,24 +31,28 @@ internal data class Utbetaling(
     internal val gjenståendeSykedager: Int,
     internal val arbeidsgiverOppdrag: Oppdrag?,
     internal val personOppdrag: Oppdrag?,
-    internal val sistUtbetalt: LocalDateTime
+    internal val sistUtbetalt: LocalDateTime,
 ) {
     init {
         require(arbeidsgiverOppdrag != null || personOppdrag != null) {
             "Hverken arbeidsgiverOppdrag eller personOppdrag er satt."
         }
     }
+
     val fom = listOfNotNull(arbeidsgiverOppdrag, personOppdrag).flatMap { it.utbetalingslinjer }.minOfOrNull { it.fom }
 
-    private fun Oppdrag?.somFpVedtak() = this?.let { oppdrag -> FpVedtak(
-        vedtaksreferanse = oppdrag.fagsystemId,
-        utbetalinger = oppdrag.utbetalingslinjer.map { Utbetalingsperiode(it.fom, it.tom, it.grad) },
-        vedtattTidspunkt = sistUtbetalt
-    )}
+    private fun Oppdrag?.somFpVedtak() =
+        this?.let { oppdrag ->
+            FpVedtak(
+                vedtaksreferanse = oppdrag.fagsystemId,
+                utbetalinger = oppdrag.utbetalingslinjer.map { Utbetalingsperiode(it.fom, it.tom, it.grad) },
+                vedtattTidspunkt = sistUtbetalt,
+            )
+        }
 
     private fun somFpVedtak() = listOfNotNull(arbeidsgiverOppdrag.somFpVedtak(), personOppdrag.somFpVedtak())
 
-    private fun somSpøkelsePeriode() : List<SpøkelsePeriode> {
+    private fun somSpøkelsePeriode(): List<SpøkelsePeriode> {
         val personidentifikator = Personidentifikator(fødselsnummer)
         val utbetalingslinjer = (arbeidsgiverOppdrag?.utbetalingslinjer ?: emptyList()) + (personOppdrag?.utbetalingslinjer ?: emptyList())
         return utbetalingslinjer.map { utbetalingslinje ->
@@ -57,10 +61,14 @@ internal data class Utbetaling(
     }
 
     internal companion object {
-        private fun JsonNode.oppdrag(path:String) = path(path).takeUnless { it.isMissingOrNull() || it.path("utbetalingslinjer").isEmpty }?.let { Oppdrag(
-            fagsystemId = it.path("fagsystemId").asText(),
-            utbetalingslinjer = it.path("utbetalingslinjer").values().map { linje -> linje.utbetalingslinje() }
-        )}
+        private fun JsonNode.oppdrag(path: String) =
+            path(path).takeUnless { it.isMissingOrNull() || it.path("utbetalingslinjer").isEmpty }?.let {
+                Oppdrag(
+                    fagsystemId = it.path("fagsystemId").asText(),
+                    utbetalingslinjer = it.path("utbetalingslinjer").values().map { linje -> linje.utbetalingslinje() },
+                )
+            }
+
         internal fun JsonNode.utbetaling(sistUtbetalt: LocalDateTime): Utbetaling {
             require(erUtbetaling) { "Kan ikke mappe event $event til utbetaling" }
             val arbeidsgiverOppdrag = oppdrag("arbeidsgiverOppdrag")
@@ -75,10 +83,12 @@ internal data class Utbetaling(
                 gjenståendeSykedager = gjenståendeSykedager,
                 arbeidsgiverOppdrag = arbeidsgiverOppdrag,
                 personOppdrag = personOppdrag,
-                sistUtbetalt = sistUtbetalt
+                sistUtbetalt = sistUtbetalt,
             )
         }
+
         internal fun List<Utbetaling>.somFpVedtak() = flatMap(Utbetaling::somFpVedtak)
+
         internal fun List<Utbetaling>.somSpøkelsePerioder() = flatMap(Utbetaling::somSpøkelsePeriode)
     }
 }

@@ -1,6 +1,5 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
@@ -8,6 +7,7 @@ import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.OK
 import no.nav.helse.spokelse.hent
 import org.slf4j.LoggerFactory
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
@@ -15,12 +15,14 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.Map
 import kotlin.collections.set
 
-abstract class AccessToken(private val leeway: Duration = Duration.ofSeconds(30)) {
+abstract class AccessToken(
+    private val leeway: Duration = Duration.ofSeconds(30),
+) {
     private var cache = ConcurrentHashMap<String, Pair<String, LocalDateTime>>()
+
     abstract suspend fun hentNytt(scope: String): Pair<String, Long>
 
-    internal suspend fun get(scope: String) =
-        cache[scope]?.takeIf { it.second > now() }?.first ?: hentOgCache(scope)
+    internal suspend fun get(scope: String) = cache[scope]?.takeIf { it.second > now() }?.first ?: hentOgCache(scope)
 
     private suspend fun hentOgCache(scope: String): String {
         val (accessToken, expiresIn) = hentNytt(scope)
@@ -35,22 +37,26 @@ abstract class AccessToken(private val leeway: Duration = Duration.ofSeconds(30)
     }
 }
 
-
-internal class Azure(config: Map<String, String>, private val client: HttpClient): AccessToken() {
+internal class Azure(
+    config: Map<String, String>,
+    private val client: HttpClient,
+) : AccessToken() {
     private val tokenEndpoint = config.hent("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT")
     private val clientId = config.hent("AZURE_APP_CLIENT_ID")
     private val clientSecret = config.hent("AZURE_APP_CLIENT_SECRET")
 
     override suspend fun hentNytt(scope: String): Pair<String, Long> {
-        val response = client.submitForm(
-            url = tokenEndpoint,
-            formParameters = Parameters.build {
-                append("client_id", clientId)
-                append("client_secret", clientSecret)
-                append("scope", scope)
-                append("grant_type", "client_credentials")
-            }
-        )
+        val response =
+            client.submitForm(
+                url = tokenEndpoint,
+                formParameters =
+                    Parameters.build {
+                        append("client_id", clientId)
+                        append("client_secret", clientSecret)
+                        append("scope", scope)
+                        append("grant_type", "client_credentials")
+                    },
+            )
         check(response.status == OK) {
             "Mottok HTTP ${response.status} ved henting av access token for $scope:\n\t${response.bodyAsText()}"
         }

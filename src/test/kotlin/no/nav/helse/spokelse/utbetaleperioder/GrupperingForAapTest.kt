@@ -12,16 +12,16 @@ import org.skyscreamer.jsonassert.JSONAssert
 import org.skyscreamer.jsonassert.JSONCompareMode
 
 internal class GrupperingForAapTest {
-
     @Test
     fun `Et planke oppslag`() {
-        val perioder = listOf(
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 100, "111111111", setOf("2")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 100, "111111111", setOf("3")),
-            SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 100, "111111111", setOf("4")),
-            SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 50, "111111111", setOf("5"))
-        )
+        val perioder =
+            listOf(
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.januar, 100, "111111111", setOf("1")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 20.januar, 100, "111111111", setOf("2")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 31.januar, 100, "111111111", setOf("3")),
+                SpøkelsePeriode(personidentifikator, 1.januar, 10.februar, 100, "111111111", setOf("4")),
+                SpøkelsePeriode(personidentifikator, 1.mars, 31.mars, 50, "111111111", setOf("5")),
+            )
 
         @Language("JSON")
         val forventet = """
@@ -40,9 +40,12 @@ internal class GrupperingForAapTest {
 
     private val AapGruppering = setOf(GroupBy.grad)
 
-    private fun assertEquals(forventet: String, perioder: List<SpøkelsePeriode>) {
+    private fun assertEquals(
+        forventet: String,
+        perioder: List<SpøkelsePeriode>,
+    ) {
         // Bare stokker periodene med en partalls-tag som Spleis og oddetall som Infotrygd. Ettersom det ikke grupperes på kilde skal det ikke ha noe å si
-        val (spleis, infotrygd) = perioder.partition { it.tags.mapNotNull { tag-> tag.toIntOrNull() }.any { int -> int % 2 == 0 }}
+        val (spleis, infotrygd) = perioder.partition { it.tags.mapNotNull { tag -> tag.toIntOrNull() }.any { int -> int % 2 == 0 } }
         val faktisk = Gruppering(AapGruppering, infotrygd, spleis, IngenTags).gruppér()
         JSONAssert.assertEquals(forventet, faktisk, JSONCompareMode.NON_EXTENSIBLE)
     }

@@ -1,6 +1,5 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somFpVedtak
@@ -9,6 +8,7 @@ import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.lang.IllegalArgumentException
 import java.time.Instant
 import java.time.LocalDate
@@ -16,31 +16,35 @@ import java.time.ZoneId
 import java.util.*
 
 internal class UtbetalingMappingTest {
-
     @Test
     fun `utbetaling_utbetalt begge oppdrag`() {
         val meldingSendt = nå()
         val utbetaling = jsonBeggeOppdrag.utbetaling(meldingSendt)
-        val forventet = Utbetaling(
-            fødselsnummer = "12345678901",
-            korrelasjonsId = UUID.fromString("a43696c7-e824-4140-b8a7-348efe7128cc"),
-            gjenståendeSykedager = 178,
-            arbeidsgiverOppdrag = Oppdrag(
-                fagsystemId = "XI2MMEZAJZBVJL2E4K7UM4BQBY",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5),
-                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
-                )
-            ),
-            personOppdrag = Oppdrag(
-                fagsystemId = "L52NYV4KE5BEPILU4L2ERGAVYU",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
-                )
-            ),
-            sistUtbetalt = meldingSendt,
-            organisasjonsnummer = "999263550"
-        )
+        val forventet =
+            Utbetaling(
+                fødselsnummer = "12345678901",
+                korrelasjonsId = UUID.fromString("a43696c7-e824-4140-b8a7-348efe7128cc"),
+                gjenståendeSykedager = 178,
+                arbeidsgiverOppdrag =
+                    Oppdrag(
+                        fagsystemId = "XI2MMEZAJZBVJL2E4K7UM4BQBY",
+                        utbetalingslinjer =
+                            listOf(
+                                Utbetalingslinje(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5),
+                                Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                            ),
+                    ),
+                personOppdrag =
+                    Oppdrag(
+                        fagsystemId = "L52NYV4KE5BEPILU4L2ERGAVYU",
+                        utbetalingslinjer =
+                            listOf(
+                                Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                            ),
+                    ),
+                sistUtbetalt = meldingSendt,
+                organisasjonsnummer = "999263550",
+            )
         assertEquals(forventet, utbetaling)
     }
 
@@ -53,21 +57,24 @@ internal class UtbetalingMappingTest {
     fun `utbetaling_utbetalt kun arbeidsgiveroppdrag`() {
         val meldingSendt = nå()
         val utbetaling = jsonKunArbeidsgiveroppdrag.utbetaling(meldingSendt)
-        val forventet = Utbetaling(
-            fødselsnummer = "12345678901",
-            korrelasjonsId = UUID.fromString("a43696c7-e824-4140-b8a7-348efe7128cc"),
-            gjenståendeSykedager = 178,
-            arbeidsgiverOppdrag = Oppdrag(
-                fagsystemId = "XI2MMEZAJZBVJL2E4K7UM4BQBY",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5),
-                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
-                )
-            ),
-            personOppdrag = null,
-            sistUtbetalt = meldingSendt,
-            organisasjonsnummer = "999263550"
-        )
+        val forventet =
+            Utbetaling(
+                fødselsnummer = "12345678901",
+                korrelasjonsId = UUID.fromString("a43696c7-e824-4140-b8a7-348efe7128cc"),
+                gjenståendeSykedager = 178,
+                arbeidsgiverOppdrag =
+                    Oppdrag(
+                        fagsystemId = "XI2MMEZAJZBVJL2E4K7UM4BQBY",
+                        utbetalingslinjer =
+                            listOf(
+                                Utbetalingslinje(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5),
+                                Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                            ),
+                    ),
+                personOppdrag = null,
+                sistUtbetalt = meldingSendt,
+                organisasjonsnummer = "999263550",
+            )
         assertEquals(forventet, utbetaling)
     }
 
@@ -75,56 +82,77 @@ internal class UtbetalingMappingTest {
     fun `utbetaling_utbetalt kun personoppdrag`() {
         val meldingSendt = nå()
         val utbetaling = jsonKunPersonoppdrag.utbetaling(meldingSendt)
-        val forventet = Utbetaling(
-            fødselsnummer = "12345678901",
-            korrelasjonsId = UUID.fromString("a43696c7-e824-4140-b8a7-348efe7128cc"),
-            gjenståendeSykedager = 178,
-            arbeidsgiverOppdrag = null,
-            personOppdrag = Oppdrag(
-                fagsystemId = "L52NYV4KE5BEPILU4L2ERGAVYU",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
-                )
-            ),
-            sistUtbetalt = meldingSendt,
-            organisasjonsnummer = "999263550"
-        )
+        val forventet =
+            Utbetaling(
+                fødselsnummer = "12345678901",
+                korrelasjonsId = UUID.fromString("a43696c7-e824-4140-b8a7-348efe7128cc"),
+                gjenståendeSykedager = 178,
+                arbeidsgiverOppdrag = null,
+                personOppdrag =
+                    Oppdrag(
+                        fagsystemId = "L52NYV4KE5BEPILU4L2ERGAVYU",
+                        utbetalingslinjer =
+                            listOf(
+                                Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                            ),
+                    ),
+                sistUtbetalt = meldingSendt,
+                organisasjonsnummer = "999263550",
+            )
         assertEquals(forventet, utbetaling)
     }
 
     @Test
     fun `mapping til eksterne datatyper`() {
         val sistUtbetalt = nå()
-        val utbetalinger = listOf(Utbetaling(
-            fødselsnummer = "12345678901",
-            korrelasjonsId = UUID.fromString("a43696c7-e824-4140-b8a7-348efe7128cc"),
-            gjenståendeSykedager = 178,
-            arbeidsgiverOppdrag = Oppdrag(
-                fagsystemId = "XI2MMEZAJZBVJL2E4K7UM4BQBY",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5),
-                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
-                )
-            ),
-            personOppdrag = Oppdrag(
-                fagsystemId = "L52NYV4KE5BEPILU4L2ERGAVYU",
-                utbetalingslinjer = listOf(
-                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
-                )
-            ),
-            sistUtbetalt = sistUtbetalt,
-            organisasjonsnummer = "999263550"
-        ))
+        val utbetalinger =
+            listOf(
+                Utbetaling(
+                    fødselsnummer = "12345678901",
+                    korrelasjonsId = UUID.fromString("a43696c7-e824-4140-b8a7-348efe7128cc"),
+                    gjenståendeSykedager = 178,
+                    arbeidsgiverOppdrag =
+                        Oppdrag(
+                            fagsystemId = "XI2MMEZAJZBVJL2E4K7UM4BQBY",
+                            utbetalingslinjer =
+                                listOf(
+                                    Utbetalingslinje(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5),
+                                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                                ),
+                        ),
+                    personOppdrag =
+                        Oppdrag(
+                            fagsystemId = "L52NYV4KE5BEPILU4L2ERGAVYU",
+                            utbetalingslinjer =
+                                listOf(
+                                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                                ),
+                        ),
+                    sistUtbetalt = sistUtbetalt,
+                    organisasjonsnummer = "999263550",
+                ),
+            )
 
-        val forventetFpVedtak = listOf(
-            FpVedtak(vedtaksreferanse = "XI2MMEZAJZBVJL2E4K7UM4BQBY", vedtattTidspunkt = sistUtbetalt, utbetalinger = listOf(
-                Utbetalingsperiode(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5),
-                Utbetalingsperiode(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
-            )),
-            FpVedtak(vedtaksreferanse = "L52NYV4KE5BEPILU4L2ERGAVYU", vedtattTidspunkt = sistUtbetalt, utbetalinger = listOf(
-                Utbetalingsperiode(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0)
-            ))
-        )
+        val forventetFpVedtak =
+            listOf(
+                FpVedtak(
+                    vedtaksreferanse = "XI2MMEZAJZBVJL2E4K7UM4BQBY",
+                    vedtattTidspunkt = sistUtbetalt,
+                    utbetalinger =
+                        listOf(
+                            Utbetalingsperiode(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5),
+                            Utbetalingsperiode(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                        ),
+                ),
+                FpVedtak(
+                    vedtaksreferanse = "L52NYV4KE5BEPILU4L2ERGAVYU",
+                    vedtattTidspunkt = sistUtbetalt,
+                    utbetalinger =
+                        listOf(
+                            Utbetalingsperiode(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                        ),
+                ),
+            )
         assertEquals(forventetFpVedtak, utbetalinger.somFpVedtak())
     }
 
@@ -132,7 +160,8 @@ internal class UtbetalingMappingTest {
         private val jackson = jacksonObjectMapper()
 
         @Language("JSON")
-        private val jsonBeggeOppdrag = """
+        private val jsonBeggeOppdrag =
+            """
         {
           "event": "utbetaling_utbetalt",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",
@@ -208,7 +237,8 @@ internal class UtbetalingMappingTest {
         """.let { jackson.readTree(it) }
 
         @Language("JSON")
-        private val jsonIngenOppdrag = """
+        private val jsonIngenOppdrag =
+            """
         {
           "event": "utbetaling_utbetalt",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",
@@ -249,7 +279,8 @@ internal class UtbetalingMappingTest {
         """.let { jackson.readTree(it) }
 
         @Language("JSON")
-        private val jsonKunArbeidsgiveroppdrag = """
+        private val jsonKunArbeidsgiveroppdrag =
+            """
         {
           "event": "utbetaling_utbetalt",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",
@@ -316,7 +347,8 @@ internal class UtbetalingMappingTest {
         """.let { jackson.readTree(it) }
 
         @Language("JSON")
-        private val jsonKunPersonoppdrag = """
+        private val jsonKunPersonoppdrag =
+            """
         {
           "event": "utbetaling_utbetalt",
           "utbetalingId": "446eca54-befd-4851-acc3-ec300a20932a",

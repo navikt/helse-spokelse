@@ -9,8 +9,7 @@ import org.junit.jupiter.api.Test
 import java.time.*
 import java.util.*
 
-internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
-
+internal class TbdUtbetalingDaoTest : AbstractE2ETest() {
     @Test
     fun `lagre utbetaling på førstegangsbehandling med full refusjon`() {
         val utbetaling = lagreFullRefusjon()
@@ -32,37 +31,44 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     @Test
     fun `oppdater utbetaling med delvis refusjon`() {
         val korrelasjonsId = UUID.randomUUID()
-        val personutbetalingslinjer = listOf(
-            Utbetalingslinje(
-                fom = 1.januar,
-                tom = 31.januar,
-                grad = 33.7
+        val personutbetalingslinjer =
+            listOf(
+                Utbetalingslinje(
+                    fom = 1.januar,
+                    tom = 31.januar,
+                    grad = 33.7,
+                ),
             )
-        )
-        val arbeidsgiverutbetalingslinjer = listOf(
-            Utbetalingslinje(
-                fom = 1.januar,
-                tom = 31.januar,
-                grad = 50.7
+        val arbeidsgiverutbetalingslinjer =
+            listOf(
+                Utbetalingslinje(
+                    fom = 1.januar,
+                    tom = 31.januar,
+                    grad = 50.7,
+                ),
             )
-        )
 
         val førstegangsutbetaling = lagreDelvisRefusjon(korrelasjonsId, arbeidsgiverutbetalingslinjer, personutbetalingslinjer)
         assertEquals(listOf(førstegangsutbetaling), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
 
-        val forlengelsesutbetaling = lagreDelvisRefusjon(
-            korrelasjonsId = korrelasjonsId,
-            arbeidsgiverUtbetalingslinjer = arbeidsgiverutbetalingslinjer + Utbetalingslinje(
-                fom = 1.februar,
-                tom = 28.februar,
-                grad = 34.0
-            ),
-            personUtbetalingslinjer = personutbetalingslinjer + Utbetalingslinje(
-                fom = 1.februar,
-                tom = 28.februar,
-                grad = 51.0
+        val forlengelsesutbetaling =
+            lagreDelvisRefusjon(
+                korrelasjonsId = korrelasjonsId,
+                arbeidsgiverUtbetalingslinjer =
+                    arbeidsgiverutbetalingslinjer +
+                        Utbetalingslinje(
+                            fom = 1.februar,
+                            tom = 28.februar,
+                            grad = 34.0,
+                        ),
+                personUtbetalingslinjer =
+                    personutbetalingslinjer +
+                        Utbetalingslinje(
+                            fom = 1.februar,
+                            tom = 28.februar,
+                            grad = 51.0,
+                        ),
             )
-        )
         assertEquals(listOf(forlengelsesutbetaling), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
 
@@ -85,26 +91,30 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     @Test
     fun `Legger til ferie i utbetalingen`() {
         val korrelasjonsId = UUID.randomUUID()
-        val utbetalingslinjer = listOf(Utbetalingslinje(
-            fom = 1.januar,
-            tom = 31.januar,
-            grad = 50.7
-        ))
+        val utbetalingslinjer =
+            listOf(
+                Utbetalingslinje(
+                    fom = 1.januar,
+                    tom = 31.januar,
+                    grad = 50.7,
+                ),
+            )
         val førstegangsbehandlingUtbetaling = lagreNullRefusjon(korrelasjonsId, utbetalingslinjer)
         assertEquals(listOf(førstegangsbehandlingUtbetaling), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
 
-        val revurdertUtbetalingslinjer = listOf(
-            Utbetalingslinje(
-                fom = 1.januar,
-                tom = 14.januar,
-                grad = 50.7
-            ),
-            Utbetalingslinje(
-                fom = 16.januar,
-                tom = 31.januar,
-                grad = 50.7
+        val revurdertUtbetalingslinjer =
+            listOf(
+                Utbetalingslinje(
+                    fom = 1.januar,
+                    tom = 14.januar,
+                    grad = 50.7,
+                ),
+                Utbetalingslinje(
+                    fom = 16.januar,
+                    tom = 31.januar,
+                    grad = 50.7,
+                ),
             )
-        )
         val revurderingUtbetaling = lagreNullRefusjon(korrelasjonsId, revurdertUtbetalingslinjer)
         assertEquals(listOf(revurderingUtbetaling), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
@@ -117,14 +127,16 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
+
     @Test
     fun `annullerer utbetaling til person ved ingen refusjon`() {
         lagreNullRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, 1.januar,null, PersonFagsystemId))
+        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, 1.januar, null, PersonFagsystemId))
         assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
+
     @Test
     fun `annullerer utbetaling til arbeidsgiver ved delvis refusjon`() {
         val utbetaling = lagreDelvisRefusjon()
@@ -133,14 +145,16 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
         assertEquals(annuleringsMeldingId, arbeidsgiverAnnuleringskilde(ArbeidsgiverFagsystemId))
         assertEquals(listOf(utbetaling.copy(arbeidsgiverOppdrag = null)), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
+
     @Test
     fun `annullerer utbetaling til person ved delvis refusjon`() {
         val utbetaling = lagreDelvisRefusjon()
         val annuleringsMeldingId = nyMeldingId()
-        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, 1.januar,null, PersonFagsystemId))
+        tbdUtbetalingDao.annullering(annuleringsMeldingId, Annullering(Fødselsnummer, 1.januar, null, PersonFagsystemId))
         assertEquals(annuleringsMeldingId, personAnnuleringskilde(PersonFagsystemId))
         assertEquals(listOf(utbetaling.copy(personOppdrag = null)), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
     }
+
     @Test
     fun `annullerer utbetaling til person og arbeidsgiver ved delvis refusjon`() {
         lagreDelvisRefusjon()
@@ -153,20 +167,23 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
 
     @Test
     fun `flere utbetalinger på samme person`() {
-        val januar = lagreNullRefusjon(
-            fagsystemId = "januar",
-            utbetalingslinjer = listOf(Utbetalingslinje(1.januar, 31.januar, 55.0))
-        )
-        val mars = lagreFullRefusjon(
-            fagsystemId = "mars",
-            utbetalingslinjer = listOf(Utbetalingslinje(1.mars, 31.mars, 44.3))
-        )
-        val mai = lagreDelvisRefusjon(
-            personFagsystemId = "maiPerson",
-            personUtbetalingslinjer = listOf(Utbetalingslinje(1.mai, 31.mai, 50.0)),
-            arbeidsgiverFagsystemId = "maiArbeidsgiver",
-            arbeidsgiverUtbetalingslinjer = listOf(Utbetalingslinje(1.mai, 31.mai, 50.0))
-        )
+        val januar =
+            lagreNullRefusjon(
+                fagsystemId = "januar",
+                utbetalingslinjer = listOf(Utbetalingslinje(1.januar, 31.januar, 55.0)),
+            )
+        val mars =
+            lagreFullRefusjon(
+                fagsystemId = "mars",
+                utbetalingslinjer = listOf(Utbetalingslinje(1.mars, 31.mars, 44.3)),
+            )
+        val mai =
+            lagreDelvisRefusjon(
+                personFagsystemId = "maiPerson",
+                personUtbetalingslinjer = listOf(Utbetalingslinje(1.mai, 31.mai, 50.0)),
+                arbeidsgiverFagsystemId = "maiArbeidsgiver",
+                arbeidsgiverUtbetalingslinjer = listOf(Utbetalingslinje(1.mai, 31.mai, 50.0)),
+            )
         assertEquals(listOf(januar, mars, mai), tbdUtbetalingDao.hentUtbetalinger(Fødselsnummer))
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger("99999999999"))
     }
@@ -201,80 +218,94 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
     }
 
     private fun nyMeldingId() = tbdUtbetalingDao.lagreMelding(Melding("{}", nå(), "test_event", Fødselsnummer))
+
     private fun lagreFullRefusjon(
         korrelasjonsId: UUID = UUID.randomUUID(),
         fagsystemId: String = ArbeidsgiverFagsystemId,
-        utbetalingslinjer: List<Utbetalingslinje> = listOf(
-            Utbetalingslinje(fom = 1.januar, tom = 31.januar, grad = 50.7)
-        ),
-        fødselsnummer: String = Fødselsnummer
+        utbetalingslinjer: List<Utbetalingslinje> =
+            listOf(
+                Utbetalingslinje(fom = 1.januar, tom = 31.januar, grad = 50.7),
+            ),
+        fødselsnummer: String = Fødselsnummer,
     ): Utbetaling {
         val meldingId = nyMeldingId()
-        val utbetaling = Utbetaling(
-            fødselsnummer = fødselsnummer,
-            korrelasjonsId = korrelasjonsId,
-            gjenståendeSykedager = 50,
-            personOppdrag = null,
-            arbeidsgiverOppdrag = Oppdrag(
-                fagsystemId = fagsystemId,
-                utbetalingslinjer = utbetalingslinjer
-            ),
-            sistUtbetalt = nå(),
-            organisasjonsnummer = Organisasjonsnummer
-        )
+        val utbetaling =
+            Utbetaling(
+                fødselsnummer = fødselsnummer,
+                korrelasjonsId = korrelasjonsId,
+                gjenståendeSykedager = 50,
+                personOppdrag = null,
+                arbeidsgiverOppdrag =
+                    Oppdrag(
+                        fagsystemId = fagsystemId,
+                        utbetalingslinjer = utbetalingslinjer,
+                    ),
+                sistUtbetalt = nå(),
+                organisasjonsnummer = Organisasjonsnummer,
+            )
         tbdUtbetalingDao.utbetaling(meldingId, utbetaling)
         return utbetaling
     }
+
     private fun lagreNullRefusjon(
         korrelasjonsId: UUID = UUID.randomUUID(),
-        utbetalingslinjer: List<Utbetalingslinje> = listOf(
-            Utbetalingslinje(fom = 1.januar, tom = 31.januar, grad = 33.7)
-        ),
-        fagsystemId: String = PersonFagsystemId
+        utbetalingslinjer: List<Utbetalingslinje> =
+            listOf(
+                Utbetalingslinje(fom = 1.januar, tom = 31.januar, grad = 33.7),
+            ),
+        fagsystemId: String = PersonFagsystemId,
     ): Utbetaling {
         val meldingId = nyMeldingId()
-        val utbetaling = Utbetaling(
-            fødselsnummer = Fødselsnummer,
-            korrelasjonsId = korrelasjonsId,
-            gjenståendeSykedager = 50,
-            personOppdrag = Oppdrag(
-                fagsystemId = fagsystemId,
-                utbetalingslinjer = utbetalingslinjer
-            ),
-            arbeidsgiverOppdrag = null,
-            sistUtbetalt = nå(),
-            organisasjonsnummer = Organisasjonsnummer
-        )
+        val utbetaling =
+            Utbetaling(
+                fødselsnummer = Fødselsnummer,
+                korrelasjonsId = korrelasjonsId,
+                gjenståendeSykedager = 50,
+                personOppdrag =
+                    Oppdrag(
+                        fagsystemId = fagsystemId,
+                        utbetalingslinjer = utbetalingslinjer,
+                    ),
+                arbeidsgiverOppdrag = null,
+                sistUtbetalt = nå(),
+                organisasjonsnummer = Organisasjonsnummer,
+            )
         tbdUtbetalingDao.utbetaling(meldingId, utbetaling)
         return utbetaling
     }
+
     private fun lagreDelvisRefusjon(
         korrelasjonsId: UUID = UUID.randomUUID(),
-        arbeidsgiverUtbetalingslinjer: List<Utbetalingslinje> = listOf(
-            Utbetalingslinje(fom = 1.januar, tom = 31.januar, grad = 50.7)
-        ),
-        personUtbetalingslinjer: List<Utbetalingslinje> = listOf(
-            Utbetalingslinje(fom = 1.januar, tom = 31.januar, grad = 33.7)
-        ),
+        arbeidsgiverUtbetalingslinjer: List<Utbetalingslinje> =
+            listOf(
+                Utbetalingslinje(fom = 1.januar, tom = 31.januar, grad = 50.7),
+            ),
+        personUtbetalingslinjer: List<Utbetalingslinje> =
+            listOf(
+                Utbetalingslinje(fom = 1.januar, tom = 31.januar, grad = 33.7),
+            ),
         arbeidsgiverFagsystemId: String = ArbeidsgiverFagsystemId,
         personFagsystemId: String = PersonFagsystemId,
     ): Utbetaling {
         val meldingId = nyMeldingId()
-        val utbetaling = Utbetaling(
-            fødselsnummer = Fødselsnummer,
-            korrelasjonsId = korrelasjonsId,
-            gjenståendeSykedager = 50,
-            personOppdrag = Oppdrag(
-                fagsystemId = personFagsystemId,
-                utbetalingslinjer = personUtbetalingslinjer
-            ),
-            arbeidsgiverOppdrag = Oppdrag(
-                fagsystemId = arbeidsgiverFagsystemId,
-                utbetalingslinjer = arbeidsgiverUtbetalingslinjer
-            ),
-            sistUtbetalt = nå(),
-            organisasjonsnummer = Organisasjonsnummer
-        )
+        val utbetaling =
+            Utbetaling(
+                fødselsnummer = Fødselsnummer,
+                korrelasjonsId = korrelasjonsId,
+                gjenståendeSykedager = 50,
+                personOppdrag =
+                    Oppdrag(
+                        fagsystemId = personFagsystemId,
+                        utbetalingslinjer = personUtbetalingslinjer,
+                    ),
+                arbeidsgiverOppdrag =
+                    Oppdrag(
+                        fagsystemId = arbeidsgiverFagsystemId,
+                        utbetalingslinjer = arbeidsgiverUtbetalingslinjer,
+                    ),
+                sistUtbetalt = nå(),
+                organisasjonsnummer = Organisasjonsnummer,
+            )
         tbdUtbetalingDao.utbetaling(meldingId, utbetaling)
         return utbetaling
     }
@@ -285,6 +316,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
                 session.run(queryOf(sql).map { it.long("personAnnuleringskilde") }.asList).singleOrNull()
             }
         }
+
     private fun arbeidsgiverAnnuleringskilde(arbeidsgiverFagsystemId: String) =
         "SELECT arbeidsgiverAnnuleringskilde FROM tbdUtbetaling_Utbetaling WHERE arbeidsgiverFagsystemId='$arbeidsgiverFagsystemId'".let { sql ->
             sessionOf(dataSource).use { session ->
@@ -294,6 +326,7 @@ internal class TbdUtbetalingDaoTest: AbstractE2ETest() {
 
     private companion object {
         private fun nå() = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDateTime()
+
         private const val Fødselsnummer = "12345678911"
         private const val Organisasjonsnummer = "987654321"
         private const val ArbeidsgiverFagsystemId = "arbeid"

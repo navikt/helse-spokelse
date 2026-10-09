@@ -1,38 +1,40 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
-import tools.jackson.databind.JsonNode
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
 import no.nav.helse.spokelse.utbetalteperioder.Grupperingsnøkkel.Companion.grupperingsnøkkel
 import org.slf4j.LoggerFactory
+import tools.jackson.databind.JsonNode
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 internal enum class GroupBy {
     organisasjonsnummer,
     personidentifikator,
     grad,
-    kilde;
+    kilde,
+    ;
 
     internal companion object {
         internal val JsonNode.groupBy get(): Set<GroupBy> {
-            val oppløsning = path("oppløsning").takeIf { it.isArray }
-                ?: throw IllegalStateException("oppløsning må settes i requesten. Men kan settes til en tom liste om man kun ønsker utbetalte perioder per person")
+            val oppløsning =
+                path("oppløsning").takeIf { it.isArray }
+                    ?: throw IllegalStateException("oppløsning må settes i requesten. Men kan settes til en tom liste om man kun ønsker utbetalte perioder per person")
             return oppløsning.values().map { GroupBy.valueOf(it.asText()) }.toSet()
         }
     }
 }
 
-
 private data class Grupperingsnøkkel(
     val personidentifikator: Personidentifikator?,
     val organisasjonsnummer: String?,
-    val grad: Int?
+    val grad: Int?,
 ) {
     companion object {
-        fun SpøkelsePeriode.grupperingsnøkkel(groupBy: Set<GroupBy>) = Grupperingsnøkkel(
-            personidentifikator = this.personidentifikator.takeIf { GroupBy.personidentifikator in groupBy },
-            organisasjonsnummer = this.organisasjonsnummer.takeIf { GroupBy.organisasjonsnummer in groupBy },
-            grad = this.grad.takeIf { GroupBy.grad in groupBy }
-        )
+        fun SpøkelsePeriode.grupperingsnøkkel(groupBy: Set<GroupBy>) =
+            Grupperingsnøkkel(
+                personidentifikator = this.personidentifikator.takeIf { GroupBy.personidentifikator in groupBy },
+                organisasjonsnummer = this.organisasjonsnummer.takeIf { GroupBy.organisasjonsnummer in groupBy },
+                grad = this.grad.takeIf { GroupBy.grad in groupBy },
+            )
     }
 }
 
@@ -40,11 +42,11 @@ internal sealed interface TagsFilter {
     fun filter(tags: Set<String>): Set<String>?
 }
 
-internal data object AlleTags: TagsFilter {
+internal data object AlleTags : TagsFilter {
     override fun filter(tags: Set<String>) = tags
 }
 
-internal data object IngenTags: TagsFilter {
+internal data object IngenTags : TagsFilter {
     override fun filter(tags: Set<String>) = null
 }
 
@@ -52,17 +54,17 @@ internal class Gruppering(
     private val groupBy: Set<GroupBy>,
     private val infotrygd: Iterable<SpøkelsePeriode>,
     private val spleis: Iterable<SpøkelsePeriode>,
-    private val tagsFilter: TagsFilter = AlleTags
+    private val tagsFilter: TagsFilter = AlleTags,
 ) {
-
     private fun Iterable<SpøkelsePeriode>.gruppér(): List<SpøkelsePeriode> {
         val (medOrganisasjonsnummer, utenOrganisasjonsnummer) = partition { it.organisasjonsnummer != null }
 
-        return medOrganisasjonsnummer.groupBy { it.grupperingsnøkkel(groupBy) }
+        return medOrganisasjonsnummer
+            .groupBy { it.grupperingsnøkkel(groupBy) }
             .mapValues { (_, gruppertePerioder) ->
                 val første = gruppertePerioder.first()
                 val sammenhengendePerioder = gruppertePerioder.map(SpøkelsePeriode::periode).grupperSammenhengendePerioder()
-                val tags = gruppertePerioder.groupBy(SpøkelsePeriode::periode).mapValues { (_, values ) -> values.map(SpøkelsePeriode::tags).flatten() }
+                val tags = gruppertePerioder.groupBy(SpøkelsePeriode::periode).mapValues { (_, values) -> values.map(SpøkelsePeriode::tags).flatten() }
 
                 sammenhengendePerioder.map { sammenhengendePeriode ->
                     SpøkelsePeriode(
@@ -71,32 +73,43 @@ internal class Gruppering(
                         tom = sammenhengendePeriode.endInclusive,
                         grad = første.grad,
                         organisasjonsnummer = første.organisasjonsnummer,
-                        tags = tags.filter { it.key.overlapperMed(sammenhengendePeriode) }.values.flatten().toSet()
+                        tags =
+                            tags
+                                .filter { it.key.overlapperMed(sammenhengendePeriode) }
+                                .values
+                                .flatten()
+                                .toSet(),
                     )
                 }
-            }.values.flatten() + utenOrganisasjonsnummer
+            }.values
+            .flatten() + utenOrganisasjonsnummer
     }
 
     private fun List<SpøkelsePeriode>.json(): String {
-        val utbetaltePerioder = map { objectMapper.createObjectNode().apply {
-            // personidentifikator, organisasjonsnummer & grad legges kun til om det er gruppert på dem
-            //  - når vi ikke grupperer på verdiene tar vi bare verdiene fra `first()` - så det er ikke gitt at det er rett for alle periodene
-            //  - derfor kan vi heller ikke legge til disse verdiene i responsen
-            if (GroupBy.personidentifikator in groupBy) put("personidentifikator", "${it.personidentifikator}")
-            if (GroupBy.organisasjonsnummer in groupBy) put("organisasjonsnummer", it.organisasjonsnummer)
-            if (GroupBy.grad in groupBy) put("grad", it.grad)
-            put("fom", "${it.fom}")
-            put("tom", "${it.tom}")
+        val utbetaltePerioder =
+            map {
+                objectMapper.createObjectNode().apply {
+                    // personidentifikator, organisasjonsnummer & grad legges kun til om det er gruppert på dem
+                    //  - når vi ikke grupperer på verdiene tar vi bare verdiene fra `first()` - så det er ikke gitt at det er rett for alle periodene
+                    //  - derfor kan vi heller ikke legge til disse verdiene i responsen
+                    if (GroupBy.personidentifikator in groupBy) put("personidentifikator", "${it.personidentifikator}")
+                    if (GroupBy.organisasjonsnummer in groupBy) put("organisasjonsnummer", it.organisasjonsnummer)
+                    if (GroupBy.grad in groupBy) put("grad", it.grad)
+                    put("fom", "${it.fom}")
+                    put("tom", "${it.tom}")
 
-            tagsFilter.filter(it.tags)?.let { filtrerteTags ->
-                putArray("tags").let { jsonTags ->
-                    filtrerteTags.forEach(jsonTags::add)
+                    tagsFilter.filter(it.tags)?.let { filtrerteTags ->
+                        putArray("tags").let { jsonTags ->
+                            filtrerteTags.forEach(jsonTags::add)
+                        }
+                    }
                 }
             }
-        }}
-        return objectMapper.createObjectNode().apply {
-            putArray("utbetaltePerioder").addAll(utbetaltePerioder)
-        }.toString()
+        return objectMapper
+            .createObjectNode()
+            .apply {
+                putArray("utbetaltePerioder").addAll(utbetaltePerioder)
+            }.toString()
     }
 
     internal fun gruppér(): String {

@@ -1,33 +1,48 @@
 package no.nav.helse.spokelse
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
-import java.time.LocalDate
-import java.time.OffsetDateTime
 import no.nav.helse.spokelse.tbdutbetaling.Annullering
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingObserver
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.time.LocalDate
+import java.time.OffsetDateTime
 
 /*
     dings som legger fnr og timestamp på en helt egen topic hver gang spøkelse får vite om en utbetaling
  */
-internal class UtbetalingVarsel(private val producer: KafkaProducer<String, String>, private val topic: String = "tbd.boo"): TbdUtbetalingObserver {
-
-    override fun utbetaling(meldingId: Long, utbetaling: Utbetaling) {
+internal class UtbetalingVarsel(
+    private val producer: KafkaProducer<String, String>,
+    private val topic: String = "tbd.boo",
+) : TbdUtbetalingObserver {
+    override fun utbetaling(
+        meldingId: Long,
+        utbetaling: Utbetaling,
+    ) {
         noeHarSkjedd(utbetaling.fødselsnummer, utbetaling.fom, "utbetaling")
     }
 
-    override fun annullering(meldingId: Long, annullering: Annullering) {
+    override fun annullering(
+        meldingId: Long,
+        annullering: Annullering,
+    ) {
         noeHarSkjedd(annullering.fødselsnummer, annullering.fom, "annullering")
     }
 
-    fun nyInformasjonIInfotrygd(fødselsnummer: String, fom: LocalDate?) {
+    fun nyInformasjonIInfotrygd(
+        fødselsnummer: String,
+        fom: LocalDate?,
+    ) {
         noeHarSkjedd(fødselsnummer, fom, "infotrygd")
     }
 
-    private fun noeHarSkjedd(personidentifikator: String, fraOgMed: LocalDate?, pga: String) {
+    private fun noeHarSkjedd(
+        personidentifikator: String,
+        fraOgMed: LocalDate?,
+        pga: String,
+    ) {
         val melding = lagMelding(personidentifikator, fraOgMed)
         producer.send(ProducerRecord(topic, melding))
         when (val fom = fraOgMed) {
@@ -39,10 +54,16 @@ internal class UtbetalingVarsel(private val producer: KafkaProducer<String, Stri
     private companion object {
         val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
         val objectmapper = jacksonObjectMapper()
-        fun lagMelding(personidentifikator: String, fraOgMed: LocalDate?) = objectmapper.createObjectNode().apply {
-            put("personidentifikator", personidentifikator)
-            put("tidspunkt", OffsetDateTime.now().toString())
-            fraOgMed?.let { put("fraOgMed", it.toString()) }
-        }.toString()
+
+        fun lagMelding(
+            personidentifikator: String,
+            fraOgMed: LocalDate?,
+        ) = objectmapper
+            .createObjectNode()
+            .apply {
+                put("personidentifikator", personidentifikator)
+                put("tidspunkt", OffsetDateTime.now().toString())
+                fraOgMed?.let { put("fraOgMed", it.toString()) }
+            }.toString()
     }
 }
