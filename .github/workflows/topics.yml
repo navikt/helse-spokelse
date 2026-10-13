@@ -21,7 +21,7 @@ permissions:
 jobs:
   deploy-dev:
     name: Deploy til dev
-    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy-v2.yml@77c349d62b631cf0fedc02278c68abd33bc8ea5b # v1.0.10
+    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy-v2.yml@fc1bc4b862baacc4b4d8e0519bf3dc9040a2e644 # v1.0.11
     with:
       manifest: .nais/boo.yaml
       environment: dev-gcp
@@ -31,7 +31,7 @@ jobs:
 
   deploy-prod:
     name: Deploy til prod
-    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy-v2.yml@77c349d62b631cf0fedc02278c68abd33bc8ea5b # v1.0.10
+    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy-v2.yml@fc1bc4b862baacc4b4d8e0519bf3dc9040a2e644 # v1.0.11
     with:
       manifest: .nais/boo.yaml
       environment: prod-gcp
