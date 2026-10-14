@@ -1,8 +1,8 @@
 [versions]
-tbdLibs = "20261005.1432"
+tbdLibs = "20261013.1613"
 # Nyere versjon bruker wiremock-jetty12, som kreves av Jetty 12-BOM-en i sykepenger-pluginen
-tbdLibsSignedJwtIssuerTest = "20261005.1432"
-sykepengerGradlePlugins = "20261001.1830"
+tbdLibsSignedJwtIssuerTest = "20261013.1613"
+sykepengerGradlePlugins = "20261013.1718"
 
 [libraries]
 awaitility = "org.awaitility:awaitility:4.3.0"
