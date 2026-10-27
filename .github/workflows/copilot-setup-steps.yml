@@ -19,6 +19,6 @@ jobs:
       contents: read
 
     steps:
-      - uses: navikt/sykepenger-github-workflows/.github/actions/copilot-setup-steps@fc1bc4b862baacc4b4d8e0519bf3dc9040a2e644 # v1.0.11
+      - uses: navikt/sykepenger-github-workflows/.github/actions/copilot-setup-steps@5ff5fbfcd847f89bd33941fd4a6212de7b3eb749 # v1.0.13
         with:
           kotlin: true
