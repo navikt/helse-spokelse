@@ -1,8 +1,8 @@
 [versions]
-tbdLibs = "20261013.1613"
+tbdLibs = "20261029.1843"
 # Nyere versjon bruker wiremock-jetty12, som kreves av Jetty 12-BOM-en i sykepenger-pluginen
-tbdLibsSignedJwtIssuerTest = "20261013.1613"
-sykepengerGradlePlugins = "20261028.1441"
+tbdLibsSignedJwtIssuerTest = "20261029.1843"
+sykepengerGradlePlugins = "20261029.1945"
 
 [libraries]
 awaitility = "org.awaitility:awaitility:4.3.0"
@@ -16,7 +16,7 @@ ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt" }
 mockk = "io.mockk:mockk:1.14.11"
 postgresql = "org.postgresql:postgresql:42.7.14"
 rapidsAndRivers = "com.github.navikt:rapids-and-rivers:2026091610031789545782"
-sykepengerLibs-logging = "no.nav.sykepenger.libs:logging:20261013.1719"
+sykepengerLibs-logging = "no.nav.sykepenger.libs:logging:20261029.1851"
 tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", version.ref = "tbdLibs" }
 tbdLibs-naisfulTestApp = { module = "com.github.navikt.tbd-libs:naisful-test-app", version.ref = "tbdLibs" }
 tbdLibs-postgresTestdatabaser = { module = "com.github.navikt.tbd-libs:postgres-testdatabaser", version.ref = "tbdLibs" }
