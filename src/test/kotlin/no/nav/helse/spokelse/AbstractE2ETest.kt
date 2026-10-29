@@ -10,6 +10,7 @@ import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.sykepenger.libs.logging.navngittLogger
@@ -46,6 +47,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var gamleUtbetalingerDao: GamleUtbetalingerDao
     protected lateinit var lagreVedtakDao: LagreVedtakDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
+    protected lateinit var gjenståendeSykedagerDao: GjenståendeSykedagerDao
 
     private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
     private val auth by lazy {
@@ -74,6 +76,7 @@ internal abstract class AbstractE2ETest {
         gamleUtbetalingerDao = GamleUtbetalingerDao(::dataSource)
         lagreVedtakDao = LagreVedtakDao(dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
+        gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
     }
 
     @AfterEach
@@ -93,7 +96,7 @@ internal abstract class AbstractE2ETest {
     ) {
         naisfulTestApp(
             testApplicationModule = {
-                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao))
+                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), gjenståendeSykedagerDao)
             },
             objectMapper = jacksonObjectMapper(),
             meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT),
