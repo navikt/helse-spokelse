@@ -2,11 +2,11 @@
 tbdLibs = "20261013.1613"
 # Nyere versjon bruker wiremock-jetty12, som kreves av Jetty 12-BOM-en i sykepenger-pluginen
 tbdLibsSignedJwtIssuerTest = "20261013.1613"
-sykepengerGradlePlugins = "20261026.1611"
+sykepengerGradlePlugins = "20261028.1441"
 
 [libraries]
 awaitility = "org.awaitility:awaitility:4.3.0"
-flyway-database-postgresql = "org.flywaydb:flyway-database-postgresql:13.10.3"
+flyway-database-postgresql = "org.flywaydb:flyway-database-postgresql:13.11.1"
 hikaricp = "com.zaxxer:HikariCP:7.1.0"
 jsonassert = "org.skyscreamer:jsonassert:1.5.3"
 kotliquery = "com.github.seratch:kotliquery:1.9.1"
