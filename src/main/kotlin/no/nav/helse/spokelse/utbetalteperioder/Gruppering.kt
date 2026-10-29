@@ -18,7 +18,7 @@ internal enum class GroupBy {
             val oppløsning =
                 path("oppløsning").takeIf { it.isArray }
                     ?: throw IllegalStateException("oppløsning må settes i requesten. Men kan settes til en tom liste om man kun ønsker utbetalte perioder per person")
-            return oppløsning.values().map { GroupBy.valueOf(it.asText()) }.toSet()
+            return oppløsning.values().map { GroupBy.valueOf(it.asString()) }.toSet()
         }
     }
 }

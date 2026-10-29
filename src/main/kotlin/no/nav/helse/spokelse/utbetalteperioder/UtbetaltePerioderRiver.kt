@@ -30,7 +30,7 @@ internal class UtbetaltePerioderRiver(
         metadata: MessageMetadata,
         meterRegistry: MeterRegistry,
     ) {
-        withMDC("callId" to packet["@id"].asText()) {
+        withMDC("callId" to packet["@id"].asString()) {
             val request = objectMapper.readTree(packet.toJson())
             runBlocking { utbetaltePerioder.hent(request) }
         }

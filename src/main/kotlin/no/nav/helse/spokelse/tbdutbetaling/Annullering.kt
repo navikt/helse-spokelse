@@ -26,8 +26,8 @@ internal data class Annullering(
             return Annullering(
                 fødselsnummer = fødselsnummer,
                 fom = path("fom").asLocalDate(),
-                arbeidsgiverFagsystemId = path("arbeidsgiverFagsystemId").takeUnless { it.isMissingOrNull() }?.asText(),
-                personFagsystemId = path("personFagsystemId").takeUnless { it.isMissingOrNull() }?.asText(),
+                arbeidsgiverFagsystemId = path("arbeidsgiverFagsystemId").takeUnless { it.isMissingOrNull() }?.asString(),
+                personFagsystemId = path("personFagsystemId").takeUnless { it.isMissingOrNull() }?.asString(),
             )
         }
     }

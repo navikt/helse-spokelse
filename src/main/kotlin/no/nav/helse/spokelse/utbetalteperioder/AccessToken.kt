@@ -57,7 +57,7 @@ internal class Azure(
             "Mottok HTTP ${response.status} ved henting av access token for $scope:\n\t${response.bodyAsText()}"
         }
         val json = objectMapper.readTree(response.readBytes())
-        val accessToken = json.path("access_token").asText()
+        val accessToken = json.path("access_token").asString()
         val expiresIn = json.path("expires_in").asLong()
         return accessToken to expiresIn
     }

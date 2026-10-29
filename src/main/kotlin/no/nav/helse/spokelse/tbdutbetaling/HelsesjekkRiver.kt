@@ -53,7 +53,7 @@ internal class HelsesjekkRiver(
         if (!packet.utførHelsesjekk) return
 
         val systemParticipatingServices = packet["system_participating_services"]
-        val ukedag = packet["ukedag"].takeUnless { it.isMissingOrNull() }?.let { DayOfWeek.valueOf(it.asText()) } ?: THURSDAY
+        val ukedag = packet["ukedag"].takeUnless { it.isMissingOrNull() }?.let { DayOfWeek.valueOf(it.asString()) } ?: THURSDAY
 
         try {
             val slackmelding = Helsesjekk(dao, systemParticipatingServices, ukedag).slackmelding() ?: return
@@ -64,7 +64,7 @@ internal class HelsesjekkRiver(
     }
 
     private companion object {
-        private val JsonMessage.utførHelsesjekk get() = get("@opprettet").asLocalDateTime().let { it.hour == 8 && it.minute == 30 } || get("@event_name").asText() == "spokelse_helsesjekk"
+        private val JsonMessage.utførHelsesjekk get() = get("@opprettet").asLocalDateTime().let { it.hour == 8 && it.minute == 30 } || get("@event_name").asString() == "spokelse_helsesjekk"
 
         class Helsesjekk(
             dao: TbdUtbetalingDao,

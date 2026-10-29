@@ -33,11 +33,11 @@ internal class UtbetaltePerioder(
             request
                 .path("personidentifikatorer")
                 .values()
-                .map { Personidentifikator(it.asText()) }
+                .map { Personidentifikator(it.asString()) }
                 .toSet()
                 .takeUnless { it.isEmpty() } ?: throw IllegalArgumentException("Det må sendes med minst én personidentifikator")
-        val fom = LocalDate.parse(request.path("fom").asText())
-        val tom = LocalDate.parse(request.path("tom").asText())
+        val fom = LocalDate.parse(request.path("fom").asString())
+        val tom = LocalDate.parse(request.path("tom").asString())
         check(tom >= fom) { "Ugyldig periode $fom - $tom" }
         val response =
             Gruppering(

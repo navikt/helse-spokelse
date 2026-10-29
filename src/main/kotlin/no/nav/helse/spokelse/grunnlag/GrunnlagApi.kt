@@ -45,13 +45,13 @@ internal fun Route.grunnlagApi(
     post("/grunnlag") {
         val request = objectMapper.readTree(call.receiveText())
         val fødselsnummer =
-            request.path("fodselsnummer").takeUnless { it.isMissingOrNull() }?.asText()
+            request.path("fodselsnummer").takeUnless { it.isMissingOrNull() }?.asString()
                 ?: run {
                     logger.error("/grunnlag Mangler fodselsnummer i request body")
                     return@post call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer request body")
                 }
         val fom =
-            request.path("fom").takeUnless { it.isMissingOrNull() }?.asText()?.let {
+            request.path("fom").takeUnless { it.isMissingOrNull() }?.asString()?.let {
                 it.asLocalDateOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest, "Ugyldig fom request body")
             }
         respond(fødselsnummer, fom)

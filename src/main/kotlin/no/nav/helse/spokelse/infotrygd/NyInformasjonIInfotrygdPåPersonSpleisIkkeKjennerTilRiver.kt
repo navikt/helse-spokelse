@@ -31,6 +31,6 @@ internal class NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver(
         metadata: MessageMetadata,
         meterRegistry: MeterRegistry,
     ) {
-        utbetalingVarsel.nyInformasjonIInfotrygd(packet["fødselsnummer"].asText(), null)
+        utbetalingVarsel.nyInformasjonIInfotrygd(packet["fødselsnummer"].asString(), null)
     }
 }

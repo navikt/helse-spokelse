@@ -50,12 +50,12 @@ internal class Infotrygd(
 
     private fun JsonNode.somPeriode(): SpøkelsePeriode =
         SpøkelsePeriode(
-            personidentifikator = Personidentifikator(path("personidentifikator").asText()),
-            fom = LocalDate.parse(path("fom").asText()),
-            tom = LocalDate.parse(path("tom").asText()),
+            personidentifikator = Personidentifikator(path("personidentifikator").asString()),
+            fom = LocalDate.parse(path("fom").asString()),
+            tom = LocalDate.parse(path("tom").asString()),
             grad = path("grad").asInt(),
-            organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asText(),
-            tags = (path("tags").values().map { it.asText() } + "Infotrygd").toSet(),
+            organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asString(),
+            tags = (path("tags").values().map { it.asString() } + "Infotrygd").toSet(),
         )
 
     private companion object {

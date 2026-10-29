@@ -111,8 +111,8 @@ internal class TbdUtbetalingConsumer(
     ) = loggInfo(
         "Håndterer melding fra $topic",
         "event" to json.event,
-        "fødselsnummer" to json.path("fødselsnummer").asText(),
-        "korrelasjonsId" to json.path("korrelasjonsId").asText(),
+        "fødselsnummer" to json.path("fødselsnummer").asString(),
+        "korrelasjonsId" to json.path("korrelasjonsId").asString(),
         "meldingId" to "$meldingId",
     )
 

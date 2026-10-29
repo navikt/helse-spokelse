@@ -16,8 +16,8 @@ internal class Melding(
     internal companion object {
         internal fun JsonNode.melding(meldingSendt: LocalDateTime) = Melding(this, meldingSendt)
 
-        internal val JsonNode.event get() = path("event").asText()
-        internal val JsonNode.fødselsnummer get() = get("fødselsnummer").asText()
+        internal val JsonNode.event get() = path("event").asString()
+        internal val JsonNode.fødselsnummer get() = get("fødselsnummer").asString()
         internal val JsonNode.erUtbetaling get() = event == "utbetaling_utbetalt"
         internal val JsonNode.erAnnullering get() = event == "utbetaling_annullert"
         internal val JsonNode.erUtbetalingUtenUtbetaling get() = event == "utbetaling_uten_utbetaling"

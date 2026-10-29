@@ -64,7 +64,7 @@ internal data class Utbetaling(
         private fun JsonNode.oppdrag(path: String) =
             path(path).takeUnless { it.isMissingOrNull() || it.path("utbetalingslinjer").isEmpty }?.let {
                 Oppdrag(
-                    fagsystemId = it.path("fagsystemId").asText(),
+                    fagsystemId = it.path("fagsystemId").asString(),
                     utbetalingslinjer = it.path("utbetalingslinjer").values().map { linje -> linje.utbetalingslinje() },
                 )
             }
@@ -72,9 +72,9 @@ internal data class Utbetaling(
         internal fun JsonNode.utbetaling(sistUtbetalt: LocalDateTime): Utbetaling {
             require(erUtbetaling) { "Kan ikke mappe event $event til utbetaling" }
             val arbeidsgiverOppdrag = oppdrag("arbeidsgiverOppdrag")
-            val organisasjonsnummer = path("organisasjonsnummer").asText().takeIf { it.matches("\\d{9}".toRegex()) }
+            val organisasjonsnummer = path("organisasjonsnummer").asString().takeIf { it.matches("\\d{9}".toRegex()) }
             val personOppdrag = oppdrag("personOppdrag")
-            val korrelasjonsId = UUID.fromString(get("korrelasjonsId").asText())
+            val korrelasjonsId = UUID.fromString(get("korrelasjonsId").asString())
             val gjenståendeSykedager = get("gjenståendeSykedager").asInt()
             return Utbetaling(
                 fødselsnummer = fødselsnummer,
