@@ -49,8 +49,8 @@ Konsumenten må også ha tilgang gjennom Nais access policy.
 
 | Metode | Endepunkt | Innhold | Påkrevd rolle |
 |--------|-----------|---------|---------------|
-| POST | `/grunnlag` | Utbetalinger fra Spleis, inkludert eldre utbetalinger, for Foreldrepenger og K9 | `foreldrepenger-les` eller `k9-les` |
-| POST | `/utbetalte-perioder` | Perioder fra Spleis og Infotrygd med valgfri gruppering | `spleiselaget-les` |
+| POST | `/grunnlag` | Utbetalinger fra Spleis, inkludert eldre utbetalinger, for Foreldrepenger og K9, direkte og via Abakus | `foreldrepenger-les` eller `k9-les` |
+| POST | `/utbetalte-perioder` | Perioder fra Spleis og Infotrygd med valgfri gruppering, brukes av [Spapi](https://github.com/navikt/helse-spapi) | `spleiselaget-les` |
 | POST | `/utbetalte-perioder-aap` | Perioder gruppert etter grad, uten tags | `aap-les` |
 | POST | `/utbetalte-perioder-dagpenger` | Perioder gruppert etter grad, uten tags | `dagpenger-les` |
 | POST | `/utbetalte-perioder-personoversikt` | Perioder gruppert etter grad, organisasjonsnummer og kilde, med tags | `personoversikt-les` |
