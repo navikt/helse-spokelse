@@ -9,20 +9,20 @@ import no.nav.sykepenger.libs.logging.loggInfo
 import tools.jackson.databind.JsonNode
 import java.time.LocalDate
 
-internal class UtbetaltePerioder private constructor(
-    private val spleis: Spleis,
-    private val infotrygd: Infotrygd,
+internal class UtbetaltePerioder(
+    config: Map<String, String>,
+    httpClient: HttpClient,
+    tbdUtbetalingApi: TbdUtbetalingApi,
+    gamleUtbetalingerDao: GamleUtbetalingerDao,
 ) {
-    internal constructor(config: Map<String, String>, httpClient: HttpClient, tbdUtbetalingApi: TbdUtbetalingApi, gamleUtbetalingerDao: GamleUtbetalingerDao) : this(
-        spleis = Spleis(tbdUtbetalingApi = tbdUtbetalingApi, gamleUtbetalingerDao = gamleUtbetalingerDao),
-        infotrygd =
-            Infotrygd(
-                httpClient = httpClient,
-                scope = config.hent("INFOTRYGD_SCOPE"),
-                accessToken = Azure(config, httpClient),
-                url = config.hent("INFOTRYGD_URL"),
-            ),
-    )
+    private val spleis = Spleis(tbdUtbetalingApi = tbdUtbetalingApi, gamleUtbetalingerDao = gamleUtbetalingerDao)
+    private val infotrygd =
+        Infotrygd(
+            httpClient = httpClient,
+            scope = config.hent("INFOTRYGD_SCOPE"),
+            accessToken = Azure(config, httpClient),
+            url = config.hent("INFOTRYGD_URL"),
+        )
 
     internal suspend fun hent(
         request: JsonNode,
