@@ -17,6 +17,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import io.prometheus.metrics.model.registry.PrometheusRegistry
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerApi
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
@@ -26,6 +27,8 @@ import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
+import no.nav.helse.spokelse.utbetalteperioder.Azure
+import no.nav.helse.spokelse.utbetalteperioder.Infotrygd
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioderRiver
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
@@ -55,7 +58,26 @@ fun launchApplication(env: Map<String, String>) {
     val aivenFactory = ConsumerProducerFactory(AivenConfig.default)
     val utbetalingVarsel = UtbetalingVarsel(aivenFactory.createProducer())
 
-    val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), gamleUtbetalingerDao)
+    val tbdUtbetalingApi = TbdUtbetalingApi(tbdUtbetalingDao)
+    val infotrygdHttpClient = HttpClient(CIO)
+    val infotrygd =
+        Infotrygd(
+            httpClient = infotrygdHttpClient,
+            scope = env.hent("INFOTRYGD_SCOPE"),
+            accessToken = Azure(env, infotrygdHttpClient),
+            url = env.hent("INFOTRYGD_URL"),
+        )
+    val utbetaltePerioder =
+        UtbetaltePerioder(
+            infotrygd = infotrygd,
+            tbdUtbetalingApi = tbdUtbetalingApi,
+            gamleUtbetalingerDao = gamleUtbetalingerDao,
+        )
+    val gjenståendeSykedager =
+        GjenståendeSykedager(
+            dao = gjenståendeSykedagerDao,
+            infotrygd = infotrygd,
+        )
 
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
@@ -88,7 +110,7 @@ fun launchApplication(env: Map<String, String>) {
                         readyCheck = rapid::isReady,
                         preStopHook = preStopHook::handlePreStopRequest,
                     ) {
-                        spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), gjenståendeSykedagerDao)
+                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager)
                     }
                 }
             },
@@ -117,19 +139,18 @@ internal fun RapidsConnection.registerRivers(
 }
 
 internal fun Application.spokelse(
-    env: Map<String, String>,
     auth: Auth,
     gamleUtbetalingerDao: GamleUtbetalingerDao,
     tbdUtbetalingApi: TbdUtbetalingApi,
-    gjenståendeSykedagerDao: GjenståendeSykedagerDao,
+    utbetaltePerioder: UtbetaltePerioder,
+    gjenståendeSykedager: GjenståendeSykedager,
 ) {
-    val httpClient = HttpClient(CIO)
     azureAdAppAuthentication(auth)
     routing {
         authenticate {
             grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
-            utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, gamleUtbetalingerDao))
-            gjenståendeSykedagerApi(gjenståendeSykedagerDao)
+            utbetaltePerioderApi(utbetaltePerioder)
+            gjenståendeSykedagerApi(gjenståendeSykedager)
         }
     }
 }

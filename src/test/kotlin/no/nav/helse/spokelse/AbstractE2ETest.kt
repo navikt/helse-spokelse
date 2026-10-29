@@ -3,6 +3,10 @@ package no.nav.helse.spokelse
 import com.github.navikt.tbd_libs.naisful.test.naisfulTestApp
 import com.github.navikt.tbd_libs.signed_jwt_issuer_test.Issuer
 import com.github.navikt.tbd_libs.test_support.TestDataSource
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.respondError
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -10,9 +14,13 @@ import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
+import no.nav.helse.spokelse.utbetalteperioder.AccessToken
+import no.nav.helse.spokelse.utbetalteperioder.Infotrygd
+import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.sykepenger.libs.logging.navngittLogger
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.AfterAll
@@ -31,13 +39,23 @@ import javax.sql.DataSource
 
 @TestInstance(PER_CLASS)
 internal abstract class AbstractE2ETest {
-    private val env =
-        mapOf(
-            "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "http://localhost",
-            "AZURE_APP_CLIENT_ID" to "clientId",
-            "AZURE_APP_CLIENT_SECRET" to "secret",
-            "INFOTRYGD_URL" to "http://localhost",
-            "INFOTRYGD_SCOPE" to "api://infotrygd",
+    // Svaret fra den falske Infotrygd. null gir 500.
+    protected var infotrygdsvar: String? = """{"utbetaltePerioder": []}"""
+    private val infotrygd =
+        Infotrygd(
+            httpClient =
+                HttpClient(
+                    MockEngine {
+                        infotrygdsvar?.let { svar -> respond(svar, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json")) }
+                            ?: respondError(HttpStatusCode.InternalServerError)
+                    },
+                ),
+            scope = "api://infotrygd",
+            accessToken =
+                object : AccessToken() {
+                    override suspend fun hentNytt(scope: String) = "token" to 3600L
+                },
+            url = "http://infotrygd",
         )
 
     private lateinit var testDataSource: TestDataSource
@@ -77,6 +95,7 @@ internal abstract class AbstractE2ETest {
         lagreVedtakDao = LagreVedtakDao(dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
+        infotrygdsvar = """{"utbetaltePerioder": []}"""
     }
 
     @AfterEach
@@ -96,7 +115,23 @@ internal abstract class AbstractE2ETest {
     ) {
         naisfulTestApp(
             testApplicationModule = {
-                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), gjenståendeSykedagerDao)
+                val tbdUtbetalingApi = TbdUtbetalingApi(tbdUtbetalingDao)
+                spokelse(
+                    auth = auth,
+                    gamleUtbetalingerDao = gamleUtbetalingerDao,
+                    tbdUtbetalingApi = tbdUtbetalingApi,
+                    utbetaltePerioder =
+                        UtbetaltePerioder(
+                            infotrygd = infotrygd,
+                            tbdUtbetalingApi = tbdUtbetalingApi,
+                            gamleUtbetalingerDao = gamleUtbetalingerDao,
+                        ),
+                    gjenståendeSykedager =
+                        GjenståendeSykedager(
+                            dao = gjenståendeSykedagerDao,
+                            infotrygd = infotrygd,
+                        ),
+                )
             },
             objectMapper = jacksonObjectMapper(),
             meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT),
