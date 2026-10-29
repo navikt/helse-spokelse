@@ -5,6 +5,7 @@ import kotliquery.sessionOf
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 import javax.sql.DataSource
 
 internal data class SisteVedtak(
@@ -33,6 +34,18 @@ internal class GjenståendeSykedagerDao(
                         "kilde" to meldingId,
                     ),
                 ).asUpdate,
+            )
+        }
+    }
+
+    internal fun annuller(
+        meldingId: Long,
+        korrelasjonsId: UUID,
+        sendt: LocalDateTime,
+    ) {
+        sessionOf(dataSource()).use { session ->
+            session.run(
+                queryOf(annuller, mapOf("kilde" to meldingId, "korrelasjonsId" to korrelasjonsId, "sendt" to sendt)).asUpdate,
             )
         }
     }
@@ -68,6 +81,15 @@ internal class GjenståendeSykedagerDao(
                 kilde = excluded.kilde,
                 annullert_kilde = NULL
             WHERE excluded.sendt >= gjenstående_sykedager.sendt
+        """
+
+        // En annullering som er sendt før vedtaket, gjelder en tidligere versjon av vedtaket.
+        @Language("PostgreSQL")
+        private val annuller = """
+            UPDATE gjenstående_sykedager
+            SET annullert_kilde = :kilde
+            WHERE korrelasjons_id = :korrelasjonsId
+            AND sendt < :sendt
         """
 
         @Language("PostgreSQL")
