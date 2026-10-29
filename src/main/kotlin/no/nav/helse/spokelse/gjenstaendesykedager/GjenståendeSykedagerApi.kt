@@ -17,6 +17,7 @@ private val gyldigFødselsnummer = Regex("\\d{11}")
 
 internal enum class Feilkode {
     INGEN_VEDTAK,
+    SISTE_UTBETALING_I_INFOTRYGD,
     UGYLDIG_FORESPØRSEL,
 }
 
@@ -30,7 +31,7 @@ internal data class GjenståendeSykedagerResponse(
     val gjelderTilOgMed: LocalDate,
 )
 
-internal fun Route.gjenståendeSykedagerApi(dao: GjenståendeSykedagerDao) {
+internal fun Route.gjenståendeSykedagerApi(gjenståendeSykedager: GjenståendeSykedager) {
     post("/gjenstaende-sykedager") {
         if (!Tilgangsstyring.harTilgangTilGjenståendeSykedager(call)) return@post call.respond(HttpStatusCode.Forbidden)
 
@@ -38,20 +39,27 @@ internal fun Route.gjenståendeSykedagerApi(dao: GjenståendeSykedagerDao) {
             fødselsnummerFraRequest()
                 ?: return@post respondFeil(HttpStatusCode.BadRequest, Feilkode.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
 
-        val sisteVedtak =
-            dao.sisteVedtak(fødselsnummer)
-                ?: run {
-                    logger.info("Fant ikke vedtak for /gjenstaende-sykedager", "fødselsnummer" to fødselsnummer)
-                    return@post respondFeil(HttpStatusCode.NotFound, Feilkode.INGEN_VEDTAK, "Fant ingen vedtak for personen i ny løsning")
-                }
+        when (val resultat = gjenståendeSykedager.hent(fødselsnummer)) {
+            GjenståendeSykedager.Resultat.IngenVedtak -> {
+                logger.info("Fant ikke vedtak for /gjenstaende-sykedager", "fødselsnummer" to fødselsnummer)
+                respondFeil(HttpStatusCode.NotFound, Feilkode.INGEN_VEDTAK, "Fant ingen vedtak for personen i ny løsning")
+            }
 
-        logger.info(
-            "Svarer på /gjenstaende-sykedager",
-            "fødselsnummer" to fødselsnummer,
-            "gjenståendeSykedager" to sisteVedtak.gjenståendeSykedager.toString(),
-            "gjelderTilOgMed" to sisteVedtak.gjelderTilOgMed.toString(),
-        )
-        call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(sisteVedtak.gjenståendeSykedager, sisteVedtak.gjelderTilOgMed))
+            GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd -> {
+                logger.info("Siste utbetaling er i Infotrygd for /gjenstaende-sykedager", "fødselsnummer" to fødselsnummer)
+                respondFeil(HttpStatusCode.NotFound, Feilkode.SISTE_UTBETALING_I_INFOTRYGD, "Infotrygd har en utbetaling etter siste vedtak i ny løsning")
+            }
+
+            is GjenståendeSykedager.Resultat.Svar -> {
+                logger.info(
+                    "Svarer på /gjenstaende-sykedager",
+                    "fødselsnummer" to fødselsnummer,
+                    "gjenståendeSykedager" to resultat.gjenståendeSykedager.toString(),
+                    "gjelderTilOgMed" to resultat.gjelderTilOgMed.toString(),
+                )
+                call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(resultat.gjenståendeSykedager, resultat.gjelderTilOgMed))
+            }
+        }
     }
 }
 

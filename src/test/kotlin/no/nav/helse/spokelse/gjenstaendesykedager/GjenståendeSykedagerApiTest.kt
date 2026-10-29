@@ -92,6 +92,30 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     }
 
     @Test
+    fun `senere utbetaling i Infotrygd gir 404`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
+        infotrygdsvar = infotrygdperiode(tom = "2023-02-28")
+        assertGjenståendeSykedager(
+            forventetHttpStatus = 404,
+            forventetResponseBody = """{"feilkode": "SISTE_UTBETALING_I_INFOTRYGD", "melding": "Infotrygd har en utbetaling etter siste vedtak i ny løsning"}""",
+        )
+    }
+
+    @Test
+    fun `eldre utbetaling i Infotrygd påvirker ikke svaret`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
+        infotrygdsvar = infotrygdperiode(tom = "2023-01-31")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 221, "gjelderTilOgMed": "2023-01-31"}""")
+    }
+
+    @Test
+    fun `feil fra Infotrygd gir 500`() {
+        lagreVedtak()
+        infotrygdsvar = null
+        assertGjenståendeSykedager(forventetHttpStatus = 500)
+    }
+
+    @Test
     fun `ugyldig fødselsnummer gir 400`() {
         assertGjenståendeSykedager(requestBody = """{"fødselsnummer": "1234"}""", forventetHttpStatus = 400, forventetResponseBody = ugyldigForespørsel)
         assertGjenståendeSykedager(requestBody = """{"fødselsnummer": 12345678911}""", forventetHttpStatus = 400, forventetResponseBody = ugyldigForespørsel)
@@ -148,6 +172,9 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         rolle = rolle,
         app = app,
     )
+
+    private fun infotrygdperiode(tom: String) =
+        """{"utbetaltePerioder": [{"personidentifikator": "$FØDSELSNUMMER", "fom": "2023-01-01", "tom": "$tom", "grad": 100}]}"""
 
     private companion object {
         private const val FØDSELSNUMMER = "12345678911"

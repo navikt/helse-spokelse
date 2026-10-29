@@ -23,6 +23,7 @@ dependencies {
     implementation(libs.kotliquery)
 
     testImplementation(libs.mockk)
+    testImplementation(libs.ktor.client.mock)
 
     testImplementation(libs.awaitility)
 
