@@ -1,8 +1,6 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
-import io.ktor.client.*
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
-import no.nav.helse.spokelse.hent
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy.Companion.groupBy
 import no.nav.sykepenger.libs.logging.loggInfo
@@ -10,18 +8,14 @@ import tools.jackson.databind.JsonNode
 import java.time.LocalDate
 
 internal class UtbetaltePerioder(
-    config: Map<String, String>,
-    httpClient: HttpClient,
+    private val infotrygd: Infotrygd,
     tbdUtbetalingApi: TbdUtbetalingApi,
     gamleUtbetalingerDao: GamleUtbetalingerDao,
 ) {
-    private val spleis = Spleis(tbdUtbetalingApi = tbdUtbetalingApi, gamleUtbetalingerDao = gamleUtbetalingerDao)
-    private val infotrygd =
-        Infotrygd(
-            httpClient = httpClient,
-            scope = config.hent("INFOTRYGD_SCOPE"),
-            accessToken = Azure(config, httpClient),
-            url = config.hent("INFOTRYGD_URL"),
+    private val spleis =
+        Spleis(
+            tbdUtbetalingApi = tbdUtbetalingApi,
+            gamleUtbetalingerDao = gamleUtbetalingerDao,
         )
 
     internal suspend fun hent(

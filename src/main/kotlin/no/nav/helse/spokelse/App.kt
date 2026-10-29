@@ -6,10 +6,13 @@ import com.github.navikt.tbd_libs.naisful.naisApp
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.ktor.client.*
 import io.ktor.client.engine.cio.CIO
+import io.ktor.http.ContentType
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.request.header
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.*
 import io.micrometer.core.instrument.Clock
 import io.micrometer.prometheusmetrics.PrometheusConfig
@@ -17,6 +20,9 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import io.prometheus.metrics.model.registry.PrometheusRegistry
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
+import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerApi
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisKjennerTilRiver
@@ -24,6 +30,8 @@ import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
+import no.nav.helse.spokelse.utbetalteperioder.Azure
+import no.nav.helse.spokelse.utbetalteperioder.Infotrygd
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioderRiver
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
@@ -48,13 +56,33 @@ fun launchApplication(env: Map<String, String>) {
 
     val gamleUtbetalingerDao = GamleUtbetalingerDao(dataSource::dataSource)
     val tbdUtbetalingDao = TbdUtbetalingDao(dataSource::dataSource)
+    val gjenståendeSykedagerDao = GjenståendeSykedagerDao(dataSource::dataSource)
 
     val aivenFactory = ConsumerProducerFactory(AivenConfig.default)
     val utbetalingVarsel = UtbetalingVarsel(aivenFactory.createProducer())
 
-    val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), gamleUtbetalingerDao)
+    val tbdUtbetalingApi = TbdUtbetalingApi(tbdUtbetalingDao)
+    val infotrygdHttpClient = HttpClient(CIO)
+    val infotrygd =
+        Infotrygd(
+            httpClient = infotrygdHttpClient,
+            scope = env.hent("INFOTRYGD_SCOPE"),
+            accessToken = Azure(env, infotrygdHttpClient),
+            url = env.hent("INFOTRYGD_URL"),
+        )
+    val utbetaltePerioder =
+        UtbetaltePerioder(
+            infotrygd = infotrygd,
+            tbdUtbetalingApi = tbdUtbetalingApi,
+            gamleUtbetalingerDao = gamleUtbetalingerDao,
+        )
+    val gjenståendeSykedager =
+        GjenståendeSykedager(
+            dao = gjenståendeSykedagerDao,
+            infotrygd = infotrygd,
+        )
 
-    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
+    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     RapidApplication
         .create(
@@ -85,7 +113,7 @@ fun launchApplication(env: Map<String, String>) {
                         readyCheck = rapid::isReady,
                         preStopHook = preStopHook::handlePreStopRequest,
                     ) {
-                        spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao))
+                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager)
                     }
                 }
             },
@@ -114,17 +142,25 @@ internal fun RapidsConnection.registerRivers(
 }
 
 internal fun Application.spokelse(
-    env: Map<String, String>,
     auth: Auth,
     gamleUtbetalingerDao: GamleUtbetalingerDao,
     tbdUtbetalingApi: TbdUtbetalingApi,
+    utbetaltePerioder: UtbetaltePerioder,
+    gjenståendeSykedager: GjenståendeSykedager,
 ) {
-    val httpClient = HttpClient(CIO)
     azureAdAppAuthentication(auth)
     routing {
+        get("/openapi/gjenstaende-sykedager.yml") {
+            call.respondText(gjenståendeSykedagerOpenApi, ContentType.parse("application/yaml"))
+        }
+        swaggerUI(path = "swagger", swaggerFile = "openapi/gjenstaende-sykedager.yml")
         authenticate {
             grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
-            utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, gamleUtbetalingerDao))
+            utbetaltePerioderApi(utbetaltePerioder)
+            gjenståendeSykedagerApi(gjenståendeSykedager)
         }
     }
 }
+
+private val gjenståendeSykedagerOpenApi =
+    requireNotNull(object {}.javaClass.getResource("/openapi/gjenstaende-sykedager.yml")) { "Fant ikke OpenAPI-specen" }.readText()

@@ -1,6 +1,8 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
+import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.Vedtak.Companion.vedtak
 import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erAnnullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
@@ -31,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class TbdUtbetalingConsumer(
     env: Map<String, String>,
     private val tbdUtbetalingDao: TbdUtbetalingDao,
+    private val gjenståendeSykedagerDao: GjenståendeSykedagerDao,
     private val observers: List<TbdUtbetalingObserver>,
 ) : Runnable,
     RapidsConnection.StatusListener {
@@ -85,6 +88,7 @@ internal class TbdUtbetalingConsumer(
     ) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         logg(json, meldingId)
+        gjenståendeSykedagerDao.lagreVedtak(meldingId, json.vedtak(meldingSendt))
         observers.forEach { it.utbetaling(meldingId, json.utbetaling(meldingSendt)) }
     }
 
@@ -94,6 +98,7 @@ internal class TbdUtbetalingConsumer(
     ) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         logg(json, meldingId)
+        gjenståendeSykedagerDao.annuller(meldingId, UUID.fromString(json.path("korrelasjonsId").asString()), meldingSendt)
         observers.forEach { it.annullering(meldingId, json.annullering()) }
     }
 
@@ -103,6 +108,7 @@ internal class TbdUtbetalingConsumer(
     ) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         logg(json, meldingId)
+        gjenståendeSykedagerDao.lagreVedtak(meldingId, json.vedtak(meldingSendt))
     }
 
     private fun logg(

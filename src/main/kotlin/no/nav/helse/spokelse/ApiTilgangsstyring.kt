@@ -27,6 +27,14 @@ internal object Tilgangsstyring {
         call.håndhevTilgangTil(endepunkt = "grunnlag", enAvRollene = setOf("foreldrepenger-les", "k9-les"))
     }
 
+    internal fun harTilgangTilGjenståendeSykedager(call: ApplicationCall) =
+        try {
+            call.håndhevTilgangTil(endepunkt = "gjenstaende-sykedager", påkrevdRolle = "aap-les")
+            true
+        } catch (_: IllegalStateException) {
+            false
+        }
+
     private val ApplicationCall.applicationId get() =
         this
             .principal<JWTPrincipal>()
