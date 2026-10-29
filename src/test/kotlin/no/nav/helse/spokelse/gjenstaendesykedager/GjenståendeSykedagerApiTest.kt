@@ -49,6 +49,43 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     }
 
     @Test
+    fun `vedtak uten utbetaling kan være siste vedtak`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 10)
+        lagreVedtak(tom = LocalDate.parse("2023-02-28"), gjenståendeSykedager = 0, type = "utbetaling_uten_utbetaling")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 0, "gjelderTilOgMed": "2023-02-28"}""")
+    }
+
+    @Test
+    fun `annullert siste vedtak gjør at forrige vedtak gjelder`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
+        val korrelasjonsId = lagreVedtak(tom = LocalDate.parse("2023-02-28"), gjenståendeSykedager = 200)
+        annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 221, "gjelderTilOgMed": "2023-01-31"}""")
+    }
+
+    @Test
+    fun `annullert eneste vedtak gir 404`() {
+        val korrelasjonsId = lagreVedtak()
+        annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
+        assertGjenståendeSykedager(forventetHttpStatus = 404, forventetResponseBody = ingenVedtak)
+    }
+
+    @Test
+    fun `annullering sendt før vedtaket påvirker det ikke`() {
+        val korrelasjonsId = lagreVedtak(sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
+        annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-01-15T12:00:00"))
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 221, "gjelderTilOgMed": "2023-01-31"}""")
+    }
+
+    @Test
+    fun `ny utbetaling etter annullering gjør vedtaket gyldig igjen`() {
+        val korrelasjonsId = lagreVedtak(sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
+        annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
+        lagreVedtak(korrelasjonsId, gjenståendeSykedager = 210, sendt = LocalDateTime.parse("2023-04-01T12:00:00"))
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 210, "gjelderTilOgMed": "2023-01-31"}""")
+    }
+
+    @Test
     fun `vedtak for andre personer telles ikke med`() {
         lagreVedtak(fødselsnummer = "11987654321")
         assertGjenståendeSykedager(forventetHttpStatus = 404, forventetResponseBody = ingenVedtak)
@@ -82,9 +119,19 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         tom: LocalDate = LocalDate.parse("2023-01-31"),
         gjenståendeSykedager: Int = 221,
         sendt: LocalDateTime = LocalDateTime.parse("2023-02-01T12:00:00"),
-    ) {
-        val meldingId = tbdUtbetalingDao.lagreMelding(Melding("{}", sendt, "utbetaling_utbetalt", fødselsnummer))
+        type: String = "utbetaling_utbetalt",
+    ): UUID {
+        val meldingId = tbdUtbetalingDao.lagreMelding(Melding("{}", sendt, type, fødselsnummer))
         gjenståendeSykedagerDao.lagreVedtak(meldingId, Vedtak(korrelasjonsId, fødselsnummer, tom.withDayOfMonth(1), tom, gjenståendeSykedager, sendt))
+        return korrelasjonsId
+    }
+
+    private fun annuller(
+        korrelasjonsId: UUID,
+        sendt: LocalDateTime,
+    ) {
+        val meldingId = tbdUtbetalingDao.lagreMelding(Melding("{}", sendt, "utbetaling_annullert", FØDSELSNUMMER))
+        gjenståendeSykedagerDao.annuller(meldingId, korrelasjonsId, sendt)
     }
 
     private fun assertGjenståendeSykedager(

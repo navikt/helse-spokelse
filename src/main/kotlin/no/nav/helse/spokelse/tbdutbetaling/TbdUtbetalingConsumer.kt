@@ -86,6 +86,7 @@ internal class TbdUtbetalingConsumer(
     ) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         logg(json, meldingId)
+        gjenståendeSykedagerDao.annuller(meldingId, UUID.fromString(json.path("korrelasjonsId").asText()), meldingSendt)
         observers.forEach { it.annullering(meldingId, json.annullering()) }
     }
 
@@ -95,6 +96,7 @@ internal class TbdUtbetalingConsumer(
     ) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
         logg(json, meldingId)
+        gjenståendeSykedagerDao.lagreVedtak(meldingId, json.vedtak(meldingSendt))
     }
 
     private fun logg(
