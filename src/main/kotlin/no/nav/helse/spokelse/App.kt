@@ -18,6 +18,7 @@ import io.prometheus.metrics.model.registry.PrometheusRegistry
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerApi
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisKjennerTilRiver
@@ -57,8 +58,7 @@ fun launchApplication(env: Map<String, String>) {
 
     val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), gamleUtbetalingerDao)
 
-    val tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
-    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingHåndterer)
+    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     RapidApplication
         .create(
@@ -89,7 +89,7 @@ fun launchApplication(env: Map<String, String>) {
                         readyCheck = rapid::isReady,
                         preStopHook = preStopHook::handlePreStopRequest,
                     ) {
-                        spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao))
+                        spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), gjenståendeSykedagerDao)
                     }
                 }
             },
@@ -122,6 +122,7 @@ internal fun Application.spokelse(
     auth: Auth,
     gamleUtbetalingerDao: GamleUtbetalingerDao,
     tbdUtbetalingApi: TbdUtbetalingApi,
+    gjenståendeSykedagerDao: GjenståendeSykedagerDao,
 ) {
     val httpClient = HttpClient(CIO)
     azureAdAppAuthentication(auth)
@@ -129,6 +130,7 @@ internal fun Application.spokelse(
         authenticate {
             grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
             utbetaltePerioderApi(UtbetaltePerioder(env, httpClient, tbdUtbetalingApi, gamleUtbetalingerDao))
+            gjenståendeSykedagerApi(gjenståendeSykedagerDao)
         }
     }
 }

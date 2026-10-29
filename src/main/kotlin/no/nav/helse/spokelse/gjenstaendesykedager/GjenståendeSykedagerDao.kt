@@ -8,8 +8,8 @@ import java.util.UUID
 import javax.sql.DataSource
 
 internal data class SisteVedtak(
-    val gjenståendeDager: Int,
-    val vurdertTilOgMed: LocalDate,
+    val gjenståendeSykedager: Int,
+    val gjelderTilOgMed: LocalDate,
 )
 
 internal class GjenståendeSykedagerDao(
@@ -88,8 +88,8 @@ internal class GjenståendeSykedagerDao(
                     mapOf("fodselsnummer" to fødselsnummer, "brukVedtakEtter" to brukVedtakEtter),
                 ).map { row ->
                     SisteVedtak(
-                        gjenståendeDager = row.int("gjenstående_sykedager"),
-                        vurdertTilOgMed = row.localDate("tom"),
+                        gjenståendeSykedager = row.int("gjenstående_sykedager"),
+                        gjelderTilOgMed = row.localDate("tom"),
                     )
                 }.asSingle,
             )

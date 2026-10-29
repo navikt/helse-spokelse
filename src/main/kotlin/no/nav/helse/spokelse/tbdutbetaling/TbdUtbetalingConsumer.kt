@@ -1,6 +1,15 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
+import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.Vedtak.Companion.vedtak
+import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erAnnullering
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetalingUtenUtbetaling
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
+import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.melding
+import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.utbetaling
 import no.nav.sykepenger.libs.logging.loggError
 import no.nav.sykepenger.libs.logging.loggInfo
 import org.apache.kafka.clients.CommonClientConfigs
@@ -20,7 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 internal class TbdUtbetalingConsumer(
     env: Map<String, String>,
-    private val håndterer: TbdUtbetalingHåndterer,
+    private val tbdUtbetalingDao: TbdUtbetalingDao,
+    private val gjenståendeSykedagerDao: GjenståendeSykedagerDao,
+    private val observers: List<TbdUtbetalingObserver>,
 ) : Runnable,
     RapidsConnection.StatusListener {
     private val kafkaConsumer = KafkaConsumer(consumerProperties(env), StringDeserializer(), StringDeserializer())
@@ -58,6 +69,44 @@ internal class TbdUtbetalingConsumer(
         konsumerer.set(false)
         kafkaConsumer.wakeup()
     }
+
+    private fun håndterUtbetaling(
+        json: JsonNode,
+        meldingSendt: LocalDateTime,
+    ) {
+        val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
+        logg(json, meldingId)
+        gjenståendeSykedagerDao.lagreVedtak(meldingId, json.vedtak(meldingSendt))
+        observers.forEach { it.utbetaling(meldingId, json.utbetaling(meldingSendt)) }
+    }
+
+    private fun håndteAnnullering(
+        json: JsonNode,
+        meldingSendt: LocalDateTime,
+    ) {
+        val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
+        logg(json, meldingId)
+        observers.forEach { it.annullering(meldingId, json.annullering()) }
+    }
+
+    private fun håndterUtbetalingUtenUtbetaling(
+        json: JsonNode,
+        meldingSendt: LocalDateTime,
+    ) {
+        val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
+        logg(json, meldingId)
+    }
+
+    private fun logg(
+        json: JsonNode,
+        meldingId: Long,
+    ) = loggInfo(
+        "Håndterer melding fra $topic",
+        "event" to json.event,
+        "fødselsnummer" to json.path("fødselsnummer").asString(),
+        "korrelasjonsId" to json.path("korrelasjonsId").asString(),
+        "meldingId" to "$meldingId",
+    )
 
     internal companion object {
         private fun Long.somLocalDateTime() = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDateTime()
