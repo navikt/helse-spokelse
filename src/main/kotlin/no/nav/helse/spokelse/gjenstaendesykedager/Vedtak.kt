@@ -23,7 +23,7 @@ internal data class Vedtak(
             require(erUtbetaling || erUtbetalingUtenUtbetaling) { "Kan ikke mappe event $event til vedtak" }
             require(path("gjenståendeSykedager").isIntegralNumber) { "Mangler gjenståendeSykedager på $event" }
             return Vedtak(
-                korrelasjonsId = UUID.fromString(path("korrelasjonsId").asText()),
+                korrelasjonsId = UUID.fromString(path("korrelasjonsId").asString()),
                 fødselsnummer = fødselsnummer,
                 fom = path("fom").asLocalDate(),
                 tom = path("tom").asLocalDate(),
