@@ -10,14 +10,12 @@ import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somFpVedtak
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somFpVedtak
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import no.nav.sykepenger.libs.logging.navngittLogger
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
-private val logg: Logger = LoggerFactory.getLogger("spokelse")
-private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
+private val logger = navngittLogger("no.nav.helse.spokelse.grunnlag.GrunnlagApi")
 private val objectMapper = jacksonObjectMapper()
 
 private fun String.asLocalDateOrNull() = kotlin.runCatching { LocalDate.parse(this) }.getOrNull()
@@ -37,12 +35,11 @@ internal fun Route.grunnlagApi(
                     val vedtak: List<FpVedtak> = gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, fom).somFpVedtak() + tbdUtbetalingApi.utbetalinger(fødselsnummer, fom, null).somFpVedtak()
                     call.respond(HttpStatusCode.OK, vedtak)
                 } catch (e: Exception) {
-                    logg.error("Feil ved henting av vedtak", e)
-                    sikkerlogg.error("Feil ved henting av vedtak for $fødselsnummer", e)
+                    logger.error("Feil ved henting av vedtak", e, "fødselsnummer" to fødselsnummer)
                     call.respond(HttpStatusCode.InternalServerError, "Feil ved henting av vedtak")
                 }
             }
-        sikkerlogg.info("FP hentet vedtak for $fødselsnummer fra og med $fom ($time ms)")
+        logger.info("Hentet vedtak for /grunnlag ($time ms)", "fødselsnummer" to fødselsnummer, "fom" to fom?.toString())
     }
 
     post("/grunnlag") {
@@ -50,7 +47,7 @@ internal fun Route.grunnlagApi(
         val fødselsnummer =
             request.path("fodselsnummer").takeUnless { it.isMissingOrNull() }?.asText()
                 ?: run {
-                    logg.error("/grunnlag Mangler fodselsnummer i request body")
+                    logger.error("/grunnlag Mangler fodselsnummer i request body")
                     return@post call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer request body")
                 }
         val fom =

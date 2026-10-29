@@ -3,9 +3,9 @@ package no.nav.helse.spokelse
 import no.nav.helse.spokelse.tbdutbetaling.Annullering
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingObserver
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
+import no.nav.sykepenger.libs.logging.loggInfo
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.slf4j.LoggerFactory
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -45,14 +45,15 @@ internal class UtbetalingVarsel(
     ) {
         val melding = lagMelding(personidentifikator, fraOgMed)
         producer.send(ProducerRecord(topic, melding))
-        when (val fom = fraOgMed) {
-            null -> sikkerLogg.info("Sier bø! som følge av en $pga for $personidentifikator:\n$melding")
-            else -> sikkerLogg.info("Sier bø! som følge av en $pga fra og med $fom for $personidentifikator:\n$melding")
-        }
+        loggInfo(
+            "Sier bø! som følge av en $pga",
+            "personidentifikator" to personidentifikator,
+            "fraOgMed" to fraOgMed?.toString(),
+            "melding" to melding,
+        )
     }
 
     private companion object {
-        val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
         val objectmapper = jacksonObjectMapper()
 
         fun lagMelding(

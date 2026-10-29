@@ -16,6 +16,7 @@ ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt" }
 mockk = "io.mockk:mockk:1.14.11"
 postgresql = "org.postgresql:postgresql:42.7.14"
 rapidsAndRivers = "com.github.navikt:rapids-and-rivers:2026091610031789545782"
+sykepengerLibs-logging = "no.nav.sykepenger.libs:logging:20261013.1719"
 tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", version.ref = "tbdLibs" }
 tbdLibs-naisfulTestApp = { module = "com.github.navikt.tbd-libs:naisful-test-app", version.ref = "tbdLibs" }
 tbdLibs-postgresTestdatabaser = { module = "com.github.navikt.tbd-libs:postgres-testdatabaser", version.ref = "tbdLibs" }

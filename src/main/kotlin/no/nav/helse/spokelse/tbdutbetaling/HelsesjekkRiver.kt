@@ -8,7 +8,8 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
-import org.slf4j.LoggerFactory
+import no.nav.sykepenger.libs.logging.loggError
+import no.nav.sykepenger.libs.logging.loggInfo
 import org.slf4j.event.Level
 import org.slf4j.event.Level.ERROR
 import org.slf4j.event.Level.INFO
@@ -58,12 +59,11 @@ internal class HelsesjekkRiver(
             val slackmelding = Helsesjekk(dao, systemParticipatingServices, ukedag).slackmelding() ?: return
             context.publish(slackmelding)
         } catch (throwable: Throwable) {
-            sikkerlogg.error("Feil ved utføring av Spøkelse sin helsesjekk", throwable)
+            loggError("Feil ved utføring av Spøkelse sin helsesjekk", throwable)
         }
     }
 
     private companion object {
-        private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
         private val JsonMessage.utførHelsesjekk get() = get("@opprettet").asLocalDateTime().let { it.hour == 8 && it.minute == 30 } || get("@event_name").asText() == "spokelse_helsesjekk"
 
         class Helsesjekk(
@@ -126,9 +126,9 @@ $oppsummering
                 ).toJson()
                 .also {
                     if (level == ERROR) {
-                        sikkerlogg.error("Kan se ut til at Spøkelse har problemer, sender alarm på slack:\n\t$it")
+                        loggError("Kan se ut til at Spøkelse har problemer, sender alarm på slack", "slackmelding" to it)
                     } else {
-                        sikkerlogg.info("Sender gladmelding på slack:\n\t$it")
+                        loggInfo("Sender gladmelding på slack", "slackmelding" to it)
                     }
                 }
 

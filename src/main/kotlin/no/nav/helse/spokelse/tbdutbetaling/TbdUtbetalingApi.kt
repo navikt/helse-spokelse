@@ -1,6 +1,6 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import org.slf4j.LoggerFactory
+import no.nav.sykepenger.libs.logging.loggInfo
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -14,10 +14,6 @@ internal class TbdUtbetalingApi(
         fom: LocalDate?,
         tom: LocalDate?,
     ) = tbdUtbetalingDao.hentUtbetalinger(fødselsnummer, fom, tom).filter { it.sistUtbetalt > brukUtbetalingerEtter }.also {
-        if (it.isNotEmpty()) sikkerlogg.info("Fant ${it.size} utbetalinger for $fødselsnummer fra tbd.utbetaling.")
-    }
-
-    private companion object {
-        private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
+        if (it.isNotEmpty()) loggInfo("Fant ${it.size} utbetalinger fra tbd.utbetaling", "fødselsnummer" to fødselsnummer)
     }
 }

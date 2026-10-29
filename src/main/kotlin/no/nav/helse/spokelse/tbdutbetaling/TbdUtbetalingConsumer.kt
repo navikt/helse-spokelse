@@ -1,7 +1,6 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
-import net.logstash.logback.argument.StructuredArguments.keyValue
 import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erAnnullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
@@ -9,6 +8,9 @@ import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetalingUtenUtb
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.melding
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.utbetaling
+import no.nav.sykepenger.libs.logging.loggError
+import no.nav.sykepenger.libs.logging.loggInfo
+import no.nav.sykepenger.libs.logging.loggWarn
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -16,7 +18,6 @@ import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.errors.WakeupException
 import org.apache.kafka.common.security.auth.SecurityProtocol
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.slf4j.LoggerFactory
 import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.net.InetAddress
@@ -37,7 +38,7 @@ internal class TbdUtbetalingConsumer(
     private val konsumerer = AtomicBoolean(false)
 
     override fun run() {
-        sikkerlogg.info("Starter konsumering av $topic")
+        loggInfo("Starter konsumering av $topic")
         try {
             kafkaConsumer.subscribe(listOf(topic))
 
@@ -51,7 +52,7 @@ internal class TbdUtbetalingConsumer(
                         json.erAnnullering -> håndteAnnullering(json, meldingSendt)
                         json.erUtbetalingUtenUtbetaling -> håndterUtbetalingUtenUtbetaling(json, meldingSendt)
                         else -> {
-                            sikkerlogg.warn("Uventet event '${json.event}' på $topic. Lagres ikke i spøkelse\n\n$json‘")
+                            loggWarn("Uventet event på $topic. Lagres ikke i spøkelse", "event" to json.event, "melding" to json.toString())
                         }
                     }
                 }
@@ -59,9 +60,9 @@ internal class TbdUtbetalingConsumer(
         } catch (wakeupException: WakeupException) {
             if (konsumerer.get()) throw wakeupException
         } catch (exception: Exception) {
-            sikkerlogg.error("Feil ved håndtering av melding på $topic", exception)
+            loggError("Feil ved håndtering av melding på $topic", exception)
         } finally {
-            sikkerlogg.info("Stopper konsumering av $topic")
+            loggInfo("Stopper konsumering av $topic")
             kafkaConsumer.close()
         }
     }
@@ -83,7 +84,7 @@ internal class TbdUtbetalingConsumer(
         meldingSendt: LocalDateTime,
     ) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
-        json.logg(meldingId)
+        logg(json, meldingId)
         observers.forEach { it.utbetaling(meldingId, json.utbetaling(meldingSendt)) }
     }
 
@@ -92,7 +93,7 @@ internal class TbdUtbetalingConsumer(
         meldingSendt: LocalDateTime,
     ) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
-        json.logg(meldingId)
+        logg(json, meldingId)
         observers.forEach { it.annullering(meldingId, json.annullering()) }
     }
 
@@ -101,21 +102,21 @@ internal class TbdUtbetalingConsumer(
         meldingSendt: LocalDateTime,
     ) {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
-        json.logg(meldingId)
+        logg(json, meldingId)
     }
 
+    private fun logg(
+        json: JsonNode,
+        meldingId: Long,
+    ) = loggInfo(
+        "Håndterer melding fra $topic",
+        "event" to json.event,
+        "fødselsnummer" to json.path("fødselsnummer").asText(),
+        "korrelasjonsId" to json.path("korrelasjonsId").asText(),
+        "meldingId" to "$meldingId",
+    )
+
     internal companion object {
-        private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
-
-        private fun JsonNode.logg(meldingId: Long) =
-            sikkerlogg.info(
-                "Håndterer {}, {}, {}, {}",
-                keyValue("event", event),
-                keyValue("fødselsnummer", path("fødselsnummer").asText()),
-                keyValue("korrelasjonsId", path("korrelasjonsId").asText()),
-                keyValue("meldingId", "$meldingId"),
-            )
-
         private fun Long.somLocalDateTime() = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDateTime()
 
         private val jackson = jacksonObjectMapper()

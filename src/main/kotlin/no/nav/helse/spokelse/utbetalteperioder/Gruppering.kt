@@ -2,7 +2,7 @@ package no.nav.helse.spokelse.utbetalteperioder
 
 import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
 import no.nav.helse.spokelse.utbetalteperioder.Grupperingsnøkkel.Companion.grupperingsnøkkel
-import org.slf4j.LoggerFactory
+import no.nav.sykepenger.libs.logging.loggInfo
 import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 
@@ -120,11 +120,10 @@ internal class Gruppering(
 
     private fun loggRådataFørGruppering() {
         val rådata = (infotrygd + spleis).json()
-        sikkerlogg.info("/utbetalte-perioder:\nRådata:\n\t$rådata")
+        loggInfo("/utbetalte-perioder: rådata før gruppering", "rådata" to rådata)
     }
 
     private companion object {
         private val objectMapper = jacksonObjectMapper()
-        private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
     }
 }

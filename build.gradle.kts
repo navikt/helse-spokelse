@@ -10,6 +10,7 @@ sykepengerDeployable {
 dependencies {
     implementation(libs.rapidsAndRivers)
     implementation(libs.tbdLibs.naisfulApp)
+    implementation(libs.sykepengerLibs.logging)
     implementation(libs.ktor.server.auth.jwt) {
         exclude(group = "junit")
     }

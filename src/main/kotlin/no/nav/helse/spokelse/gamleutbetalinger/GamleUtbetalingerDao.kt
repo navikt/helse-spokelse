@@ -5,8 +5,8 @@ import kotliquery.sessionOf
 import no.nav.helse.spokelse.tbdutbetaling.Annullering
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingObserver
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
+import no.nav.sykepenger.libs.logging.loggInfo
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import javax.sql.DataSource
 import kotlin.time.measureTimedValue
@@ -15,8 +15,6 @@ internal class GamleUtbetalingerDao(
     private val dataSource: () -> DataSource,
 ) : TbdUtbetalingObserver {
     internal companion object {
-        private val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
-
         private val harDataFraOgMed = LocalDate.parse("2019-10-25")
         private val harDataTilOgMed = LocalDate.parse("2022-03-16")
 
@@ -118,7 +116,7 @@ internal class GamleUtbetalingerDao(
                     )
                 }
             }
-        sikkerLogg.info("Oppslag mot gamle utbetalinger tok ${duration.inWholeMilliseconds}ms")
+        loggInfo("Oppslag mot gamle utbetalinger tok ${duration.inWholeMilliseconds}ms")
         return perioder
     }
 
@@ -138,7 +136,7 @@ internal class GamleUtbetalingerDao(
 
         sessionOf(dataSource()).use { session ->
             listOfNotNull(annullering.arbeidsgiverFagsystemId, annullering.personFagsystemId).forEach { fagsystemId ->
-                sikkerLogg.info("Lagrer annullering av fagsystemId $fagsystemId i tabellen alle_annulleringer")
+                loggInfo("Lagrer annullering i tabellen alle_annulleringer", "fagsystemId" to fagsystemId)
                 session.run(queryOf(sql, mapOf("fagsystem_id" to fagsystemId)).asExecute)
             }
         }

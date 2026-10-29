@@ -6,7 +6,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.OK
 import no.nav.helse.spokelse.hent
-import org.slf4j.LoggerFactory
+import no.nav.sykepenger.libs.logging.loggInfo
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import java.time.LocalDateTime
@@ -28,12 +28,8 @@ abstract class AccessToken(
         val (accessToken, expiresIn) = hentNytt(scope)
         val expires = now().plusSeconds(expiresIn).minus(leeway)
         cache[scope] = accessToken to expires
-        logger.info("Hentet nytt access token for $scope som brukes frem til $expires")
+        loggInfo("Hentet nytt access token for $scope som brukes frem til $expires")
         return accessToken
-    }
-
-    private companion object {
-        private val logger = LoggerFactory.getLogger(AccessToken::class.java)
     }
 }
 

@@ -12,6 +12,7 @@ import kotlinx.coroutines.runBlocking
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
+import no.nav.sykepenger.libs.logging.navngittLogger
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
@@ -21,7 +22,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.skyscreamer.jsonassert.JSONAssert
-import org.slf4j.LoggerFactory
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import java.time.LocalDate
@@ -121,13 +121,13 @@ internal abstract class AbstractE2ETest {
                         }
                     }
                 val body = runBlocking { response.bodyAsText() }
-                logg.info("fikk <{}> tilbake fra /{}", body, path)
+                logg.info("Fikk svar tilbake fra /$path", "body" to body)
                 assertEquals(HttpStatusCode.fromValue(forventetHttpStatus), response.status)
                 forventetResponseBody?.let {
                     try {
                         JSONAssert.assertEquals(it, body, true)
                     } catch (err: AssertionError) {
-                        logg.info("<{}> er ikke som forventet <{}>", body, it, err)
+                        logg.info("Svaret er ikke som forventet", err, "body" to body, "forventet" to it)
                         throw err
                     }
                 }
@@ -147,7 +147,7 @@ internal abstract class AbstractE2ETest {
     }
 
     internal companion object {
-        private val logg = LoggerFactory.getLogger(AbstractE2ETest::class.java)
+        private val logg = navngittLogger(AbstractE2ETest::class.java.name)
 
         internal fun oppdrag(
             fødselsnummer: String,

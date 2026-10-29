@@ -2,15 +2,11 @@ package no.nav.helse.spokelse
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import no.nav.sykepenger.libs.logging.loggInfo
 import org.flywaydb.core.Flyway
-import org.slf4j.LoggerFactory
 import java.time.Duration
 
 internal class DataSourceBuilder {
-    private companion object {
-        private val logger = LoggerFactory.getLogger(DataSourceBuilder::class.java)
-    }
-
     private val databaseHost: String = requireNotNull(System.getenv("DATABASE_HOST")) { "host må settes" }
     private val databasePort: String = requireNotNull(System.getenv("DATABASE_PORT")) { "port må settes" }
     private val databaseName: String = requireNotNull(System.getenv("DATABASE_DATABASE")) { "databasenavn må settes" }
@@ -32,7 +28,7 @@ internal class DataSourceBuilder {
     internal val dataSource by lazy { HikariDataSource(hikariConfig) }
 
     fun migrate() {
-        logger.info("Migrerer database")
+        loggInfo("Migrerer database")
         HikariDataSource(
             HikariConfig().apply {
                 jdbcUrl = dbUrl
@@ -49,6 +45,6 @@ internal class DataSourceBuilder {
                 .load()
                 .migrate()
         }
-        logger.info("Migrering ferdig!")
+        loggInfo("Migrering ferdig!")
     }
 }

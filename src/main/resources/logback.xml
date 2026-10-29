@@ -1,28 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
-    </appender>
-
-    <appender name="team-logs" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-        <destination>team-logs.nais-system:5170</destination>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"google_cloud_project":"${GOOGLE_CLOUD_PROJECT}","nais_namespace_name":"${NAIS_NAMESPACE}","nais_pod_name":"${HOSTNAME}","nais_container_name":"${NAIS_APP_NAME}"}</customFields>
-            <includeContext>false</includeContext>
-        </encoder>
-    </appender>
-
-    <logger name="tjenestekall" level="DEBUG" additivity="false">
-        <appender-ref ref="team-logs"/>
-    </logger>
+    <property name="TJENESTEKALL_LEVEL" value="DEBUG"/>
+    <include resource="no/nav/sykepenger/libs/logging/logback-base.xml"/>
 
     <logger name="io.ktor.auth.jwt" level="TRACE" additivity="false">
         <appender-ref ref="team-logs"/>
     </logger>
 
-    <logger name="no.nav" level="DEBUG" />
-
-    <root level="INFO">
-        <appender-ref ref="STDOUT_JSON"/>
-    </root>
+    <logger name="no.nav" level="DEBUG"/>
 </configuration>

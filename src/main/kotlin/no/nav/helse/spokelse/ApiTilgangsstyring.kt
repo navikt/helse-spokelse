@@ -3,7 +3,8 @@ package no.nav.helse.spokelse
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import org.slf4j.LoggerFactory
+import no.nav.sykepenger.libs.logging.loggError
+import no.nav.sykepenger.libs.logging.loggInfo
 
 internal object Tilgangsstyring {
     internal fun utbetaltePerioder(call: ApplicationCall) {
@@ -46,8 +47,6 @@ internal object Tilgangsstyring {
             ?.getListClaim("roles", String::class)
             ?: emptyList()
 
-    private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
-
     private fun ApplicationCall.håndhevTilgangTil(
         endepunkt: String,
         enAvRollene: Set<String>,
@@ -55,11 +54,23 @@ internal object Tilgangsstyring {
         val rolle =
             enAvRollene.firstOrNull { it in roles } ?: run {
                 val feilmelding = "Applikasjonen $applicationName ($applicationId) har ikke tilgang til /$endepunkt - Må ha en av rollene $enAvRollene, har bare $roles"
-                sikkerlogg.error(feilmelding)
+                loggError(
+                    "Applikasjon mangler rolle for endepunkt",
+                    "endepunkt" to "/$endepunkt",
+                    "applicationName" to applicationName,
+                    "applicationId" to applicationId,
+                    "påkrevdeRoller" to enAvRollene.toString(),
+                    "roller" to roles.toString(),
+                )
                 throw IllegalStateException(feilmelding)
             }
 
-        sikkerlogg.info("Håndterer request til /$endepunkt fra $applicationName ($applicationId) som har rolle $rolle")
+        loggInfo(
+            "Håndterer request til /$endepunkt",
+            "applicationName" to applicationName,
+            "applicationId" to applicationId,
+            "rolle" to rolle,
+        )
     }
 
     private fun ApplicationCall.håndhevTilgangTil(
