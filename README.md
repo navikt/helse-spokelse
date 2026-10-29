@@ -1,6 +1,6 @@
 # Spøkelse
 
-Spøkelse deler informasjon om utbetalte sykepengeperioder fra Spleis og Infotrygd gjennom et HTTP-API.
+Spøkelse deler informasjon om utbetalte sykepengeperioder og gjenstående sykedager fra Spleis og Infotrygd gjennom et HTTP-API.
 
 [![Bygg, test og deploy](https://github.com/navikt/helse-spokelse/actions/workflows/main.yml/badge.svg)](https://github.com/navikt/helse-spokelse/actions/workflows/main.yml)
 
@@ -24,12 +24,12 @@ Azure AD-konfigurasjon og tilgang til Infotrygd-API-et. Se [konfigurasjon](#konf
 
 ## Dataflyt
 
-Spøkelse lagrer utbetalinger og annulleringer fra Spleis i egen database. Ved forespørsler om utbetalte perioder
+Spøkelse lagrer utbetalinger, vedtak uten utbetaling og annulleringer fra Spleis i egen database. Ved forespørsler om utbetalte perioder
 kombinerer den disse med eldre Spleis-utbetalinger og perioder hentet fra Infotrygd.
 
 ```mermaid
 flowchart LR
-    utbetaling["tbd.utbetaling"] -->|Utbetalinger og annulleringer| spokelse["Spøkelse"]
+    utbetaling["tbd.utbetaling"] -->|Utbetalinger, vedtak uten utbetaling og annulleringer| spokelse["Spøkelse"]
     spokelse -->|Lagrer og leser Spleis-data| database[("PostgreSQL")]
     spokelse -->|Henter Infotrygd-perioder via HTTP| infotrygd["sparkel-sykepengeperioder-api"]
     konsument["API-konsument"] -->|HTTP-forespørsel| spokelse
@@ -56,10 +56,24 @@ Konsumenten må også ha tilgang gjennom Nais access policy.
 | POST | `/utbetalte-perioder-aap` | Perioder gruppert etter grad, uten tags | `aap-les` |
 | POST | `/utbetalte-perioder-dagpenger` | Perioder gruppert etter grad, uten tags | `dagpenger-les` |
 | POST | `/utbetalte-perioder-personoversikt` | Perioder gruppert etter grad, organisasjonsnummer og kilde, med tags | `personoversikt-les` |
+| POST | `/gjenstaende-sykedager` | Gjenstående sykedager fra siste vedtak i Spleis | `aap-les` |
 
 Se [rutene for utbetalte perioder](src/main/kotlin/no/nav/helse/spokelse/utbetalteperioder/UtbetaltePerioderApi.kt),
 [grupperingsreglene](src/main/kotlin/no/nav/helse/spokelse/utbetalteperioder/Gruppering.kt) og
 [ruten for grunnlag](src/main/kotlin/no/nav/helse/spokelse/grunnlag/GrunnlagApi.kt) for request- og response-format.
+
+### Gjenstående sykedager
+
+`/gjenstaende-sykedager` tar imot `{"fødselsnummer": "<11 siffer>"}` og svarer med antall gjenstående sykedager
+og datoen tallet gjelder til og med. Tallet gjelder per siste vedtak, ikke per i dag. Hvis Infotrygd har en utbetaling
+etter siste vedtak, svarer endepunktet `404` med feilkoden `SISTE_UTBETALING_I_INFOTRYGD`.
+
+OpenAPI-specen ligger på `/openapi/gjenstaende-sykedager.yml`, og Swagger UI på `/swagger`. Begge er åpne uten token:
+[dev](https://spokelse.intern.dev.nav.no/swagger) og [prod](https://spokelse.intern.nav.no/swagger).
+Specen beskriver svarkodene, feilkodene og hva tallet ikke tar hensyn til.
+
+Vedtakene lagres i tabellen `gjenstående_sykedager`. Vedtak fra før endepunktet kom, er fylt inn fra råmeldingene
+i `tbdUtbetaling_Melding` med migreringen `V20`.
 
 ## Konfigurasjon
 
