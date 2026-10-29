@@ -15,6 +15,7 @@ dependencies {
         exclude(group = "junit")
     }
 
+    implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
     implementation(libs.postgresql)
