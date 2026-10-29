@@ -1,0 +1,123 @@
+openapi: 3.0.3
+info:
+  title: Spøkelse – gjenstående sykedager
+  version: 1.0.0
+  description: |
+    Gir antall gjenstående sykedager for en person, slik det står i siste vedtak i ny løsning for sykepenger (Speil).
+
+    **Tallet gjelder per siste vedtak, ikke per i dag.** `gjelderTilOgMed` er siste dag i perioden vedtaket gjelder for.
+    Har personen hatt sykepenger etter denne datoen, er det ikke fanget opp i tallet.
+
+    Tallet tar ikke hensyn til:
+    - ny rett til sykepenger etter 26 uker uten sykepenger
+    - at sykedager som er eldre enn tre år, faller bort
+    - sykdom som ikke er behandlet ennå
+    - at graderte dager teller som hele dager, så personen kan ha brukt opp færre dager enn det ser ut som
+
+    Siste vedtak er vedtaket med senest `gjelderTilOgMed`. Det kan være et vedtak med eller uten utbetaling.
+    Et annullert vedtak regnes ikke med, og da gjelder forrige vedtak.
+
+    **Kjent begrensning:** Hvis et vedtak uten utbetaling er annullert, fanges ikke annulleringen opp,
+    og svaret kan fortsatt bygge på det annullerte vedtaket.
+
+    Vedtak fra før 16. mars 2022 og vedtak i Infotrygd er ikke med.
+servers:
+  - url: https://spokelse.intern.dev.nav.no
+    description: dev
+  - url: https://spokelse.intern.nav.no
+    description: prod
+paths:
+  /gjenstaende-sykedager:
+    post:
+      summary: Hent gjenstående sykedager fra siste vedtak
+      security:
+        - azureAd: []
+      description: Krever et Azure AD-token med rollen `aap-les`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Request'
+            example:
+              fødselsnummer: "12345678911"
+      responses:
+        '200':
+          description: Personen har et siste vedtak, og Infotrygd har ingen utbetaling etter det.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GjenståendeSykedager'
+              example:
+                gjenståendeSykedager: 112
+                gjelderTilOgMed: "2026-09-30"
+        '400':
+          description: Ugyldig request. Body mangler, er ikke JSON, eller `fødselsnummer` er ikke en streng på 11 siffer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feil'
+              example:
+                feilkode: UGYLDIG_FORESPØRSEL
+                melding: Forventer en body med fødselsnummer på 11 siffer
+        '401':
+          description: Mangler gyldig token.
+        '403':
+          description: Tokenet mangler rollen `aap-les`.
+        '404':
+          description: |
+            Fant ikke et tall å svare med. `feilkode` sier hvorfor:
+            - `INGEN_VEDTAK`: Personen har ingen vedtak i ny løsning. Personen er ukjent, har bare saker under behandling, eller har bare vedtak fra før 16. mars 2022.
+            - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling som slutter etter siste vedtak i ny løsning. Gjenstående sykedager må hentes fra Infotrygd.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feil'
+              examples:
+                ingenVedtak:
+                  summary: Ingen vedtak i ny løsning
+                  value:
+                    feilkode: INGEN_VEDTAK
+                    melding: Fant ingen vedtak for personen i ny løsning
+                sisteUtbetalingIInfotrygd:
+                  summary: Siste utbetaling er i Infotrygd
+                  value:
+                    feilkode: SISTE_UTBETALING_I_INFOTRYGD
+                    melding: Infotrygd har en utbetaling etter siste vedtak i ny løsning
+        '500':
+          description: Uventet feil, for eksempel at oppslaget mot Infotrygd feilet. Prøv igjen senere.
+components:
+  securitySchemes:
+    azureAd:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Request:
+      type: object
+      required: [fødselsnummer]
+      properties:
+        fødselsnummer:
+          type: string
+          pattern: '^\d{11}$'
+    GjenståendeSykedager:
+      type: object
+      required: [gjenståendeSykedager, gjelderTilOgMed]
+      properties:
+        gjenståendeSykedager:
+          type: integer
+          description: Antall gjenstående sykedager per `gjelderTilOgMed`.
+        gjelderTilOgMed:
+          type: string
+          format: date
+          description: Siste dag i perioden siste vedtak gjelder for.
+    Feil:
+      type: object
+      required: [feilkode, melding]
+      properties:
+        feilkode:
+          type: string
+          enum: [INGEN_VEDTAK, SISTE_UTBETALING_I_INFOTRYGD, UGYLDIG_FORESPØRSEL]
+        melding:
+          type: string
+          description: Forklaring for mennesker. Ikke bruk den til å styre logikk.
