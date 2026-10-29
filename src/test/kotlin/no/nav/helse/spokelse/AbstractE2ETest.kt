@@ -49,7 +49,6 @@ internal abstract class AbstractE2ETest {
     protected lateinit var lagreVedtakDao: LagreVedtakDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
     protected lateinit var gjenståendeSykedagerDao: GjenståendeSykedagerDao
-    protected lateinit var tbdUtbetalingHåndterer: TbdUtbetalingHåndterer
 
     private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
     private val auth by lazy {
@@ -79,7 +78,6 @@ internal abstract class AbstractE2ETest {
         lagreVedtakDao = LagreVedtakDao(dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
-        tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
     }
 
     @AfterEach
@@ -99,7 +97,7 @@ internal abstract class AbstractE2ETest {
     ) {
         naisfulTestApp(
             testApplicationModule = {
-                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao))
+                spokelse(env, auth, gamleUtbetalingerDao, TbdUtbetalingApi(tbdUtbetalingDao), gjenståendeSykedagerDao)
             },
             objectMapper = jacksonObjectMapper(),
             meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT),
