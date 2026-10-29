@@ -39,8 +39,10 @@ flowchart LR
 Spøkelse lytter også på `tbd.rapid.v1`, blant annet etter varsler om nye opplysninger i Infotrygd.
 Den publiserer endringsvarsler på `tbd.boo` ved utbetalinger, annulleringer og nye Infotrygd-opplysninger.
 
-Eldre Spleis-utbetalinger kommer fra tiden før overgangen til `tbd.utbetaling` i oktober 2022.
-De brukes fortsatt ved oppslag. Se [eldre utbetalinger](src/main/kotlin/no/nav/helse/spokelse/gamleutbetalinger/README.md).
+Eldre Spleis-utbetalinger kommer fra tiden før overgangen til `tbd.utbetaling` i oktober 2022. Før det leste
+Spøkelse fra den interne rapiden. Disse utbetalingene får ikke nye data, men brukes fortsatt ved oppslag.
+Annulleringer av eldre utbetalinger lagres i tabellen `alle_annulleringer`. Den har alle annulleringene fra
+den interne rapiden, og nye annulleringer fra `tbd.utbetaling` legges også inn der.
 
 ## API og tilgang
 
