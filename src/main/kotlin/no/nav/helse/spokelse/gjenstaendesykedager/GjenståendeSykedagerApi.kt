@@ -65,7 +65,7 @@ internal fun Route.gjenståendeSykedagerApi(gjenståendeSykedager: GjenståendeS
 
 private suspend fun RoutingContext.personidentifikatorFraRequest(): Personidentifikator? {
     val body = runCatching { objectMapper.readTree(call.receiveText()) }.getOrNull() ?: return null
-    val fødselsnummer = body.path("fødselsnummer").takeIf { it.isString }?.asText() ?: return null
+    val fødselsnummer = body.path("fødselsnummer").takeIf { it.isString }?.asString() ?: return null
     return runCatching { Personidentifikator(fødselsnummer) }.getOrNull()
 }
 
