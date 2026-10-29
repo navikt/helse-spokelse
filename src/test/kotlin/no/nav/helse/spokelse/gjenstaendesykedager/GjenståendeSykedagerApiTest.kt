@@ -137,6 +137,12 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         assertGjenståendeSykedager(rolle = null, app = null, forventetHttpStatus = 401)
     }
 
+    @Test
+    fun `OpenAPI-specen og Swagger UI er tilgjengelig uten token`() {
+        assertApiRequest(path = "openapi/gjenstaende-sykedager.yml", httpMethod = "GET", rolle = null, app = null)
+        assertApiRequest(path = "swagger", httpMethod = "GET", rolle = null, app = null)
+    }
+
     private fun lagreVedtak(
         korrelasjonsId: UUID = UUID.randomUUID(),
         fødselsnummer: String = FØDSELSNUMMER,
