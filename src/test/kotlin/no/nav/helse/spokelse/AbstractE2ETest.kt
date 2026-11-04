@@ -10,6 +10,7 @@ import io.ktor.client.engine.mock.respondError
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.http.content.TextContent
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
@@ -40,15 +41,23 @@ import javax.sql.DataSource
 
 @TestInstance(PER_CLASS)
 internal abstract class AbstractE2ETest {
-    // Svaret fra den falske Infotrygd. null gir 500.
-    protected var infotrygdsvar: String? = """{"utbetaltePerioder": []}"""
+    // Utbetalte perioder i den falske Infotrygd. Som i sparkel svarer den bare med perioder som overlapper fom-tom i requesten. null gir 500.
+    protected var infotrygdperioder: List<ClosedRange<LocalDate>>? = emptyList()
     private val infotrygd =
         Infotrygd(
             httpClient =
                 HttpClient(
-                    MockEngine {
-                        infotrygdsvar?.let { svar -> respond(svar, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json")) }
-                            ?: respondError(HttpStatusCode.InternalServerError)
+                    MockEngine { request ->
+                        val perioder = infotrygdperioder ?: return@MockEngine respondError(HttpStatusCode.InternalServerError)
+                        val body = jacksonObjectMapper().readTree((request.body as TextContent).text)
+                        val fom = LocalDate.parse(body.path("fom").asString())
+                        val tom = LocalDate.parse(body.path("tom").asString())
+                        val personidentifikator = body.path("personidentifikatorer").first().asString()
+                        val utbetaltePerioder =
+                            perioder
+                                .filter { it.start <= tom && it.endInclusive >= fom }
+                                .joinToString { """{"personidentifikator": "$personidentifikator", "fom": "${it.start}", "tom": "${it.endInclusive}", "grad": 100}""" }
+                        respond("""{"utbetaltePerioder": [$utbetaltePerioder]}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
                     },
                 ),
             scope = "api://infotrygd",
@@ -98,7 +107,7 @@ internal abstract class AbstractE2ETest {
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
         tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
-        infotrygdsvar = """{"utbetaltePerioder": []}"""
+        infotrygdperioder = emptyList()
     }
 
     @AfterEach

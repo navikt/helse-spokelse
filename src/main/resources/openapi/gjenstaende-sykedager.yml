@@ -8,10 +8,11 @@ info:
     Alle utfall av oppslaget gir `200` med feltet `status`:
     - `VEDTAK_I_NY_LØSNING`: Personen har et siste vedtak i ny løsning, og Infotrygd har ingen utbetaling etter det.
       Bare da er `gjenståendeDager` og `vurdertTilOgMed` med.
-    - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling som slutter etter siste vedtak i ny løsning.
+    - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling som slutter etter siste vedtak i ny løsning,
+      eller personen har ingen vedtak i ny løsning, men har utbetalinger i Infotrygd (også gamle).
       Hent gjenstående sykedager fra Infotrygd.
-    - `INGEN_VEDTAK`: Vi fant ingen vedtak for personen i ny løsning. Det betyr **ikke** at personen aldri har hatt sykepenger.
-      Vedtak fra før 16. mars 2022 og annullerte vedtak er ikke med, og vedtak i Infotrygd sjekkes ikke.
+    - `INGEN_VEDTAK`: Vi fant ingen vedtak for personen i ny løsning og ingen utbetalinger i Infotrygd.
+      Det betyr **ikke** at personen aldri har hatt sykepenger. Vedtak fra før 16. mars 2022 og annullerte vedtak er ikke med.
 
     Svaret bygger bare på fattede vedtak. Sykdom som er under behandling, er ikke med.
 
@@ -64,11 +65,11 @@ paths:
                     gjenståendeDager: 112
                     vurdertTilOgMed: "2026-09-30"
                 sisteUtbetalingIInfotrygd:
-                  summary: Infotrygd har utbetalt etter siste vedtak
+                  summary: Infotrygd har utbetalt etter siste vedtak, eller personen har bare utbetalinger i Infotrygd
                   value:
                     status: SISTE_UTBETALING_I_INFOTRYGD
                 ingenVedtak:
-                  summary: Ingen vedtak i ny løsning
+                  summary: Ingen vedtak i ny løsning og ingen utbetalinger i Infotrygd
                   value:
                     status: INGEN_VEDTAK
         '400':
