@@ -60,30 +60,31 @@ internal fun Route.gjenståendeSykedagerApi(
                 throw exception
             }
 
-        when (resultat) {
-            GjenståendeSykedager.Resultat.IngenVedtak -> {
-                logger.info("Fant ikke vedtak for /gjenstaende-sykedager", "fødselsnummer" to personidentifikator.toString())
-                tellUtfall(Status.INGEN_VEDTAK.name)
-                call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(Status.INGEN_VEDTAK))
+        val response =
+            when (resultat) {
+                GjenståendeSykedager.Resultat.IngenVedtak -> {
+                    logger.info("Fant ikke vedtak for /gjenstaende-sykedager", "fødselsnummer" to personidentifikator.toString())
+                    GjenståendeSykedagerResponse(Status.INGEN_VEDTAK)
+                }
+
+                GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd -> {
+                    logger.info("Siste utbetaling er i Infotrygd for /gjenstaende-sykedager", "fødselsnummer" to personidentifikator.toString())
+                    GjenståendeSykedagerResponse(Status.SISTE_UTBETALING_I_INFOTRYGD)
+                }
+
+                is GjenståendeSykedager.Resultat.VedtakINyLøsning -> {
+                    logger.info(
+                        "Svarer på /gjenstaende-sykedager",
+                        "fødselsnummer" to personidentifikator.toString(),
+                        "gjenståendeDager" to resultat.gjenståendeDager.toString(),
+                        "vurdertTilOgMed" to resultat.vurdertTilOgMed.toString(),
+                    )
+                    GjenståendeSykedagerResponse(Status.VEDTAK_I_NY_LØSNING, resultat.gjenståendeDager, resultat.vurdertTilOgMed)
+                }
             }
 
-            GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd -> {
-                logger.info("Siste utbetaling er i Infotrygd for /gjenstaende-sykedager", "fødselsnummer" to personidentifikator.toString())
-                tellUtfall(Status.SISTE_UTBETALING_I_INFOTRYGD.name)
-                call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(Status.SISTE_UTBETALING_I_INFOTRYGD))
-            }
-
-            is GjenståendeSykedager.Resultat.VedtakINyLøsning -> {
-                logger.info(
-                    "Svarer på /gjenstaende-sykedager",
-                    "fødselsnummer" to personidentifikator.toString(),
-                    "gjenståendeDager" to resultat.gjenståendeDager.toString(),
-                    "vurdertTilOgMed" to resultat.vurdertTilOgMed.toString(),
-                )
-                tellUtfall(Status.VEDTAK_I_NY_LØSNING.name)
-                call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(Status.VEDTAK_I_NY_LØSNING, resultat.gjenståendeDager, resultat.vurdertTilOgMed))
-            }
-        }
+        tellUtfall(response.status.name)
+        call.respond(HttpStatusCode.OK, response)
     }
 }
 
