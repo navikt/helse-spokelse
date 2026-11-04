@@ -1,16 +1,8 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
-import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
-import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erAnnullering
-import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
-import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetalingUtenUtbetaling
-import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
-import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.melding
-import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.utbetaling
 import no.nav.sykepenger.libs.logging.loggError
 import no.nav.sykepenger.libs.logging.loggInfo
-import no.nav.sykepenger.libs.logging.loggWarn
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -18,51 +10,39 @@ import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.errors.WakeupException
 import org.apache.kafka.common.security.auth.SecurityProtocol
 import org.apache.kafka.common.serialization.StringDeserializer
-import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 internal class TbdUtbetalingConsumer(
     env: Map<String, String>,
-    private val tbdUtbetalingDao: TbdUtbetalingDao,
-    private val observers: List<TbdUtbetalingObserver>,
+    private val håndterer: TbdUtbetalingHåndterer,
 ) : Runnable,
     RapidsConnection.StatusListener {
     private val kafkaConsumer = KafkaConsumer(consumerProperties(env), StringDeserializer(), StringDeserializer())
     private val konsumerer = AtomicBoolean(false)
 
     override fun run() {
-        loggInfo("Starter konsumering av $topic")
+        loggInfo("Starter konsumering av $TOPIC")
         try {
-            kafkaConsumer.subscribe(listOf(topic))
+            kafkaConsumer.subscribe(listOf(TOPIC))
 
             while (konsumerer.get()) {
                 val records = kafkaConsumer.poll(Duration.ofSeconds(1))
                 records.forEach { record ->
-                    val json = jackson.readTree(record.value())
-                    val meldingSendt = record.timestamp().somLocalDateTime()
-                    when {
-                        json.erUtbetaling -> håndterUtbetaling(json, meldingSendt)
-                        json.erAnnullering -> håndteAnnullering(json, meldingSendt)
-                        json.erUtbetalingUtenUtbetaling -> håndterUtbetalingUtenUtbetaling(json, meldingSendt)
-                        else -> {
-                            loggWarn("Uventet event på $topic. Lagres ikke i spøkelse", "event" to json.event, "melding" to json.toString())
-                        }
-                    }
+                    håndterer.håndter(jackson.readTree(record.value()), record.timestamp().somLocalDateTime())
                 }
             }
         } catch (wakeupException: WakeupException) {
             if (konsumerer.get()) throw wakeupException
         } catch (exception: Exception) {
-            loggError("Feil ved håndtering av melding på $topic", exception)
+            loggError("Feil ved håndtering av melding på $TOPIC", exception)
         } finally {
-            loggInfo("Stopper konsumering av $topic")
+            loggInfo("Stopper konsumering av $TOPIC")
             kafkaConsumer.close()
         }
     }
@@ -79,43 +59,6 @@ internal class TbdUtbetalingConsumer(
         kafkaConsumer.wakeup()
     }
 
-    private fun håndterUtbetaling(
-        json: JsonNode,
-        meldingSendt: LocalDateTime,
-    ) {
-        val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
-        logg(json, meldingId)
-        observers.forEach { it.utbetaling(meldingId, json.utbetaling(meldingSendt)) }
-    }
-
-    private fun håndteAnnullering(
-        json: JsonNode,
-        meldingSendt: LocalDateTime,
-    ) {
-        val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
-        logg(json, meldingId)
-        observers.forEach { it.annullering(meldingId, json.annullering()) }
-    }
-
-    private fun håndterUtbetalingUtenUtbetaling(
-        json: JsonNode,
-        meldingSendt: LocalDateTime,
-    ) {
-        val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(meldingSendt))
-        logg(json, meldingId)
-    }
-
-    private fun logg(
-        json: JsonNode,
-        meldingId: Long,
-    ) = loggInfo(
-        "Håndterer melding fra $topic",
-        "event" to json.event,
-        "fødselsnummer" to json.path("fødselsnummer").asString(),
-        "korrelasjonsId" to json.path("korrelasjonsId").asString(),
-        "meldingId" to "$meldingId",
-    )
-
     internal companion object {
         private fun Long.somLocalDateTime() = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDateTime()
 
@@ -123,7 +66,7 @@ internal class TbdUtbetalingConsumer(
         private const val PREFIX = "tbd-utbetaling"
         private const val maxPollRecords = 200
         private val maxPollIntervalMs = Duration.ofSeconds(120 + maxPollRecords * 4.toLong()).toMillis()
-        private const val topic = "tbd.utbetaling"
+        internal const val TOPIC = "tbd.utbetaling"
 
         private fun consumerProperties(env: Map<String, String>) =
             Properties().apply {
