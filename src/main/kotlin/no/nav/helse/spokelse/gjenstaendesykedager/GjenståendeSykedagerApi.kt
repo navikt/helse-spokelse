@@ -32,6 +32,23 @@ internal enum class Status {
     INGEN_VEDTAK,
 }
 
+private enum class Utfall {
+    VEDTAK_I_NY_LØSNING,
+    SISTE_UTBETALING_I_INFOTRYGD,
+    INGEN_VEDTAK,
+    FEIL,
+    ;
+
+    companion object {
+        fun fra(status: Status) =
+            when (status) {
+                Status.VEDTAK_I_NY_LØSNING -> VEDTAK_I_NY_LØSNING
+                Status.SISTE_UTBETALING_I_INFOTRYGD -> SISTE_UTBETALING_I_INFOTRYGD
+                Status.INGEN_VEDTAK -> INGEN_VEDTAK
+            }
+    }
+}
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 internal data class GjenståendeSykedagerResponse(
     val status: Status,
@@ -43,7 +60,7 @@ internal fun Route.gjenståendeSykedagerApi(
     gjenståendeSykedager: GjenståendeSykedager,
     meterRegistry: MeterRegistry,
 ) {
-    fun tellUtfall(utfall: String) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", utfall).increment()
+    fun tellUtfall(utfall: Utfall) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", utfall.name).increment()
 
     post("/gjenstaende-sykedager") {
         if (!Tilgangsstyring.harTilgangTilGjenståendeSykedager(call)) return@post call.respond(HttpStatusCode.Forbidden)
@@ -56,7 +73,7 @@ internal fun Route.gjenståendeSykedagerApi(
             try {
                 gjenståendeSykedager.hent(personidentifikator)
             } catch (exception: Exception) {
-                tellUtfall("FEIL")
+                tellUtfall(Utfall.FEIL)
                 throw exception
             }
 
@@ -83,7 +100,7 @@ internal fun Route.gjenståendeSykedagerApi(
                 }
             }
 
-        tellUtfall(response.status.name)
+        tellUtfall(Utfall.fra(response.status))
         call.respond(HttpStatusCode.OK, response)
     }
 }
