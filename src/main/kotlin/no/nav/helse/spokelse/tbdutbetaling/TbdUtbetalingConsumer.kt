@@ -27,9 +27,9 @@ internal class TbdUtbetalingConsumer(
     private val konsumerer = AtomicBoolean(false)
 
     override fun run() {
-        loggInfo("Starter konsumering av $topic")
+        loggInfo("Starter konsumering av $TOPIC")
         try {
-            kafkaConsumer.subscribe(listOf(topic))
+            kafkaConsumer.subscribe(listOf(TOPIC))
 
             while (konsumerer.get()) {
                 val records = kafkaConsumer.poll(Duration.ofSeconds(1))
@@ -40,9 +40,9 @@ internal class TbdUtbetalingConsumer(
         } catch (wakeupException: WakeupException) {
             if (konsumerer.get()) throw wakeupException
         } catch (exception: Exception) {
-            loggError("Feil ved håndtering av melding på $topic", exception)
+            loggError("Feil ved håndtering av melding på $TOPIC", exception)
         } finally {
-            loggInfo("Stopper konsumering av $topic")
+            loggInfo("Stopper konsumering av $TOPIC")
             kafkaConsumer.close()
         }
     }
@@ -66,7 +66,7 @@ internal class TbdUtbetalingConsumer(
         private const val PREFIX = "tbd-utbetaling"
         private const val maxPollRecords = 200
         private val maxPollIntervalMs = Duration.ofSeconds(120 + maxPollRecords * 4.toLong()).toMillis()
-        private const val topic = TbdUtbetalingHåndterer.TOPIC
+        internal const val TOPIC = "tbd.utbetaling"
 
         private fun consumerProperties(env: Map<String, String>) =
             Properties().apply {
