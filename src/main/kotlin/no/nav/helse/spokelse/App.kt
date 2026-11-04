@@ -24,6 +24,7 @@ import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioderRiver
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
@@ -54,7 +55,8 @@ fun launchApplication(env: Map<String, String>) {
 
     val utbetaltePerioder = UtbetaltePerioder(env, HttpClient(CIO), TbdUtbetalingApi(tbdUtbetalingDao), gamleUtbetalingerDao)
 
-    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
+    val tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
+    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingHåndterer)
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     RapidApplication
         .create(
