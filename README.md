@@ -68,8 +68,10 @@ Se [rutene for utbetalte perioder](src/main/kotlin/no/nav/helse/spokelse/utbetal
 
 - `VEDTAK_I_NY_LØSNING` med `gjenståendeDager` og `vurdertTilOgMed`, som er siste dag i siste vedtak. Tallet gjelder per
   siste vedtak, ikke per i dag.
-- `SISTE_UTBETALING_I_INFOTRYGD` hvis Infotrygd har en utbetaling etter siste vedtak. Tallet må hentes i Infotrygd.
-- `INGEN_VEDTAK` hvis personen ikke har vedtak i ny løsning. Det betyr ikke at personen aldri har hatt sykepenger.
+- `SISTE_UTBETALING_I_INFOTRYGD` hvis Infotrygd har en utbetaling etter siste vedtak, eller hvis personen ikke har vedtak
+  i ny løsning, men har utbetalinger i Infotrygd. Tallet må hentes i Infotrygd.
+- `INGEN_VEDTAK` hvis personen verken har vedtak i ny løsning eller utbetalinger i Infotrygd. Det betyr ikke at personen
+  aldri har hatt sykepenger.
 
 Ugyldig request gir `400` med feilkoden `UGYLDIG_FORESPØRSEL`, og feil fra Infotrygd gir `500`.
 
