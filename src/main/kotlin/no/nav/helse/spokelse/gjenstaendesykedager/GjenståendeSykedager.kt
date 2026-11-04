@@ -11,8 +11,8 @@ internal class GjenståendeSykedager(
 ) {
     internal sealed interface Resultat {
         data class Svar(
-            val gjenståendeSykedager: Int,
-            val gjelderTilOgMed: LocalDate,
+            val gjenståendeSykedagerVedSisteVedtak: Int,
+            val datoForSisteVedtak: LocalDate,
         ) : Resultat
 
         data object IngenVedtak : Resultat
@@ -22,17 +22,17 @@ internal class GjenståendeSykedager(
 
     internal suspend fun hent(personidentifikator: Personidentifikator): Resultat {
         val sisteVedtak = dao.sisteVedtak(personidentifikator.toString()) ?: return Resultat.IngenVedtak
-        if (harSenereUtbetalingIInfotrygd(personidentifikator, sisteVedtak.gjelderTilOgMed)) return Resultat.SisteUtbetalingIInfotrygd
-        return Resultat.Svar(sisteVedtak.gjenståendeSykedager, sisteVedtak.gjelderTilOgMed)
+        if (harSenereUtbetalingIInfotrygd(personidentifikator, sisteVedtak.datoForSisteVedtak)) return Resultat.SisteUtbetalingIInfotrygd
+        return Resultat.Svar(sisteVedtak.gjenståendeSykedagerVedSisteVedtak, sisteVedtak.datoForSisteVedtak)
     }
 
     private suspend fun harSenereUtbetalingIInfotrygd(
         personidentifikator: Personidentifikator,
-        gjelderTilOgMed: LocalDate,
+        datoForSisteVedtak: LocalDate,
     ): Boolean {
-        val fom = gjelderTilOgMed.plusDays(1)
+        val fom = datoForSisteVedtak.plusDays(1)
         val tom = idag()
         if (fom > tom) return false
-        return infotrygd.hent(setOf(personidentifikator), fom, tom).any { it.tom > gjelderTilOgMed }
+        return infotrygd.hent(setOf(personidentifikator), fom, tom).any { it.tom > datoForSisteVedtak }
     }
 }

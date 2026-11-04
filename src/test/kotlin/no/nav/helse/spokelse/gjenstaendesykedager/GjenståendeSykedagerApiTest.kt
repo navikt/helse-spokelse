@@ -11,7 +11,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     @Test
     fun `svarer med gjenstående sykedager fra siste vedtak`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 221, "gjelderTilOgMed": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 221, "datoForSisteVedtak": "2023-01-31"}""")
     }
 
     @Test
@@ -29,7 +29,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     fun `siste vedtak velges etter tom og ikke etter sendt`() {
         lagreVedtak(tom = LocalDate.parse("2023-03-31"), gjenståendeSykedager = 150, sendt = LocalDateTime.parse("2023-04-01T12:00:00"))
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221, sendt = LocalDateTime.parse("2023-05-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 150, "gjelderTilOgMed": "2023-03-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 150, "datoForSisteVedtak": "2023-03-31"}""")
     }
 
     @Test
@@ -37,7 +37,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         val korrelasjonsId = UUID.randomUUID()
         lagreVedtak(korrelasjonsId, tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221, sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
         lagreVedtak(korrelasjonsId, tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 225, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 225, "gjelderTilOgMed": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 225, "datoForSisteVedtak": "2023-01-31"}""")
     }
 
     @Test
@@ -45,14 +45,14 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         val korrelasjonsId = UUID.randomUUID()
         lagreVedtak(korrelasjonsId, tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 225, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
         lagreVedtak(korrelasjonsId, tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221, sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 225, "gjelderTilOgMed": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 225, "datoForSisteVedtak": "2023-01-31"}""")
     }
 
     @Test
     fun `vedtak uten utbetaling kan være siste vedtak`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 10)
         lagreVedtak(tom = LocalDate.parse("2023-02-28"), gjenståendeSykedager = 0, type = "utbetaling_uten_utbetaling")
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 0, "gjelderTilOgMed": "2023-02-28"}""")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 0, "datoForSisteVedtak": "2023-02-28"}""")
     }
 
     @Test
@@ -60,7 +60,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
         val korrelasjonsId = lagreVedtak(tom = LocalDate.parse("2023-02-28"), gjenståendeSykedager = 200)
         annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 221, "gjelderTilOgMed": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 221, "datoForSisteVedtak": "2023-01-31"}""")
     }
 
     @Test
@@ -74,7 +74,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     fun `annullering sendt før vedtaket påvirker det ikke`() {
         val korrelasjonsId = lagreVedtak(sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
         annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-01-15T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 221, "gjelderTilOgMed": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 221, "datoForSisteVedtak": "2023-01-31"}""")
     }
 
     @Test
@@ -82,7 +82,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         val korrelasjonsId = lagreVedtak(sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
         annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
         lagreVedtak(korrelasjonsId, gjenståendeSykedager = 210, sendt = LocalDateTime.parse("2023-04-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 210, "gjelderTilOgMed": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 210, "datoForSisteVedtak": "2023-01-31"}""")
     }
 
     @Test
@@ -92,11 +92,11 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     }
 
     @Test
-    fun `senere utbetaling i Infotrygd gir 404`() {
+    fun `senere utbetaling i Infotrygd gir 409`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"))
         infotrygdsvar = infotrygdperiode(tom = "2023-02-28")
         assertGjenståendeSykedager(
-            forventetHttpStatus = 404,
+            forventetHttpStatus = 409,
             forventetResponseBody = """{"feilkode": "SISTE_UTBETALING_I_INFOTRYGD", "melding": "Infotrygd har en utbetaling etter siste vedtak i ny løsning"}""",
         )
     }
@@ -105,7 +105,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     fun `eldre utbetaling i Infotrygd påvirker ikke svaret`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
         infotrygdsvar = infotrygdperiode(tom = "2023-01-31")
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedager": 221, "gjelderTilOgMed": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 221, "datoForSisteVedtak": "2023-01-31"}""")
     }
 
     @Test

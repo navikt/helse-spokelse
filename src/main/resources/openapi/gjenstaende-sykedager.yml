@@ -5,7 +5,7 @@ info:
   description: |
     Gir antall gjenstående sykedager for en person, slik det står i siste vedtak i ny løsning for sykepenger (Speil).
 
-    **Tallet gjelder per siste vedtak, ikke per i dag.** `gjelderTilOgMed` er siste dag i perioden vedtaket gjelder for.
+    **Tallet gjelder per siste vedtak, ikke per i dag.** `datoForSisteVedtak` er siste dag i perioden vedtaket gjelder for.
     Har personen hatt sykepenger etter denne datoen, er det ikke fanget opp i tallet.
 
     Tallet tar ikke hensyn til:
@@ -14,7 +14,7 @@ info:
     - sykdom som ikke er behandlet ennå
     - at graderte dager teller som hele dager, så personen kan ha brukt opp færre dager enn det ser ut som
 
-    Siste vedtak er vedtaket med senest `gjelderTilOgMed`. Det kan være et vedtak med eller uten utbetaling.
+    Siste vedtak er vedtaket med senest `datoForSisteVedtak`. Det kan være et vedtak med eller uten utbetaling.
     Et annullert vedtak regnes ikke med, og da gjelder forrige vedtak.
 
     **Kjent begrensning:** Hvis et vedtak uten utbetaling er annullert, fanges ikke annulleringen opp,
@@ -49,8 +49,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/GjenståendeSykedager'
               example:
-                gjenståendeSykedager: 112
-                gjelderTilOgMed: "2026-09-30"
+                gjenståendeSykedagerVedSisteVedtak: 112
+                datoForSisteVedtak: "2026-09-30"
         '400':
           description: Ugyldig request. Body mangler, er ikke JSON, eller `fødselsnummer` er ikke en streng på 11 siffer.
           content:
@@ -66,24 +66,24 @@ paths:
           description: Tokenet mangler rollen `aap-les`.
         '404':
           description: |
-            Fant ikke et tall å svare med. `feilkode` sier hvorfor:
-            - `INGEN_VEDTAK`: Personen har ingen vedtak i ny løsning. Personen er ukjent, har bare saker under behandling, eller har bare vedtak fra før 16. mars 2022.
-            - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling som slutter etter siste vedtak i ny løsning. Gjenstående sykedager må hentes fra Infotrygd.
+            Personen har ingen vedtak i ny løsning (`INGEN_VEDTAK`). Personen er ukjent, har bare saker under behandling, eller har bare vedtak fra før 16. mars 2022.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Feil'
-              examples:
-                ingenVedtak:
-                  summary: Ingen vedtak i ny løsning
-                  value:
-                    feilkode: INGEN_VEDTAK
-                    melding: Fant ingen vedtak for personen i ny løsning
-                sisteUtbetalingIInfotrygd:
-                  summary: Siste utbetaling er i Infotrygd
-                  value:
-                    feilkode: SISTE_UTBETALING_I_INFOTRYGD
-                    melding: Infotrygd har en utbetaling etter siste vedtak i ny løsning
+              example:
+                feilkode: INGEN_VEDTAK
+                melding: Fant ingen vedtak for personen i ny løsning
+        '409':
+          description: |
+            Infotrygd har en utbetaling som slutter etter siste vedtak i ny løsning (`SISTE_UTBETALING_I_INFOTRYGD`). Gjenstående sykedager må hentes fra Infotrygd.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feil'
+              example:
+                feilkode: SISTE_UTBETALING_I_INFOTRYGD
+                melding: Infotrygd har en utbetaling etter siste vedtak i ny løsning
         '500':
           description: Uventet feil, for eksempel at oppslaget mot Infotrygd feilet. Prøv igjen senere.
 components:
@@ -102,12 +102,12 @@ components:
           pattern: '^\d{11}$'
     GjenståendeSykedager:
       type: object
-      required: [gjenståendeSykedager, gjelderTilOgMed]
+      required: [gjenståendeSykedagerVedSisteVedtak, datoForSisteVedtak]
       properties:
-        gjenståendeSykedager:
+        gjenståendeSykedagerVedSisteVedtak:
           type: integer
-          description: Antall gjenstående sykedager per `gjelderTilOgMed`.
-        gjelderTilOgMed:
+          description: Antall gjenstående sykedager per `datoForSisteVedtak`.
+        datoForSisteVedtak:
           type: string
           format: date
           description: Siste dag i perioden siste vedtak gjelder for.
