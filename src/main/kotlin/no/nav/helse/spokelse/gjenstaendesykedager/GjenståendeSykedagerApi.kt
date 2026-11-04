@@ -7,6 +7,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.post
+import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.spokelse.Tilgangsstyring
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.sykepenger.libs.logging.navngittLogger
@@ -38,7 +39,12 @@ internal data class GjenståendeSykedagerResponse(
     val vurdertTilOgMed: LocalDate? = null,
 )
 
-internal fun Route.gjenståendeSykedagerApi(gjenståendeSykedager: GjenståendeSykedager) {
+internal fun Route.gjenståendeSykedagerApi(
+    gjenståendeSykedager: GjenståendeSykedager,
+    meterRegistry: MeterRegistry,
+) {
+    fun tellUtfall(utfall: String) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", utfall).increment()
+
     post("/gjenstaende-sykedager") {
         if (!Tilgangsstyring.harTilgangTilGjenståendeSykedager(call)) return@post call.respond(HttpStatusCode.Forbidden)
 
@@ -46,14 +52,24 @@ internal fun Route.gjenståendeSykedagerApi(gjenståendeSykedager: GjenståendeS
             personidentifikatorFraRequest()
                 ?: return@post respondFeil(HttpStatusCode.BadRequest, Feilkode.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
 
-        when (val resultat = gjenståendeSykedager.hent(personidentifikator)) {
+        val resultat =
+            try {
+                gjenståendeSykedager.hent(personidentifikator)
+            } catch (exception: Exception) {
+                tellUtfall("FEIL")
+                throw exception
+            }
+
+        when (resultat) {
             GjenståendeSykedager.Resultat.IngenVedtak -> {
                 logger.info("Fant ikke vedtak for /gjenstaende-sykedager", "fødselsnummer" to personidentifikator.toString())
+                tellUtfall(Status.INGEN_VEDTAK.name)
                 call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(Status.INGEN_VEDTAK))
             }
 
             GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd -> {
                 logger.info("Siste utbetaling er i Infotrygd for /gjenstaende-sykedager", "fødselsnummer" to personidentifikator.toString())
+                tellUtfall(Status.SISTE_UTBETALING_I_INFOTRYGD.name)
                 call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(Status.SISTE_UTBETALING_I_INFOTRYGD))
             }
 
@@ -64,6 +80,7 @@ internal fun Route.gjenståendeSykedagerApi(gjenståendeSykedager: GjenståendeS
                     "gjenståendeDager" to resultat.gjenståendeDager.toString(),
                     "vurdertTilOgMed" to resultat.vurdertTilOgMed.toString(),
                 )
+                tellUtfall(Status.VEDTAK_I_NY_LØSNING.name)
                 call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(Status.VEDTAK_I_NY_LØSNING, resultat.gjenståendeDager, resultat.vurdertTilOgMed))
             }
         }

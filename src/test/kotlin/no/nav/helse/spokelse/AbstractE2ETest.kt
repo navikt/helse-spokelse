@@ -77,6 +77,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
     protected lateinit var gjenståendeSykedagerDao: GjenståendeSykedagerDao
     protected lateinit var tbdUtbetalingHåndterer: TbdUtbetalingHåndterer
+    protected lateinit var meterRegistry: PrometheusMeterRegistry
 
     private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
     private val auth by lazy {
@@ -108,6 +109,7 @@ internal abstract class AbstractE2ETest {
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
         tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
         infotrygdperioder = emptyList()
+        meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     }
 
     @AfterEach
@@ -143,10 +145,11 @@ internal abstract class AbstractE2ETest {
                             dao = gjenståendeSykedagerDao,
                             infotrygd = infotrygd,
                         ),
+                    meterRegistry = meterRegistry,
                 )
             },
             objectMapper = jacksonObjectMapper(),
-            meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT),
+            meterRegistry = meterRegistry,
         ) {
             Awaitility.await().atMost(timeout).untilAsserted {
                 val response =

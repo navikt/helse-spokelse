@@ -75,6 +75,9 @@ Se [rutene for utbetalte perioder](src/main/kotlin/no/nav/helse/spokelse/utbetal
 
 Ugyldig request gir `400` med feilkoden `UGYLDIG_FORESPØRSEL`, og feil fra Infotrygd gir `500`.
 
+Telleren `gjenstaende_sykedager_oppslag_total` viser hvor mange oppslag som ender i hvert utfall. Labelen `utfall` er
+en `status` eller `FEIL`.
+
 OpenAPI-specen ligger på `/openapi/gjenstaende-sykedager.yml`, og Swagger UI på `/swagger`. Begge er åpne uten token:
 [dev](https://spokelse.intern.dev.nav.no/swagger) og [prod](https://spokelse.intern.nav.no/swagger).
 Specen beskriver hver `status`, feilkodene og hva tallet ikke tar hensyn til.
