@@ -64,13 +64,18 @@ Se [rutene for utbetalte perioder](src/main/kotlin/no/nav/helse/spokelse/utbetal
 
 ### Gjenstående sykedager
 
-`/gjenstaende-sykedager` tar imot `{"fødselsnummer": "<11 siffer>"}` og svarer med `gjenståendeSykedagerVedSisteVedtak`
-og `datoForSisteVedtak`, som er siste dag i siste vedtak. Tallet gjelder per siste vedtak, ikke per i dag. Hvis Infotrygd har en utbetaling
-etter siste vedtak, svarer endepunktet `409` med feilkoden `SISTE_UTBETALING_I_INFOTRYGD`.
+`/gjenstaende-sykedager` tar imot `{"fødselsnummer": "<11 siffer>"}` og svarer alltid `200` med feltet `status`:
+
+- `VEDTAK_I_NY_LØSNING` med `gjenståendeDager` og `vurdertTilOgMed`, som er siste dag i siste vedtak. Tallet gjelder per
+  siste vedtak, ikke per i dag.
+- `SISTE_UTBETALING_I_INFOTRYGD` hvis Infotrygd har en utbetaling etter siste vedtak. Tallet må hentes i Infotrygd.
+- `INGEN_VEDTAK` hvis personen ikke har vedtak i ny løsning. Det betyr ikke at personen aldri har hatt sykepenger.
+
+Ugyldig request gir `400` med feilkoden `UGYLDIG_FORESPØRSEL`, og feil fra Infotrygd gir `500`.
 
 OpenAPI-specen ligger på `/openapi/gjenstaende-sykedager.yml`, og Swagger UI på `/swagger`. Begge er åpne uten token:
 [dev](https://spokelse.intern.dev.nav.no/swagger) og [prod](https://spokelse.intern.nav.no/swagger).
-Specen beskriver svarkodene, feilkodene og hva tallet ikke tar hensyn til.
+Specen beskriver hver `status`, feilkodene og hva tallet ikke tar hensyn til.
 
 Vedtakene lagres i tabellen `gjenstående_sykedager`. Vedtak fra før endepunktet kom, er fylt inn fra råmeldingene
 i `tbdUtbetaling_Melding` med migreringen `V20`.
