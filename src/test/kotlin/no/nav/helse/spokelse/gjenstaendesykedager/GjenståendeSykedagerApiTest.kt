@@ -2,6 +2,7 @@ package no.nav.helse.spokelse.gjenstaendesykedager
 
 import no.nav.helse.spokelse.AbstractE2ETest
 import org.intellij.lang.annotations.Language
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
@@ -123,6 +124,22 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     fun `ingen vedtak og feil fra Infotrygd gir 500`() {
         infotrygdperioder = null
         assertGjenståendeSykedager(forventetHttpStatus = 500)
+    }
+
+    @Test
+    fun `teller oppslag per utfall`() {
+        assertGjenståendeSykedager(forventetResponseBody = ingenVedtak)
+        infotrygdperioder = listOf(LocalDate.parse("2005-03-01")..LocalDate.parse("2005-06-30"))
+        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
+        infotrygdperioder = null
+        assertGjenståendeSykedager(forventetHttpStatus = 500)
+        infotrygdperioder = emptyList()
+        lagreVedtak()
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
+
+        mapOf("INGEN_VEDTAK" to 1.0, "SISTE_UTBETALING_I_INFOTRYGD" to 1.0, "FEIL" to 1.0, "VEDTAK_I_NY_LØSNING" to 1.0).forEach { (utfall, forventet) ->
+            assertEquals(forventet, meterRegistry.find("gjenstaende_sykedager_oppslag").tag("utfall", utfall).counter()?.count(), "utfall=$utfall")
+        }
     }
 
     @Test

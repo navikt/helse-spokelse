@@ -15,6 +15,7 @@ import io.ktor.server.request.header
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.*
 import io.micrometer.core.instrument.Clock
+import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import io.prometheus.metrics.model.registry.PrometheusRegistry
@@ -115,7 +116,7 @@ fun launchApplication(env: Map<String, String>) {
                         readyCheck = rapid::isReady,
                         preStopHook = preStopHook::handlePreStopRequest,
                     ) {
-                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager)
+                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry)
                     }
                 }
             },
@@ -149,6 +150,7 @@ internal fun Application.spokelse(
     tbdUtbetalingApi: TbdUtbetalingApi,
     utbetaltePerioder: UtbetaltePerioder,
     gjenståendeSykedager: GjenståendeSykedager,
+    meterRegistry: MeterRegistry,
 ) {
     azureAdAppAuthentication(auth)
     routing {
@@ -159,7 +161,7 @@ internal fun Application.spokelse(
         authenticate {
             grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
             utbetaltePerioderApi(utbetaltePerioder)
-            gjenståendeSykedagerApi(gjenståendeSykedager)
+            gjenståendeSykedagerApi(gjenståendeSykedager, meterRegistry)
         }
     }
 }
