@@ -95,21 +95,33 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     @Test
     fun `senere utbetaling i Infotrygd gir SISTE_UTBETALING_I_INFOTRYGD`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"))
-        infotrygdsvar = infotrygdperiode(tom = "2023-02-28")
-        assertGjenståendeSykedager(forventetResponseBody = """{"status": "SISTE_UTBETALING_I_INFOTRYGD"}""")
+        infotrygdperioder = listOf(LocalDate.parse("2023-01-01")..LocalDate.parse("2023-02-28"))
+        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
     }
 
     @Test
     fun `eldre utbetaling i Infotrygd påvirker ikke svaret`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
-        infotrygdsvar = infotrygdperiode(tom = "2023-01-31")
+        infotrygdperioder = listOf(LocalDate.parse("2022-01-01")..LocalDate.parse("2023-01-31"))
         assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
     }
 
     @Test
     fun `feil fra Infotrygd gir 500`() {
         lagreVedtak()
-        infotrygdsvar = null
+        infotrygdperioder = null
+        assertGjenståendeSykedager(forventetHttpStatus = 500)
+    }
+
+    @Test
+    fun `ingen vedtak og utbetalinger i Infotrygd gir SISTE_UTBETALING_I_INFOTRYGD`() {
+        infotrygdperioder = listOf(LocalDate.parse("2005-03-01")..LocalDate.parse("2005-06-30"))
+        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
+    }
+
+    @Test
+    fun `ingen vedtak og feil fra Infotrygd gir 500`() {
+        infotrygdperioder = null
         assertGjenståendeSykedager(forventetHttpStatus = 500)
     }
 
@@ -215,13 +227,11 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         vurdertTilOgMed: String,
     ) = """{"status": "VEDTAK_I_NY_LØSNING", "gjenståendeDager": $gjenståendeDager, "vurdertTilOgMed": "$vurdertTilOgMed"}"""
 
-    private fun infotrygdperiode(tom: String) =
-        """{"utbetaltePerioder": [{"personidentifikator": "$FØDSELSNUMMER", "fom": "2023-01-01", "tom": "$tom", "grad": 100}]}"""
-
     private companion object {
         private const val FØDSELSNUMMER = "12345678911"
         private val objectMapper = jacksonObjectMapper()
         private val ingenVedtak = """{"status": "INGEN_VEDTAK"}"""
+        private val sisteUtbetalingIInfotrygd = """{"status": "SISTE_UTBETALING_I_INFOTRYGD"}"""
         private val ugyldigForespørsel = """{"feilkode": "UGYLDIG_FORESPØRSEL", "melding": "Forventer en body med fødselsnummer på 11 siffer"}"""
     }
 }
