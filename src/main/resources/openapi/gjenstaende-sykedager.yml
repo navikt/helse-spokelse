@@ -56,7 +56,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GjenståendeSykedager'
+                $ref: '#/components/schemas/GjenstaendeSykedager'
               examples:
                 vedtakINyLøsning:
                   summary: Siste vedtak er i ny løsning
@@ -101,7 +101,7 @@ components:
         fødselsnummer:
           type: string
           pattern: '^\d{11}$'
-    GjenståendeSykedager:
+    GjenstaendeSykedager:
       type: object
       required: [status]
       properties:
