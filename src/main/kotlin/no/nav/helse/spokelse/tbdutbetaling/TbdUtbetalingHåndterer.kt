@@ -28,7 +28,7 @@ internal class TbdUtbetalingHåndterer(
             json.erUtbetaling -> håndterUtbetaling(json, sendt)
             json.erAnnullering -> håndterAnnullering(json, sendt)
             json.erUtbetalingUtenUtbetaling -> håndterUtbetalingUtenUtbetaling(json, sendt)
-            else -> loggWarn("Uventet event på $TOPIC. Lagres ikke i spøkelse", "event" to json.event, "melding" to json.toString())
+            else -> loggWarn("Uventet event på ${TbdUtbetalingConsumer.TOPIC}. Lagres ikke i spøkelse", "event" to json.event, "melding" to json.toString())
         }
     }
 
@@ -64,16 +64,12 @@ internal class TbdUtbetalingHåndterer(
     ): Long {
         val meldingId = tbdUtbetalingDao.lagreMelding(json.melding(sendt))
         loggInfo(
-            "Håndterer melding fra $TOPIC",
+            "Håndterer melding fra ${TbdUtbetalingConsumer.TOPIC}",
             "event" to json.event,
             "fødselsnummer" to json.path("fødselsnummer").asString(),
             "korrelasjonsId" to json.path("korrelasjonsId").asString(),
             "meldingId" to "$meldingId",
         )
         return meldingId
-    }
-
-    internal companion object {
-        internal const val TOPIC = "tbd.utbetaling"
     }
 }

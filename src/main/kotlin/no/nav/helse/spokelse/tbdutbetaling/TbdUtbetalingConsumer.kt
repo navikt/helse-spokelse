@@ -66,7 +66,7 @@ internal class TbdUtbetalingConsumer(
         private const val PREFIX = "tbd-utbetaling"
         private const val maxPollRecords = 200
         private val maxPollIntervalMs = Duration.ofSeconds(120 + maxPollRecords * 4.toLong()).toMillis()
-        private const val topic = TbdUtbetalingHåndterer.TOPIC
+        internal const val TOPIC = "tbd.utbetaling"
 
         private fun consumerProperties(env: Map<String, String>) =
             Properties().apply {
