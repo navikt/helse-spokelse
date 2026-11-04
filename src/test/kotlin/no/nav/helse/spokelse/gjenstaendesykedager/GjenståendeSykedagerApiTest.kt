@@ -1,8 +1,9 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
 import no.nav.helse.spokelse.AbstractE2ETest
-import no.nav.helse.spokelse.tbdutbetaling.Melding
+import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -151,8 +152,27 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         sendt: LocalDateTime = LocalDateTime.parse("2023-02-01T12:00:00"),
         type: String = "utbetaling_utbetalt",
     ): UUID {
-        val meldingId = tbdUtbetalingDao.lagreMelding(Melding("{}", sendt, type, fødselsnummer))
-        gjenståendeSykedagerDao.lagreVedtak(meldingId, Vedtak(korrelasjonsId, fødselsnummer, tom.withDayOfMonth(1), tom, gjenståendeSykedager, sendt))
+        val fom = tom.withDayOfMonth(1)
+        @Language("JSON")
+        val json =
+            """
+            {
+              "event": "$type",
+              "utbetalingId": "${UUID.randomUUID()}",
+              "korrelasjonsId": "$korrelasjonsId",
+              "fødselsnummer": "$fødselsnummer",
+              "organisasjonsnummer": "999263550",
+              "fom": "$fom",
+              "tom": "$tom",
+              "gjenståendeSykedager": $gjenståendeSykedager,
+              "arbeidsgiverOppdrag": {
+                "fagsystemId": "${UUID.randomUUID()}",
+                "utbetalingslinjer": [{ "fom": "$fom", "tom": "$tom", "grad": 100.0 }]
+              },
+              "personOppdrag": { "fagsystemId": "${UUID.randomUUID()}", "utbetalingslinjer": [] }
+            }
+            """
+        tbdUtbetalingHåndterer.håndter(objectMapper.readTree(json), sendt)
         return korrelasjonsId
     }
 
@@ -160,8 +180,22 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         korrelasjonsId: UUID,
         sendt: LocalDateTime,
     ) {
-        val meldingId = tbdUtbetalingDao.lagreMelding(Melding("{}", sendt, "utbetaling_annullert", FØDSELSNUMMER))
-        gjenståendeSykedagerDao.annuller(meldingId, korrelasjonsId, sendt)
+        @Language("JSON")
+        val json =
+            """
+            {
+              "event": "utbetaling_annullert",
+              "utbetalingId": "${UUID.randomUUID()}",
+              "korrelasjonsId": "$korrelasjonsId",
+              "fødselsnummer": "$FØDSELSNUMMER",
+              "organisasjonsnummer": "999263550",
+              "fom": "2023-01-01",
+              "tom": "2023-01-31",
+              "arbeidsgiverFagsystemId": "${UUID.randomUUID()}",
+              "personFagsystemId": null
+            }
+            """
+        tbdUtbetalingHåndterer.håndter(objectMapper.readTree(json), sendt)
     }
 
     private fun assertGjenståendeSykedager(
@@ -184,6 +218,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
 
     private companion object {
         private const val FØDSELSNUMMER = "12345678911"
+        private val objectMapper = jacksonObjectMapper()
         private val ingenVedtak = """{"feilkode": "INGEN_VEDTAK", "melding": "Fant ingen vedtak for personen i ny løsning"}"""
         private val ugyldigForespørsel = """{"feilkode": "UGYLDIG_FORESPØRSEL", "melding": "Forventer en body med fødselsnummer på 11 siffer"}"""
     }

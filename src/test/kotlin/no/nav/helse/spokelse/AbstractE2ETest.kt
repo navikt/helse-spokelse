@@ -18,6 +18,7 @@ import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
+import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
 import no.nav.helse.spokelse.utbetalteperioder.AccessToken
 import no.nav.helse.spokelse.utbetalteperioder.Infotrygd
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
@@ -66,6 +67,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var lagreVedtakDao: LagreVedtakDao
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
     protected lateinit var gjenståendeSykedagerDao: GjenståendeSykedagerDao
+    protected lateinit var tbdUtbetalingHåndterer: TbdUtbetalingHåndterer
 
     private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
     private val auth by lazy {
@@ -95,6 +97,7 @@ internal abstract class AbstractE2ETest {
         lagreVedtakDao = LagreVedtakDao(dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
+        tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
         infotrygdsvar = """{"utbetaltePerioder": []}"""
     }
 
