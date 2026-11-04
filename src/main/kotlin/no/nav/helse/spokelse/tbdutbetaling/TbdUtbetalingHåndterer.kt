@@ -1,5 +1,7 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
+import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.Vedtak.Companion.vedtak
 import no.nav.helse.spokelse.tbdutbetaling.Annullering.Companion.annullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erAnnullering
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
@@ -11,9 +13,11 @@ import no.nav.sykepenger.libs.logging.loggInfo
 import no.nav.sykepenger.libs.logging.loggWarn
 import tools.jackson.databind.JsonNode
 import java.time.LocalDateTime
+import java.util.UUID
 
 internal class TbdUtbetalingHåndterer(
     private val tbdUtbetalingDao: TbdUtbetalingDao,
+    private val gjenståendeSykedagerDao: GjenståendeSykedagerDao,
     private val observers: List<TbdUtbetalingObserver>,
 ) {
     internal fun håndter(
@@ -33,6 +37,7 @@ internal class TbdUtbetalingHåndterer(
         sendt: LocalDateTime,
     ) {
         val meldingId = lagreMelding(json, sendt)
+        gjenståendeSykedagerDao.lagreVedtak(meldingId, json.vedtak(sendt))
         observers.forEach { it.utbetaling(meldingId, json.utbetaling(sendt)) }
     }
 
@@ -41,6 +46,7 @@ internal class TbdUtbetalingHåndterer(
         sendt: LocalDateTime,
     ) {
         val meldingId = lagreMelding(json, sendt)
+        gjenståendeSykedagerDao.annuller(meldingId, UUID.fromString(json.path("korrelasjonsId").asString()), sendt)
         observers.forEach { it.annullering(meldingId, json.annullering()) }
     }
 
@@ -48,7 +54,8 @@ internal class TbdUtbetalingHåndterer(
         json: JsonNode,
         sendt: LocalDateTime,
     ) {
-        lagreMelding(json, sendt)
+        val meldingId = lagreMelding(json, sendt)
+        gjenståendeSykedagerDao.lagreVedtak(meldingId, json.vedtak(sendt))
     }
 
     private fun lagreMelding(
