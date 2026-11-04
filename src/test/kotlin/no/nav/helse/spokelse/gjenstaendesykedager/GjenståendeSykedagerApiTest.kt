@@ -12,25 +12,25 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     @Test
     fun `svarer med gjenstående sykedager fra siste vedtak`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 221, "datoForSisteVedtak": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
     }
 
     @Test
-    fun `ingen vedtak gir 404`() {
-        assertGjenståendeSykedager(forventetHttpStatus = 404, forventetResponseBody = ingenVedtak)
+    fun `ingen vedtak gir INGEN_VEDTAK`() {
+        assertGjenståendeSykedager(forventetResponseBody = ingenVedtak)
     }
 
     @Test
     fun `vedtak før grensen for ny løsning telles ikke med`() {
         lagreVedtak(tom = LocalDate.parse("2022-03-01"), gjenståendeSykedager = 200, sendt = LocalDateTime.parse("2022-03-16T21:53:18"))
-        assertGjenståendeSykedager(forventetHttpStatus = 404, forventetResponseBody = ingenVedtak)
+        assertGjenståendeSykedager(forventetResponseBody = ingenVedtak)
     }
 
     @Test
     fun `siste vedtak velges etter tom og ikke etter sendt`() {
         lagreVedtak(tom = LocalDate.parse("2023-03-31"), gjenståendeSykedager = 150, sendt = LocalDateTime.parse("2023-04-01T12:00:00"))
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221, sendt = LocalDateTime.parse("2023-05-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 150, "datoForSisteVedtak": "2023-03-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 150, vurdertTilOgMed = "2023-03-31"))
     }
 
     @Test
@@ -38,7 +38,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         val korrelasjonsId = UUID.randomUUID()
         lagreVedtak(korrelasjonsId, tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221, sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
         lagreVedtak(korrelasjonsId, tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 225, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 225, "datoForSisteVedtak": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 225, vurdertTilOgMed = "2023-01-31"))
     }
 
     @Test
@@ -46,14 +46,14 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         val korrelasjonsId = UUID.randomUUID()
         lagreVedtak(korrelasjonsId, tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 225, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
         lagreVedtak(korrelasjonsId, tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221, sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 225, "datoForSisteVedtak": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 225, vurdertTilOgMed = "2023-01-31"))
     }
 
     @Test
     fun `vedtak uten utbetaling kan være siste vedtak`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 10)
         lagreVedtak(tom = LocalDate.parse("2023-02-28"), gjenståendeSykedager = 0, type = "utbetaling_uten_utbetaling")
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 0, "datoForSisteVedtak": "2023-02-28"}""")
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 0, vurdertTilOgMed = "2023-02-28"))
     }
 
     @Test
@@ -61,21 +61,21 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
         val korrelasjonsId = lagreVedtak(tom = LocalDate.parse("2023-02-28"), gjenståendeSykedager = 200)
         annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 221, "datoForSisteVedtak": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
     }
 
     @Test
-    fun `annullert eneste vedtak gir 404`() {
+    fun `annullert eneste vedtak gir INGEN_VEDTAK`() {
         val korrelasjonsId = lagreVedtak()
         annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
-        assertGjenståendeSykedager(forventetHttpStatus = 404, forventetResponseBody = ingenVedtak)
+        assertGjenståendeSykedager(forventetResponseBody = ingenVedtak)
     }
 
     @Test
     fun `annullering sendt før vedtaket påvirker det ikke`() {
         val korrelasjonsId = lagreVedtak(sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
         annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-01-15T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 221, "datoForSisteVedtak": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
     }
 
     @Test
@@ -83,30 +83,27 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         val korrelasjonsId = lagreVedtak(sendt = LocalDateTime.parse("2023-02-01T12:00:00"))
         annuller(korrelasjonsId, sendt = LocalDateTime.parse("2023-03-01T12:00:00"))
         lagreVedtak(korrelasjonsId, gjenståendeSykedager = 210, sendt = LocalDateTime.parse("2023-04-01T12:00:00"))
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 210, "datoForSisteVedtak": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 210, vurdertTilOgMed = "2023-01-31"))
     }
 
     @Test
     fun `vedtak for andre personer telles ikke med`() {
         lagreVedtak(fødselsnummer = "11987654321")
-        assertGjenståendeSykedager(forventetHttpStatus = 404, forventetResponseBody = ingenVedtak)
+        assertGjenståendeSykedager(forventetResponseBody = ingenVedtak)
     }
 
     @Test
-    fun `senere utbetaling i Infotrygd gir 409`() {
+    fun `senere utbetaling i Infotrygd gir SISTE_UTBETALING_I_INFOTRYGD`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"))
         infotrygdsvar = infotrygdperiode(tom = "2023-02-28")
-        assertGjenståendeSykedager(
-            forventetHttpStatus = 409,
-            forventetResponseBody = """{"feilkode": "SISTE_UTBETALING_I_INFOTRYGD", "melding": "Infotrygd har en utbetaling etter siste vedtak i ny løsning"}""",
-        )
+        assertGjenståendeSykedager(forventetResponseBody = """{"status": "SISTE_UTBETALING_I_INFOTRYGD"}""")
     }
 
     @Test
     fun `eldre utbetaling i Infotrygd påvirker ikke svaret`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
         infotrygdsvar = infotrygdperiode(tom = "2023-01-31")
-        assertGjenståendeSykedager(forventetResponseBody = """{"gjenståendeSykedagerVedSisteVedtak": 221, "datoForSisteVedtak": "2023-01-31"}""")
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
     }
 
     @Test
@@ -213,13 +210,18 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         app = app,
     )
 
+    private fun vedtakINyLøsning(
+        gjenståendeDager: Int,
+        vurdertTilOgMed: String,
+    ) = """{"status": "VEDTAK_I_NY_LØSNING", "gjenståendeDager": $gjenståendeDager, "vurdertTilOgMed": "$vurdertTilOgMed"}"""
+
     private fun infotrygdperiode(tom: String) =
         """{"utbetaltePerioder": [{"personidentifikator": "$FØDSELSNUMMER", "fom": "2023-01-01", "tom": "$tom", "grad": 100}]}"""
 
     private companion object {
         private const val FØDSELSNUMMER = "12345678911"
         private val objectMapper = jacksonObjectMapper()
-        private val ingenVedtak = """{"feilkode": "INGEN_VEDTAK", "melding": "Fant ingen vedtak for personen i ny løsning"}"""
+        private val ingenVedtak = """{"status": "INGEN_VEDTAK"}"""
         private val ugyldigForespørsel = """{"feilkode": "UGYLDIG_FORESPØRSEL", "melding": "Forventer en body med fødselsnummer på 11 siffer"}"""
     }
 }
