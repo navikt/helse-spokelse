@@ -64,9 +64,9 @@ Se [rutene for utbetalte perioder](src/main/kotlin/no/nav/helse/spokelse/utbetal
 
 ### Gjenstående sykedager
 
-`/gjenstaende-sykedager` tar imot `{"fødselsnummer": "<11 siffer>"}` og svarer med antall gjenstående sykedager
-og datoen tallet gjelder til og med. Tallet gjelder per siste vedtak, ikke per i dag. Hvis Infotrygd har en utbetaling
-etter siste vedtak, svarer endepunktet `404` med feilkoden `SISTE_UTBETALING_I_INFOTRYGD`.
+`/gjenstaende-sykedager` tar imot `{"fødselsnummer": "<11 siffer>"}` og svarer med `gjenståendeSykedagerVedSisteVedtak`
+og `datoForSisteVedtak`, som er siste dag i siste vedtak. Tallet gjelder per siste vedtak, ikke per i dag. Hvis Infotrygd har en utbetaling
+etter siste vedtak, svarer endepunktet `409` med feilkoden `SISTE_UTBETALING_I_INFOTRYGD`.
 
 OpenAPI-specen ligger på `/openapi/gjenstaende-sykedager.yml`, og Swagger UI på `/swagger`. Begge er åpne uten token:
 [dev](https://spokelse.intern.dev.nav.no/swagger) og [prod](https://spokelse.intern.nav.no/swagger).

@@ -27,8 +27,8 @@ internal data class Feil(
 )
 
 internal data class GjenståendeSykedagerResponse(
-    val gjenståendeSykedager: Int,
-    val gjelderTilOgMed: LocalDate,
+    val gjenståendeSykedagerVedSisteVedtak: Int,
+    val datoForSisteVedtak: LocalDate,
 )
 
 internal fun Route.gjenståendeSykedagerApi(gjenståendeSykedager: GjenståendeSykedager) {
@@ -47,17 +47,17 @@ internal fun Route.gjenståendeSykedagerApi(gjenståendeSykedager: GjenståendeS
 
             GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd -> {
                 logger.info("Siste utbetaling er i Infotrygd for /gjenstaende-sykedager", "fødselsnummer" to personidentifikator.toString())
-                respondFeil(HttpStatusCode.NotFound, Feilkode.SISTE_UTBETALING_I_INFOTRYGD, "Infotrygd har en utbetaling etter siste vedtak i ny løsning")
+                respondFeil(HttpStatusCode.Conflict, Feilkode.SISTE_UTBETALING_I_INFOTRYGD, "Infotrygd har en utbetaling etter siste vedtak i ny løsning")
             }
 
             is GjenståendeSykedager.Resultat.Svar -> {
                 logger.info(
                     "Svarer på /gjenstaende-sykedager",
                     "fødselsnummer" to personidentifikator.toString(),
-                    "gjenståendeSykedager" to resultat.gjenståendeSykedager.toString(),
-                    "gjelderTilOgMed" to resultat.gjelderTilOgMed.toString(),
+                    "gjenståendeSykedagerVedSisteVedtak" to resultat.gjenståendeSykedagerVedSisteVedtak.toString(),
+                    "datoForSisteVedtak" to resultat.datoForSisteVedtak.toString(),
                 )
-                call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(resultat.gjenståendeSykedager, resultat.gjelderTilOgMed))
+                call.respond(HttpStatusCode.OK, GjenståendeSykedagerResponse(resultat.gjenståendeSykedagerVedSisteVedtak, resultat.datoForSisteVedtak))
             }
         }
     }
