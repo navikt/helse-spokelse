@@ -63,7 +63,7 @@ internal fun Route.gjenståendeSykedagerApi(
     fun tellUtfall(utfall: Utfall) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", utfall.name).increment()
 
     post("/gjenstaende-sykedager") {
-        if (!Tilgangsstyring.harTilgangTilGjenståendeSykedager(call)) return@post call.respond(HttpStatusCode.Forbidden)
+        if (!Tilgangsstyring.gjenståendeSykedager(call)) return@post call.respond(HttpStatusCode.Forbidden)
 
         val personidentifikator =
             personidentifikatorFraRequest()
