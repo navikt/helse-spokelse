@@ -43,30 +43,10 @@ internal data class GjenståendeSykedagerResponse(
     val vurdertTilOgMed: LocalDate? = null,
 )
 
-private fun GjenståendeSykedager.Resultat.tilResponse() =
-    when (this) {
-        is GjenståendeSykedager.Resultat.VedtakINyLøsning -> GjenståendeSykedagerResponse(status, gjenståendeDager, vurdertTilOgMed)
-        GjenståendeSykedager.Resultat.IngenVedtak,
-        GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd,
-        -> GjenståendeSykedagerResponse(status)
-    }
-
-internal fun Route.gjenståendeSykedagerDokumentasjon() {
-    get("/$OPENAPI_FIL") {
-        call.respondText(openApi, ContentType.parse("application/yaml"))
-    }
-    swaggerUI(path = "swagger", swaggerFile = OPENAPI_FIL)
-}
-
-private const val OPENAPI_FIL = "openapi/gjenstaende-sykedager.yml"
-private val openApi =
-    requireNotNull(object {}.javaClass.getResource("/$OPENAPI_FIL")) { "Fant ikke OpenAPI-specen" }.readText()
-
 internal fun Route.gjenståendeSykedagerApi(
     gjenståendeSykedager: GjenståendeSykedager,
     meterRegistry: MeterRegistry,
 ) {
-    // status == null betyr at oppslaget feilet
     fun tellUtfall(status: Status?) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", status?.name ?: "FEIL").increment()
 
     post("/gjenstaende-sykedager") {
@@ -95,6 +75,26 @@ internal fun Route.gjenståendeSykedagerApi(
         call.respond(HttpStatusCode.OK, response)
     }
 }
+
+internal fun Route.gjenståendeSykedagerDokumentasjon() {
+    get("/$OPENAPI_FIL") {
+        call.respondText(openApi, ContentType.parse("application/yaml"))
+    }
+    swaggerUI(path = "swagger", swaggerFile = OPENAPI_FIL)
+}
+
+private const val OPENAPI_FIL = "openapi/gjenstaende-sykedager.yml"
+private val openApi =
+    requireNotNull(object {}.javaClass.getResource("/$OPENAPI_FIL")) { "Fant ikke OpenAPI-specen" }.readText()
+
+
+private fun GjenståendeSykedager.Resultat.tilResponse() =
+    when (this) {
+        is GjenståendeSykedager.Resultat.VedtakINyLøsning -> GjenståendeSykedagerResponse(status, gjenståendeDager, vurdertTilOgMed)
+        GjenståendeSykedager.Resultat.IngenVedtak,
+        GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd,
+            -> GjenståendeSykedagerResponse(status)
+    }
 
 private suspend fun RoutingContext.personidentifikatorFraRequest(): Personidentifikator? {
     val body = runCatching { objectMapper.readTree(call.receiveText()) }.getOrNull() ?: return null

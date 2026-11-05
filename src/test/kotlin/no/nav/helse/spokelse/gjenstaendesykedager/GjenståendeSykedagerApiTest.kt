@@ -115,13 +115,13 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     }
 
     @Test
-    fun `ingen vedtak og utbetalinger i Infotrygd gir SISTE_UTBETALING_I_INFOTRYGD`() {
+    fun `ingen vedtak i ny løsning og utbetalinger i Infotrygd gir SISTE_UTBETALING_I_INFOTRYGD`() {
         infotrygdperioder = listOf(LocalDate.parse("2005-03-01")..LocalDate.parse("2005-06-30"))
         assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
     }
 
     @Test
-    fun `ingen vedtak og feil fra Infotrygd gir 500`() {
+    fun `ingen vedtak i ny løsning og feil fra Infotrygd gir 500`() {
         infotrygdperioder = null
         assertGjenståendeSykedager(forventetHttpStatus = 500)
     }
