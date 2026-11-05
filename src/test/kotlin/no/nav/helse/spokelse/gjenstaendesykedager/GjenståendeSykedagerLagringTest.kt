@@ -1,6 +1,7 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
 import no.nav.helse.spokelse.AbstractE2ETest
+import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -18,14 +19,14 @@ internal class GjenståendeSykedagerLagringTest : AbstractE2ETest() {
         håndterVedtak(korrelasjonsId, gjenståendeSykedager = 225, sendt = 1.mars)
         håndterVedtak(korrelasjonsId, gjenståendeSykedager = 200, sendt = 15.februar)
 
-        assertEquals(SisteVedtak(225, TOM), gjenståendeSykedagerDao.sisteVedtak(FØDSELSNUMMER))
+        assertEquals(SisteVedtak(225, TOM), gjenståendeSykedagerDao.sisteVedtak(Personidentifikator(FØDSELSNUMMER)))
     }
 
     @Test
     fun `vedtak uten utbetaling lagres`() {
         håndterVedtak(UUID.randomUUID(), type = "utbetaling_uten_utbetaling", gjenståendeSykedager = 0, sendt = 1.mars)
 
-        assertEquals(SisteVedtak(0, TOM), gjenståendeSykedagerDao.sisteVedtak(FØDSELSNUMMER))
+        assertEquals(SisteVedtak(0, TOM), gjenståendeSykedagerDao.sisteVedtak(Personidentifikator(FØDSELSNUMMER)))
     }
 
     @Test
@@ -34,7 +35,7 @@ internal class GjenståendeSykedagerLagringTest : AbstractE2ETest() {
         håndterVedtak(korrelasjonsId, gjenståendeSykedager = 221, sendt = 1.februar)
         håndterAnnullering(korrelasjonsId, sendt = 1.mars)
 
-        assertNull(gjenståendeSykedagerDao.sisteVedtak(FØDSELSNUMMER))
+        assertNull(gjenståendeSykedagerDao.sisteVedtak(Personidentifikator(FØDSELSNUMMER)))
     }
 
     @Test
@@ -44,7 +45,7 @@ internal class GjenståendeSykedagerLagringTest : AbstractE2ETest() {
         håndterAnnullering(korrelasjonsId, sendt = 15.februar)
         håndterVedtak(korrelasjonsId, gjenståendeSykedager = 210, sendt = 1.mars)
 
-        assertEquals(SisteVedtak(210, TOM), gjenståendeSykedagerDao.sisteVedtak(FØDSELSNUMMER))
+        assertEquals(SisteVedtak(210, TOM), gjenståendeSykedagerDao.sisteVedtak(Personidentifikator(FØDSELSNUMMER)))
     }
 
     private fun håndterVedtak(
