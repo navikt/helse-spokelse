@@ -3,7 +3,7 @@ info:
   title: Spøkelse – gjenstående sykedager
   version: 1.0.0
   description: |
-    Gir antall gjenstående sykedager for en person, slik det står i siste vedtak i ny løsning for sykepenger (Speil).
+    Gir antall gjenstående sykedager for en person, slik det står i siste vedtak i ny løsning for sykepenger.
 
     Alle utfall av oppslaget gir `200` med feltet `status`:
     - `VEDTAK_I_NY_LØSNING`: Personen har et siste vedtak i ny løsning, og Infotrygd har ingen utbetaling etter det.
@@ -14,16 +14,22 @@ info:
     - `INGEN_VEDTAK`: Vi fant ingen vedtak for personen i ny løsning og ingen utbetalinger i Infotrygd.
       Det betyr **ikke** at personen aldri har hatt sykepenger. Vedtak fra før 16. mars 2022 og annullerte vedtak er ikke med.
 
-    Svaret bygger bare på fattede vedtak. Sykdom som er under behandling, er ikke med.
+    **Tallet gjelder per siste vedtak, ikke per i dag.** `gjenståendeDager` er antall sykedager personen hadde igjen
+    per `vurdertTilOgMed`, som er siste dag i perioden vedtaket gjelder for. Svaret bygger bare på fattede vedtak.
 
-    **Tallet gjelder per siste vedtak, ikke per i dag.** `vurdertTilOgMed` er siste dag i perioden vedtaket gjelder for.
-    Har personen hatt sykepenger etter denne datoen, er det ikke fanget opp i tallet.
+    Fram til og med `vurdertTilOgMed` tar tallet hensyn til:
+    - sykedager hos alle arbeidsgivere og sykedager utbetalt i Infotrygd
+    - ny rett etter 26 uker uten sykepenger
+    - at sykedager eldre enn tre år faller bort
+    - at personen har rett til høyst 60 sykedager etter fylte 67 år, og ingen rett etter fylte 70 år
+    - at graderte dager teller som hele dager, slik loven sier
 
-    Tallet tar ikke hensyn til:
-    - ny rett til sykepenger etter 26 uker uten sykepenger
-    - at sykedager som er eldre enn tre år, faller bort
+    Det som skjer etter `vurdertTilOgMed`, er ikke med:
     - sykdom som ikke er behandlet ennå
-    - at graderte dager teller som hele dager, så personen kan ha brukt opp færre dager enn det ser ut som
+    - ny rett hvis det går 26 uker uten sykepenger
+    - sykedager som blir eldre enn tre år
+
+    Personen kan derfor ha både flere og færre dager igjen i dag enn tallet viser.
 
     Siste vedtak er vedtaket med senest `vurdertTilOgMed`. Det kan være et vedtak med eller uten utbetaling.
     Et annullert vedtak regnes ikke med, og da gjelder forrige vedtak.
@@ -111,7 +117,7 @@ components:
           description: Utfallet av oppslaget. Se beskrivelsen øverst.
         gjenståendeDager:
           type: integer
-          description: Antall gjenstående sykedager per `vurdertTilOgMed`. Bare med når `status` er `VEDTAK_I_NY_LØSNING`.
+          description: Antall sykedager personen hadde igjen per `vurdertTilOgMed`. Bare med når `status` er `VEDTAK_I_NY_LØSNING`.
         vurdertTilOgMed:
           type: string
           format: date
