@@ -27,13 +27,7 @@ internal object Tilgangsstyring {
         call.håndhevTilgangTil(endepunkt = "grunnlag", enAvRollene = setOf("foreldrepenger-les", "k9-les"))
     }
 
-    internal fun harTilgangTilGjenståendeSykedager(call: ApplicationCall) =
-        try {
-            call.håndhevTilgangTil(endepunkt = "gjenstaende-sykedager", påkrevdRolle = "aap-les")
-            true
-        } catch (_: IllegalStateException) {
-            false
-        }
+    internal fun gjenståendeSykedager(call: ApplicationCall) = call.harTilgangTil(endepunkt = "gjenstaende-sykedager", enAvRollene = setOf("aap-les"))
 
     private val ApplicationCall.applicationId get() =
         this
@@ -55,23 +49,22 @@ internal object Tilgangsstyring {
             ?.getListClaim("roles", String::class)
             ?: emptyList()
 
-    private fun ApplicationCall.håndhevTilgangTil(
+    private fun ApplicationCall.harTilgangTil(
         endepunkt: String,
         enAvRollene: Set<String>,
-    ) {
-        val rolle =
-            enAvRollene.firstOrNull { it in roles } ?: run {
-                val feilmelding = "Applikasjonen $applicationName ($applicationId) har ikke tilgang til /$endepunkt - Må ha en av rollene $enAvRollene, har bare $roles"
-                loggError(
-                    "Applikasjon mangler rolle for endepunkt",
-                    "endepunkt" to "/$endepunkt",
-                    "applicationName" to applicationName,
-                    "applicationId" to applicationId,
-                    "påkrevdeRoller" to enAvRollene.toString(),
-                    "roller" to roles.toString(),
-                )
-                throw IllegalStateException(feilmelding)
-            }
+    ): Boolean {
+        val rolle = enAvRollene.firstOrNull { it in roles }
+        if (rolle == null) {
+            loggError(
+                "Applikasjon mangler rolle for endepunkt",
+                "endepunkt" to "/$endepunkt",
+                "applicationName" to applicationName,
+                "applicationId" to applicationId,
+                "påkrevdeRoller" to enAvRollene.toString(),
+                "roller" to roles.toString(),
+            )
+            return false
+        }
 
         loggInfo(
             "Håndterer request til /$endepunkt",
@@ -79,6 +72,14 @@ internal object Tilgangsstyring {
             "applicationId" to applicationId,
             "rolle" to rolle,
         )
+        return true
+    }
+
+    private fun ApplicationCall.håndhevTilgangTil(
+        endepunkt: String,
+        enAvRollene: Set<String>,
+    ) = check(harTilgangTil(endepunkt, enAvRollene)) {
+        "Applikasjonen $applicationName ($applicationId) har ikke tilgang til /$endepunkt - Må ha en av rollene $enAvRollene, har bare $roles"
     }
 
     private fun ApplicationCall.håndhevTilgangTil(
