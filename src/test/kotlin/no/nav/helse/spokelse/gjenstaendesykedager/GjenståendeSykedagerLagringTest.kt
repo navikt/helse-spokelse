@@ -48,11 +48,19 @@ internal class GjenståendeSykedagerLagringTest : AbstractE2ETest() {
         assertEquals(SisteVedtak(210, TOM), gjenståendeSykedagerDao.sisteVedtak(Personidentifikator(FØDSELSNUMMER)))
     }
 
+    @Test
+    fun `vedtak med LocalDate MIN lagres ikke`() {
+        håndterVedtak(UUID.randomUUID(), gjenståendeSykedager = 221, sendt = 1.februar, fom = LocalDate.MIN)
+
+        assertNull(gjenståendeSykedagerDao.sisteVedtak(Personidentifikator(FØDSELSNUMMER)))
+    }
+
     private fun håndterVedtak(
         korrelasjonsId: UUID,
         type: String = "utbetaling_utbetalt",
         gjenståendeSykedager: Int,
         sendt: LocalDateTime,
+        fom: LocalDate = FOM,
     ) {
         @Language("JSON")
         val json =
@@ -63,7 +71,7 @@ internal class GjenståendeSykedagerLagringTest : AbstractE2ETest() {
               "korrelasjonsId": "$korrelasjonsId",
               "fødselsnummer": "$FØDSELSNUMMER",
               "organisasjonsnummer": "999263550",
-              "fom": "$FOM",
+              "fom": "$fom",
               "tom": "$TOM",
               "gjenståendeSykedager": $gjenståendeSykedager,
               "arbeidsgiverOppdrag": {

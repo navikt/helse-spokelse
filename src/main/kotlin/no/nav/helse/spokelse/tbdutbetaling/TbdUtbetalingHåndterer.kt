@@ -37,7 +37,7 @@ internal class TbdUtbetalingHåndterer(
         sendt: LocalDateTime,
     ) {
         val meldingId = lagreMelding(json, sendt)
-        gjenståendeSykedagerDao.lagreVedtak(meldingId, json.vedtak(sendt))
+        lagreVedtak(meldingId, json, sendt)
         observers.forEach { it.utbetaling(meldingId, json.utbetaling(sendt)) }
     }
 
@@ -55,7 +55,24 @@ internal class TbdUtbetalingHåndterer(
         sendt: LocalDateTime,
     ) {
         val meldingId = lagreMelding(json, sendt)
-        gjenståendeSykedagerDao.lagreVedtak(meldingId, json.vedtak(sendt))
+        lagreVedtak(meldingId, json, sendt)
+    }
+
+    private fun lagreVedtak(
+        meldingId: Long,
+        json: JsonNode,
+        sendt: LocalDateTime,
+    ) {
+        val vedtak = json.vedtak(sendt)
+        if (!vedtak.harGyldigPeriode) {
+            return loggWarn(
+                "Lagrer ikke gjenstående sykedager for vedtak uten gyldig periode",
+                "korrelasjonsId" to "${vedtak.korrelasjonsId}",
+                "fom" to "${vedtak.fom}",
+                "tom" to "${vedtak.tom}",
+            )
+        }
+        gjenståendeSykedagerDao.lagreVedtak(meldingId, vedtak)
     }
 
     private fun lagreMelding(

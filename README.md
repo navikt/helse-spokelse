@@ -82,9 +82,6 @@ OpenAPI-specen ligger på `/openapi/gjenstaende-sykedager.yml`, og Swagger UI p�
 [dev](https://spokelse.intern.dev.nav.no/swagger) og [prod](https://spokelse.intern.nav.no/swagger).
 Specen beskriver hver `status`, feilkodene og hva tallet ikke tar hensyn til.
 
-Vedtakene lagres i tabellen `gjenstående_sykedager`. Vedtak fra før endepunktet kom, er fylt inn fra råmeldingene
-i `tbdUtbetaling_Melding` med migreringen `V20`.
-
 ## Konfigurasjon
 
 | Miljøvariabel | Bruk | Påkrevd | Standardverdi |

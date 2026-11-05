@@ -18,6 +18,9 @@ internal data class Vedtak(
     val gjenståendeSykedager: Int,
     val sendt: LocalDateTime,
 ) {
+    // Spleis bruker LocalDate.MIN/MAX når en periode mangler. Det kan ikke lagres som dato i Postgres.
+    internal val harGyldigPeriode get() = listOf(fom, tom).none { it == LocalDate.MIN || it == LocalDate.MAX }
+
     internal companion object {
         internal fun JsonNode.vedtak(sendt: LocalDateTime): Vedtak {
             require(erUtbetaling || erUtbetalingUtenUtbetaling) { "Kan ikke mappe event $event til vedtak" }

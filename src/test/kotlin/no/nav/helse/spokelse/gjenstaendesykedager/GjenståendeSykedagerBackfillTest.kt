@@ -30,6 +30,14 @@ internal class GjenståendeSykedagerBackfillTest : AbstractE2ETest() {
         lagreRåmelding("utbetaling_annullert", annullertFørRevurdering, sendt = 1.mai)
         lagreRåmelding("utbetaling_utbetalt", annullertFørRevurdering, tom = LocalDate.parse("2023-04-30"), gjenståendeSykedager = 180, sendt = 1.juni)
 
+        val nyesteLagretFørst = UUID.randomUUID()
+        lagreRåmelding("utbetaling_utbetalt", nyesteLagretFørst, tom = LocalDate.parse("2023-05-31"), gjenståendeSykedager = 170, sendt = 1.mars)
+        lagreRåmelding("utbetaling_utbetalt", nyesteLagretFørst, tom = LocalDate.parse("2023-05-31"), gjenståendeSykedager = 175, sendt = 1.februar)
+
+        val annulleringLagretFørst = UUID.randomUUID()
+        lagreRåmelding("utbetaling_annullert", annulleringLagretFørst, sendt = 1.mai)
+        lagreRåmelding("utbetaling_utbetalt", annulleringLagretFørst, tom = LocalDate.parse("2023-06-30"), gjenståendeSykedager = 160, sendt = 1.april)
+
         kjørBackfill()
 
         assertEquals(
@@ -38,9 +46,23 @@ internal class GjenståendeSykedagerBackfillTest : AbstractE2ETest() {
                 utenUtbetaling to Rad(0, LocalDate.parse("2023-02-28"), annullert = false),
                 annullert to Rad(200, LocalDate.parse("2023-03-31"), annullert = true),
                 annullertFørRevurdering to Rad(180, LocalDate.parse("2023-04-30"), annullert = false),
+                nyesteLagretFørst to Rad(170, LocalDate.parse("2023-05-31"), annullert = false),
+                annulleringLagretFørst to Rad(160, LocalDate.parse("2023-06-30"), annullert = true),
             ),
             rader(),
         )
+    }
+
+    @Test
+    fun `hopper over bolken når en annen pod holder på`() {
+        lagreRåmelding("utbetaling_utbetalt", UUID.randomUUID(), gjenståendeSykedager = 221, sendt = 1.februar)
+        sessionOf(dataSource).use { session ->
+            session.transaction { tx ->
+                tx.run(queryOf("SELECT 1 FROM gjenstående_sykedager_backfill FOR UPDATE").asExecute)
+                assertEquals(GjenståendeSykedagerBackfill.Steg.OPPTATT, GjenståendeSykedagerBackfill({ dataSource }).nesteBolk())
+            }
+        }
+        assertEquals(emptyMap<UUID, Rad>(), rader())
     }
 
     @Test
@@ -59,6 +81,14 @@ internal class GjenståendeSykedagerBackfillTest : AbstractE2ETest() {
         assertEquals(mapOf(korrelasjonsId to Rad(221, LocalDate.parse("2023-01-31"), annullert = false)), rader())
     }
 
+    @Test
+    fun `hopper over vedtak med LocalDate MIN eller MAX`() {
+        lagreRåmelding("utbetaling_utbetalt", UUID.randomUUID(), fom = LocalDate.MIN, gjenståendeSykedager = 10, sendt = 1.februar)
+        lagreRåmelding("utbetaling_utbetalt", UUID.randomUUID(), tom = LocalDate.MAX, fom = LocalDate.parse("2023-01-01"), gjenståendeSykedager = 10, sendt = 1.februar)
+        kjørBackfill()
+        assertEquals(emptyMap<UUID, Rad>(), rader())
+    }
+
     private data class Rad(
         val gjenståendeSykedager: Int,
         val tom: LocalDate,
@@ -69,6 +99,7 @@ internal class GjenståendeSykedagerBackfillTest : AbstractE2ETest() {
         type: String,
         korrelasjonsId: UUID,
         tom: LocalDate = LocalDate.parse("2023-01-31"),
+        fom: LocalDate = tom.withDayOfMonth(1),
         gjenståendeSykedager: Int? = null,
         sendt: LocalDateTime,
     ) {
@@ -77,16 +108,18 @@ internal class GjenståendeSykedagerBackfillTest : AbstractE2ETest() {
                 "event" to type,
                 "korrelasjonsId" to korrelasjonsId.toString(),
                 "fødselsnummer" to FØDSELSNUMMER,
-                "fom" to tom.withDayOfMonth(1).toString(),
+                "fom" to fom.toString(),
                 "tom" to tom.toString(),
             )
         gjenståendeSykedager?.let { melding["gjenståendeSykedager"] = it }
         tbdUtbetalingDao.lagreMelding(Melding(objectMapper.writeValueAsString(melding), sendt, type, FØDSELSNUMMER))
     }
 
+    // Bolkstørrelse 1 gjør at meldinger for samme korrelasjonsId havner i ulike bolker.
     private fun kjørBackfill() {
-        val sql = javaClass.getResource("/db/migration/V20__gjenstaende_sykedager_backfill.sql")!!.readText()
-        sessionOf(dataSource).use { it.run(queryOf(sql).asExecute) }
+        sessionOf(dataSource).use { it.run(queryOf("UPDATE gjenstående_sykedager_backfill SET fase = 'UTBETALINGER', siste_id = 0").asUpdate) }
+        val backfill = GjenståendeSykedagerBackfill({ dataSource }, bolkstørrelse = 1)
+        while (backfill.nesteBolk() == GjenståendeSykedagerBackfill.Steg.FREMGANG) Unit
     }
 
     private fun rader() =
