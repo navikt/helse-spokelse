@@ -2,6 +2,7 @@ package no.nav.helse.spokelse.gjenstaendesykedager
 
 import kotliquery.queryOf
 import kotliquery.sessionOf
+import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -71,7 +72,7 @@ internal class GjenståendeSykedagerDao(
         }
     }
 
-    internal fun sisteVedtak(fødselsnummer: String): SisteVedtak? =
+    internal fun sisteVedtak(personidentifikator: Personidentifikator): SisteVedtak? =
         sessionOf(dataSource()).use { session ->
             session.run(
                 queryOf(
@@ -85,7 +86,7 @@ internal class GjenståendeSykedagerDao(
                         ORDER BY tom DESC, sendt DESC
                         LIMIT 1
                     """,
-                    mapOf("fodselsnummer" to fødselsnummer, "brukVedtakEtter" to brukVedtakEtter),
+                    mapOf("fodselsnummer" to personidentifikator.toString(), "brukVedtakEtter" to brukVedtakEtter),
                 ).map { row ->
                     SisteVedtak(
                         gjenståendeDager = row.int("gjenstående_sykedager"),

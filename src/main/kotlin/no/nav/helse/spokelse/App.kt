@@ -6,13 +6,10 @@ import com.github.navikt.tbd_libs.naisful.naisApp
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.ktor.client.*
 import io.ktor.client.engine.cio.CIO
-import io.ktor.http.ContentType
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.request.header
-import io.ktor.server.response.respondText
 import io.ktor.server.routing.*
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.MeterRegistry
@@ -24,6 +21,7 @@ import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerApi
+import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerDokumentasjon
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisKjennerTilRiver
@@ -154,10 +152,7 @@ internal fun Application.spokelse(
 ) {
     azureAdAppAuthentication(auth)
     routing {
-        get("/openapi/gjenstaende-sykedager.yml") {
-            call.respondText(gjenståendeSykedagerOpenApi, ContentType.parse("application/yaml"))
-        }
-        swaggerUI(path = "swagger", swaggerFile = "openapi/gjenstaende-sykedager.yml")
+        gjenståendeSykedagerDokumentasjon()
         authenticate {
             grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
             utbetaltePerioderApi(utbetaltePerioder)
@@ -165,6 +160,3 @@ internal fun Application.spokelse(
         }
     }
 }
-
-private val gjenståendeSykedagerOpenApi =
-    requireNotNull(object {}.javaClass.getResource("/openapi/gjenstaende-sykedager.yml")) { "Fant ikke OpenAPI-specen" }.readText()

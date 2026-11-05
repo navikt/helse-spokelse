@@ -10,18 +10,26 @@ internal class GjenståendeSykedager(
     private val idag: () -> LocalDate = LocalDate::now,
 ) {
     internal sealed interface Resultat {
+        val status: Status
+
         data class VedtakINyLøsning(
             val gjenståendeDager: Int,
             val vurdertTilOgMed: LocalDate,
-        ) : Resultat
+        ) : Resultat {
+            override val status = Status.VEDTAK_I_NY_LØSNING
+        }
 
-        data object IngenVedtak : Resultat
+        data object IngenVedtak : Resultat {
+            override val status = Status.INGEN_VEDTAK
+        }
 
-        data object SisteUtbetalingIInfotrygd : Resultat
+        data object SisteUtbetalingIInfotrygd : Resultat {
+            override val status = Status.SISTE_UTBETALING_I_INFOTRYGD
+        }
     }
 
     internal suspend fun hent(personidentifikator: Personidentifikator): Resultat {
-        val sisteVedtak = dao.sisteVedtak(personidentifikator.toString())
+        val sisteVedtak = dao.sisteVedtak(personidentifikator)
         if (sisteVedtak == null) {
             if (harUtbetalingIInfotrygd(personidentifikator, fom = INFOTRYGD_FOM)) return Resultat.SisteUtbetalingIInfotrygd
             return Resultat.IngenVedtak
