@@ -10,7 +10,7 @@ spec:
   startup:
     path: isalive
     periodSeconds: 10
-    failureThreshold: 60
+    failureThreshold: 360
     timeout: 1
   liveness:
     path: isalive
