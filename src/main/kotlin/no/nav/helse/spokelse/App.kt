@@ -19,7 +19,6 @@ import io.prometheus.metrics.model.registry.PrometheusRegistry
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
-import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerBackfill
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerApi
 import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerDokumentasjon
@@ -126,7 +125,6 @@ fun launchApplication(env: Map<String, String>) {
                 object : RapidsConnection.StatusListener {
                     override fun onStartup(rapidsConnection: RapidsConnection) {
                         dataSource.migrate()
-                        GjenståendeSykedagerBackfill(dataSource::dataSource).startIBakgrunnen()
                     }
                 },
             )

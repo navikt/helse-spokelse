@@ -1,0 +1,1 @@
+DROP TABLE gjenstående_sykedager_backfill;
