@@ -20,6 +20,7 @@ import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.SpleisApi
 import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerApi
 import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerDokumentasjon
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
@@ -80,6 +81,13 @@ fun launchApplication(env: Map<String, String>) {
         GjenståendeSykedager(
             dao = gjenståendeSykedagerDao,
             infotrygd = infotrygd,
+            spleisApi =
+                SpleisApi(
+                    httpClient = infotrygdHttpClient,
+                    scope = env.hent("SPLEIS_API_SCOPE"),
+                    accessToken = Azure(env, infotrygdHttpClient),
+                    url = env.hent("SPLEIS_API_URL"),
+                ),
         )
 
     val tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))

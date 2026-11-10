@@ -14,6 +14,7 @@ kombinerer den disse med eldre Spleis-utbetalinger og perioder hentet fra Infotr
 flowchart LR
     utbetaling["tbd.utbetaling"] -->|Utbetalinger, vedtak uten utbetaling og annulleringer| spokelse["Spøkelse"]
     infotrygd["sparkel-sykepengeperioder-api"] -->|Infotrygd-perioder| spokelse
+    spokelse <-->|Infotrygd-perioder inn, gjenstående sykedager ut| spleisapi["spleis-api"]
     spokelse -->|Data| konsument["API-konsument"]
     spokelse -->|Varsler om endringer| boo["tbd.boo"]
 ```

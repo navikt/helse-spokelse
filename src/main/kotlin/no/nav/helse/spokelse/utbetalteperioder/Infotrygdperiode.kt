@@ -7,6 +7,7 @@ internal data class Infotrygdperiode(
     val tom: LocalDate,
     val type: String,
     val maksdato: LocalDate?,
+    val organisasjonsnummer: String?,
 ) {
     internal val erUtbetaling get() = type in UTBETALINGSTYPER
 

@@ -83,3 +83,5 @@ spec:
       value: api://dev-fss.tbd.sparkel-sykepengeperioder-api/.default
     - name: INFOTRYGD_URL
       value: https://sykepengeperioder-api.dev-fss-pub.nais.io
+    - name: SPLEIS_API_SCOPE
+      value: api://dev-gcp.tbd.spleis-api/.default

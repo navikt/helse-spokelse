@@ -94,9 +94,9 @@ private fun GjenståendeSykedager.Resultat.tilResponse() =
     when (this) {
         is GjenståendeSykedager.Resultat.VedtakINyLøsning -> GjenståendeSykedagerResponse(grunnlag, gjenståendeDager, vurdertTilOgMed)
         is GjenståendeSykedager.Resultat.MaksdatoIInfotrygd -> GjenståendeSykedagerResponse(grunnlag, gjenståendeDager, vurdertTilOgMed)
+        is GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd -> GjenståendeSykedagerResponse(grunnlag, gjenståendeDager, vurdertTilOgMed)
         GjenståendeSykedager.Resultat.ManglerMaksdatoIInfotrygd,
         GjenståendeSykedager.Resultat.IngenSykepengerSiste26Uker,
-        GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd,
             -> GjenståendeSykedagerResponse(grunnlag)
     }
 

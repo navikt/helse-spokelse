@@ -7,8 +7,9 @@ info:
 
     Alle utfall av oppslaget gir `200` med feltet `grunnlag`:
     - `VEDTAK_I_NY_LØSNING`: Tallet er beregnet da siste vedtak ble fattet. `vurdertTilOgMed` er siste dag i vedtaket.
-    - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling etter siste vedtak. Inntil videre er ikke tallet med.
-      Senere beregnes det ved oppslaget, med dager fra begge løsninger.
+    - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling etter siste vedtak. Tallet beregnes ved oppslaget, med dager
+      fra begge løsninger og de samme reglene som saksbehandlingen i ny løsning. `vurdertTilOgMed` er siste dag i siste utbetaling
+      i Infotrygd. Alle hverdager i en utbetalingsperiode i Infotrygd teller som utbetalt, så tallet kan bli for lavt.
     - `MAKSDATO_I_INFOTRYGD`: Siste sykefravær er bare i Infotrygd. Personen har bare utbetalinger der, eller det er
       minst 26 uker opphold etter siste vedtak. Tallet er ukedagene (mandag–fredag, helligdager telles med) fra dagen
       etter `vurdertTilOgMed` til og med Infotrygds maksdato. `vurdertTilOgMed` er siste dag i siste utbetaling i Infotrygd.
@@ -79,6 +80,8 @@ paths:
                   summary: Infotrygd har utbetalt etter siste vedtak
                   value:
                     grunnlag: SISTE_UTBETALING_I_INFOTRYGD
+                    gjenståendeDager: 87
+                    vurdertTilOgMed: "2026-10-30"
                 maksdatoIInfotrygd:
                   summary: Siste sykefravær er bare i Infotrygd, og Infotrygd har maksdato
                   value:
@@ -107,7 +110,7 @@ paths:
         '403':
           description: Tokenet mangler rollen `aap-les`.
         '500':
-          description: Uventet feil, for eksempel at oppslaget mot Infotrygd feilet. Prøv igjen senere.
+          description: Uventet feil, for eksempel at oppslaget mot Infotrygd eller beregningen i spleis-api feilet. Prøv igjen senere.
 components:
   securitySchemes:
     azureAd:
@@ -133,7 +136,7 @@ components:
         gjenståendeDager:
           type: integer
           minimum: 0
-          description: Antall sykedager personen hadde igjen per `vurdertTilOgMed`. Bare med når `grunnlag` er `VEDTAK_I_NY_LØSNING` eller `MAKSDATO_I_INFOTRYGD`.
+          description: Antall sykedager personen hadde igjen per `vurdertTilOgMed`. Bare med når `grunnlag` er `VEDTAK_I_NY_LØSNING`, `SISTE_UTBETALING_I_INFOTRYGD` eller `MAKSDATO_I_INFOTRYGD`.
         vurdertTilOgMed:
           type: string
           format: date

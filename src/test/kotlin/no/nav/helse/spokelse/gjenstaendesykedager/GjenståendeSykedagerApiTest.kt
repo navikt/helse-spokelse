@@ -1,10 +1,13 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
+import io.ktor.http.HttpStatusCode
 import no.nav.helse.spokelse.AbstractE2ETest
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.skyscreamer.jsonassert.JSONAssert
+import org.skyscreamer.jsonassert.JSONCompareMode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -101,10 +104,64 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     }
 
     @Test
-    fun `senere utbetaling i Infotrygd gir SISTE_UTBETALING_I_INFOTRYGD`() {
+    fun `senere utbetaling i Infotrygd gir SISTE_UTBETALING_I_INFOTRYGD med tallet fra spleis-api`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"))
         infotrygdperioder = listOf(utbetaling("2023-01-01", "2023-02-28"))
+        spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 120, "vurdertTilOgMed": "2023-02-28"}""")
+        assertGjenståendeSykedager(
+            forventetResponseBody = """{"grunnlag": "SISTE_UTBETALING_I_INFOTRYGD", "gjenståendeDager": 120, "vurdertTilOgMed": "2023-02-28"}""",
+        )
+    }
+
+    @Test
+    fun `sender alle periodene i Infotrygd fra 2000-01-01 til spleis-api`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
+        infotrygdperioder =
+            listOf(
+                utbetaling("1999-12-01", "1999-12-31", organisasjonsnummer = "999999999"),
+                utbetaling("1999-12-20", "2000-01-10", organisasjonsnummer = "888888888"),
+                utbetaling("2022-06-01", "2022-06-30", type = "FERIE"),
+                utbetaling("2023-02-01", "2023-02-28", type = "ARB_REF", organisasjonsnummer = "999263550", maksdato = "2023-12-01"),
+            )
         assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
+
+        @Language("JSON")
+        val forventetRequest =
+            """
+            {
+              "fødselsnummer": "$FØDSELSNUMMER",
+              "infotrygdperioder": [
+                { "fom": "1999-12-20", "tom": "2000-01-10", "type": "UTBETALING", "organisasjonsnummer": "888888888" },
+                { "fom": "2022-06-01", "tom": "2022-06-30", "type": "FERIE", "organisasjonsnummer": null },
+                { "fom": "2023-02-01", "tom": "2023-02-28", "type": "ARB_REF", "organisasjonsnummer": "999263550" }
+              ]
+            }
+            """
+        JSONAssert.assertEquals(forventetRequest, spleisApiRequests.single().toString(), JSONCompareMode.NON_EXTENSIBLE)
+    }
+
+    @Test
+    fun `spleis-api kalles ikke når Infotrygd ikke har noen senere utbetaling`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
+        infotrygdperioder = listOf(utbetaling("2022-01-01", "2023-01-31"))
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
+        assertEquals(emptyList<Any>(), spleisApiRequests)
+    }
+
+    @Test
+    fun `feil fra spleis-api gir 500`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
+        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28"))
+        spleisApiSvar = SpleisApiSvar(HttpStatusCode.InternalServerError)
+        assertGjenståendeSykedager(forventetHttpStatus = 500)
+    }
+
+    @Test
+    fun `404 fra spleis-api gir 500`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
+        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28"))
+        spleisApiSvar = SpleisApiSvar(HttpStatusCode.NotFound)
+        assertGjenståendeSykedager(forventetHttpStatus = 500)
     }
 
     @Test
@@ -408,14 +465,16 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         tom: String,
         maksdato: String? = null,
         type: String = "UTBETALING",
-    ) = Infotrygdperiode(LocalDate.parse(fom), LocalDate.parse(tom), type, maksdato?.let(LocalDate::parse))
+        organisasjonsnummer: String? = null,
+    ) = Infotrygdperiode(LocalDate.parse(fom), LocalDate.parse(tom), type, maksdato?.let(LocalDate::parse), organisasjonsnummer)
 
     private companion object {
         private const val FØDSELSNUMMER = "12345678911"
         private val objectMapper = jacksonObjectMapper()
         private val ingenSykepenger = """{"grunnlag": "INGEN_SYKEPENGER_SISTE_26_UKER"}"""
         private val manglerMaksdatoIInfotrygd = """{"grunnlag": "MANGLER_MAKSDATO_I_INFOTRYGD"}"""
-        private val sisteUtbetalingIInfotrygd = """{"grunnlag": "SISTE_UTBETALING_I_INFOTRYGD"}"""
+        // Tallet fra den falske spleis-api når testen ikke setter et eget svar.
+        private val sisteUtbetalingIInfotrygd = """{"grunnlag": "SISTE_UTBETALING_I_INFOTRYGD", "gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28"}"""
         private val ugyldigForespørsel = """{"feilkode": "UGYLDIG_FORESPØRSEL", "melding": "Forventer en body med fødselsnummer på 11 siffer"}"""
     }
 }

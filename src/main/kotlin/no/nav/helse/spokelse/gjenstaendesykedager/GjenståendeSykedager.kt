@@ -10,6 +10,7 @@ import java.time.temporal.ChronoUnit
 internal class GjenståendeSykedager(
     private val dao: GjenståendeSykedagerDao,
     private val infotrygd: Infotrygd,
+    private val spleisApi: SpleisApi,
     private val idag: () -> LocalDate = { LocalDate.now(ZoneId.of("Europe/Oslo")) },
 ) {
     internal sealed interface Resultat {
@@ -37,17 +38,18 @@ internal class GjenståendeSykedager(
             override val grunnlag = Grunnlag.INGEN_SYKEPENGER_SISTE_26_UKER
         }
 
-        data object SisteUtbetalingIInfotrygd : Resultat {
+        data class SisteUtbetalingIInfotrygd(
+            val gjenståendeDager: Int,
+            val vurdertTilOgMed: LocalDate,
+        ) : Resultat {
             override val grunnlag = Grunnlag.SISTE_UTBETALING_I_INFOTRYGD
         }
     }
 
     internal suspend fun hent(personidentifikator: Personidentifikator): Resultat {
         val sisteVedtak = dao.sisteVedtak(personidentifikator)
-        val utbetalingerIInfotrygd =
-            infotrygd
-                .hentAllePeriodetyper(personidentifikator, INFOTRYGD_FOM, idag())
-                .filter { it.erUtbetaling }
+        val infotrygdperioder = infotrygd.hentAllePeriodetyper(personidentifikator, INFOTRYGD_FOM, idag())
+        val utbetalingerIInfotrygd = infotrygdperioder.filter { it.erUtbetaling }
         val sisteUtbetaling = utbetalingerIInfotrygd.maxByOrNull { it.tom }
 
         val sisteDagMedSykepenger = listOfNotNull(sisteVedtak?.vurdertTilOgMed, sisteUtbetaling?.tom).maxOrNull()
@@ -58,7 +60,8 @@ internal class GjenståendeSykedager(
             return Resultat.VedtakINyLøsning(sisteVedtak.gjenståendeDager, sisteVedtak.vurdertTilOgMed)
         }
         if (harOppholdEtter(sisteVedtak.vurdertTilOgMed, utbetalingerIInfotrygd)) return maksdatoIInfotrygd(sisteUtbetaling)
-        return Resultat.SisteUtbetalingIInfotrygd
+        val beregning = spleisApi.beregnGjenståendeSykedager(personidentifikator, infotrygdperioder)
+        return Resultat.SisteUtbetalingIInfotrygd(beregning.gjenståendeDager, beregning.vurdertTilOgMed)
     }
 
     // Minst 182 dager fra dagen etter siste dag med sykepenger til og med i dag.

@@ -70,6 +70,7 @@ internal class Infotrygd(
             tom = LocalDate.parse(path("tom").asString()),
             type = path("type").asString(),
             maksdato = path("maksdato").takeUnless { it.isMissingOrNull() }?.let { LocalDate.parse(it.asString()) },
+            organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asString(),
         )
 
     private fun JsonNode.somPeriode(): SpøkelsePeriode =

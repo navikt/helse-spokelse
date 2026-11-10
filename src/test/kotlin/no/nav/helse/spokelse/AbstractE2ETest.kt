@@ -17,6 +17,7 @@ import kotlinx.coroutines.runBlocking
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
+import no.nav.helse.spokelse.gjenstaendesykedager.SpleisApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
@@ -33,10 +34,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.skyscreamer.jsonassert.JSONAssert
+import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import java.time.LocalDate
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 import javax.sql.DataSource
 
 @TestInstance(PER_CLASS)
@@ -46,7 +49,33 @@ internal abstract class AbstractE2ETest {
         val tom: LocalDate,
         val type: String = "UTBETALING",
         val maksdato: LocalDate? = null,
+        val organisasjonsnummer: String? = null,
     )
+
+    protected data class SpleisApiSvar(
+        val status: HttpStatusCode,
+        val body: String = "",
+    )
+
+    // Svaret fra den falske spleis-api. Requestene den har fått, legges i spleisApiRequests.
+    protected var spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28"}""")
+    protected val spleisApiRequests = CopyOnWriteArrayList<JsonNode>()
+    private val spleisApi =
+        SpleisApi(
+            httpClient =
+                HttpClient(
+                    MockEngine { request ->
+                        spleisApiRequests.add(jacksonObjectMapper().readTree((request.body as TextContent).text))
+                        respond(spleisApiSvar.body, spleisApiSvar.status, headersOf(HttpHeaders.ContentType, "application/json"))
+                    },
+                ),
+            scope = "api://spleis-api",
+            accessToken =
+                object : AccessToken() {
+                    override suspend fun hentNytt(scope: String) = "token" to 3600L
+                },
+            url = "http://spleis-api",
+        )
 
     // Perioder i den falske Infotrygd. Som i sparkel svarer den bare med perioder som overlapper fom-tom i requesten,
     // og bare med utbetalingstypene hvis ikke inkluderAllePeriodetyper er true. null gir 500.
@@ -69,7 +98,8 @@ internal abstract class AbstractE2ETest {
                                 .filter { inkluderAllePeriodetyper || it.type in setOf("UTBETALING", "REDUKSJON_MEDLEM", "ARB_REF", "REDUKSJON_ARB_REF") }
                                 .joinToString {
                                     val maksdato = it.maksdato?.let { dato -> "\"$dato\"" } ?: "null"
-                                    """{"personidentifikator": "$personidentifikator", "fom": "${it.fom}", "tom": "${it.tom}", "grad": 100, "type": "${it.type}", "maksdato": $maksdato}"""
+                                    val organisasjonsnummer = it.organisasjonsnummer?.let { orgnr -> "\"$orgnr\"" } ?: "null"
+                                    """{"personidentifikator": "$personidentifikator", "organisasjonsnummer": $organisasjonsnummer, "fom": "${it.fom}", "tom": "${it.tom}", "grad": 100, "type": "${it.type}", "maksdato": $maksdato}"""
                                 }
                         respond("""{"utbetaltePerioder": [$utbetaltePerioder]}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
                     },
@@ -123,6 +153,8 @@ internal abstract class AbstractE2ETest {
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
         tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
         infotrygdperioder = emptyList()
+        spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28"}""")
+        spleisApiRequests.clear()
         idag = LocalDate.now()
         meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     }
@@ -159,6 +191,7 @@ internal abstract class AbstractE2ETest {
                         GjenståendeSykedager(
                             dao = gjenståendeSykedagerDao,
                             infotrygd = infotrygd,
+                            spleisApi = spleisApi,
                             idag = { idag },
                         ),
                     meterRegistry = meterRegistry,
