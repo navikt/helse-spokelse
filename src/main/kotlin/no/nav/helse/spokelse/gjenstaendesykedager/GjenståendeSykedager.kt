@@ -10,7 +10,7 @@ import java.time.temporal.ChronoUnit
 internal class GjenståendeSykedager(
     private val dao: GjenståendeSykedagerDao,
     private val infotrygd: Infotrygd,
-    private val spleisApi: SpleisApi,
+    private val spleisApiClient: SpleisApiClient,
     private val idag: () -> LocalDate = { LocalDate.now(ZoneId.of("Europe/Oslo")) },
 ) {
     internal sealed interface Resultat {
@@ -60,7 +60,7 @@ internal class GjenståendeSykedager(
             return Resultat.VedtakINyLøsning(sisteVedtak.gjenståendeDager, sisteVedtak.vurdertTilOgMed)
         }
         if (harOppholdEtter(sisteVedtak.vurdertTilOgMed, utbetalingerIInfotrygd)) return maksdatoIInfotrygd(sisteUtbetaling)
-        val beregning = spleisApi.beregnGjenståendeSykedager(personidentifikator, infotrygdperioder)
+        val beregning = spleisApiClient.beregnGjenståendeSykedager(personidentifikator, infotrygdperioder)
         return Resultat.SisteUtbetalingIInfotrygd(beregning.gjenståendeDager, beregning.vurdertTilOgMed)
     }
 

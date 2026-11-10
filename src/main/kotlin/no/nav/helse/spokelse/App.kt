@@ -20,7 +20,7 @@ import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
-import no.nav.helse.spokelse.gjenstaendesykedager.SpleisApi
+import no.nav.helse.spokelse.gjenstaendesykedager.SpleisApiClient
 import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerApi
 import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerDokumentasjon
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
@@ -82,8 +82,8 @@ fun launchApplication(env: Map<String, String>) {
         GjenståendeSykedager(
             dao = gjenståendeSykedagerDao,
             infotrygd = infotrygd,
-            spleisApi =
-                SpleisApi(
+            spleisApiClient =
+                SpleisApiClient(
                     httpClient = httpClient,
                     scope = env.hent("SPLEIS_API_SCOPE"),
                     accessToken = azure,

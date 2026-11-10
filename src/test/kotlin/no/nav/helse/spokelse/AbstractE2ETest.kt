@@ -17,7 +17,7 @@ import kotlinx.coroutines.runBlocking
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
-import no.nav.helse.spokelse.gjenstaendesykedager.SpleisApi
+import no.nav.helse.spokelse.gjenstaendesykedager.SpleisApiClient
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
@@ -60,8 +60,8 @@ internal abstract class AbstractE2ETest {
     // Svaret fra den falske spleis-api. Requestene den har fått, legges i spleisApiRequests.
     protected var spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28"}""")
     protected val spleisApiRequests = CopyOnWriteArrayList<JsonNode>()
-    private val spleisApi =
-        SpleisApi(
+    private val spleisApiClient =
+        SpleisApiClient(
             httpClient =
                 HttpClient(
                     MockEngine { request ->
@@ -191,7 +191,7 @@ internal abstract class AbstractE2ETest {
                         GjenståendeSykedager(
                             dao = gjenståendeSykedagerDao,
                             infotrygd = infotrygd,
-                            spleisApi = spleisApi,
+                            spleisApiClient = spleisApiClient,
                             idag = { idag },
                         ),
                     meterRegistry = meterRegistry,

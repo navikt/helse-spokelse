@@ -15,7 +15,7 @@ import org.slf4j.MDC
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
 
-internal class SpleisApi(
+internal class SpleisApiClient(
     private val httpClient: HttpClient,
     private val scope: String,
     private val accessToken: AccessToken,
