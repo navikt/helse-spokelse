@@ -63,12 +63,13 @@ fun launchApplication(env: Map<String, String>) {
     val utbetalingVarsel = UtbetalingVarsel(aivenFactory.createProducer())
 
     val tbdUtbetalingApi = TbdUtbetalingApi(tbdUtbetalingDao)
-    val infotrygdHttpClient = HttpClient(CIO)
+    val httpClient = HttpClient(CIO)
+    val azure = Azure(env, httpClient)
     val infotrygd =
         Infotrygd(
-            httpClient = infotrygdHttpClient,
+            httpClient = httpClient,
             scope = env.hent("INFOTRYGD_SCOPE"),
-            accessToken = Azure(env, infotrygdHttpClient),
+            accessToken = azure,
             url = env.hent("INFOTRYGD_URL"),
         )
     val utbetaltePerioder =
@@ -83,9 +84,9 @@ fun launchApplication(env: Map<String, String>) {
             infotrygd = infotrygd,
             spleisApi =
                 SpleisApi(
-                    httpClient = infotrygdHttpClient,
+                    httpClient = httpClient,
                     scope = env.hent("SPLEIS_API_SCOPE"),
-                    accessToken = Azure(env, infotrygdHttpClient),
+                    accessToken = azure,
                     url = env.hent("SPLEIS_API_URL"),
                 ),
         )
