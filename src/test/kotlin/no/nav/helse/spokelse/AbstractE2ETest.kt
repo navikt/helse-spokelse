@@ -58,7 +58,7 @@ internal abstract class AbstractE2ETest {
     )
 
     // Svaret fra den falske spleis-api. Requestene den har fått, legges i spleisApiRequests.
-    protected var spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28"}""")
+    protected var spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28", "maksdato": "2023-06-29"}""")
     protected val spleisApiRequests = CopyOnWriteArrayList<JsonNode>()
     private val spleisApiClient =
         SpleisApiClient(
@@ -153,7 +153,7 @@ internal abstract class AbstractE2ETest {
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
         tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
         infotrygdperioder = emptyList()
-        spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28"}""")
+        spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28", "maksdato": "2023-06-29"}""")
         spleisApiRequests.clear()
         idag = LocalDate.now()
         meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)

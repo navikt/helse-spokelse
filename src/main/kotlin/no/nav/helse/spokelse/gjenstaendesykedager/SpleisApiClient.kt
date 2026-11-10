@@ -26,6 +26,7 @@ internal class SpleisApiClient(
     internal data class Beregning(
         val gjenståendeDager: Int,
         val vurdertTilOgMed: LocalDate,
+        val maksdato: LocalDate,
     )
 
     private data class Request(
@@ -71,8 +72,9 @@ internal class SpleisApiClient(
     private data class Response(
         val gjenståendeDager: Int,
         val vurdertTilOgMed: LocalDate,
+        val maksdato: LocalDate,
     ) {
-        fun tilBeregning() = Beregning(gjenståendeDager, vurdertTilOgMed)
+        fun tilBeregning() = Beregning(gjenståendeDager, vurdertTilOgMed, maksdato)
     }
 
     private companion object {

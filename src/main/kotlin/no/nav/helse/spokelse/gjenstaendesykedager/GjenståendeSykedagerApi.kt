@@ -58,13 +58,18 @@ internal fun Route.gjenståendeSykedagerApi(
             personidentifikatorFraRequest()
                 ?: return@post respondFeil(HttpStatusCode.BadRequest, Feilkode.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
 
-        val response =
+        val resultat =
             try {
-                gjenståendeSykedager.hent(personidentifikator).tilResponse()
+                gjenståendeSykedager.hent(personidentifikator)
             } catch (exception: Exception) {
                 tellUtfall(null)
                 throw exception
             }
+        val response = resultat.tilResponse()
+        val sammenligning = (resultat as? GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd)?.sammenligning
+        if (sammenligning != null) {
+            meterRegistry.counter("gjenstaende_sykedager_sammenligning_med_infotrygd", "utfall", sammenligning.utfall.name).increment()
+        }
 
         logger.info(
             "Svarer på /gjenstaende-sykedager",
@@ -72,6 +77,10 @@ internal fun Route.gjenståendeSykedagerApi(
             "grunnlag" to response.grunnlag.name,
             "gjenståendeDager" to response.gjenståendeDager?.toString(),
             "vurdertTilOgMed" to response.vurdertTilOgMed?.toString(),
+            "sammenligningMedInfotrygd" to sammenligning?.utfall?.name,
+            "maksdatoFraSpleis" to sammenligning?.maksdatoFraSpleis?.toString(),
+            "maksdatoIInfotrygd" to sammenligning?.maksdatoIInfotrygd?.toString(),
+            "avvikIUkedager" to sammenligning?.avvikIUkedager?.toString(),
         )
         tellUtfall(response.grunnlag)
         call.respond(HttpStatusCode.OK, response)

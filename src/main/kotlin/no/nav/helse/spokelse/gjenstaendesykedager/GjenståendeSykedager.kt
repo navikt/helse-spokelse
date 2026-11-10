@@ -41,8 +41,22 @@ internal class GjenståendeSykedager(
         data class SisteUtbetalingIInfotrygd(
             val gjenståendeDager: Int,
             val vurdertTilOgMed: LocalDate,
+            val sammenligning: Sammenligning,
         ) : Resultat {
             override val grunnlag = Grunnlag.SISTE_UTBETALING_I_INFOTRYGD
+        }
+    }
+
+    internal data class Sammenligning(
+        val utfall: Utfall,
+        val maksdatoFraSpleis: LocalDate,
+        val maksdatoIInfotrygd: LocalDate?,
+        val avvikIUkedager: Int?,
+    ) {
+        internal enum class Utfall {
+            LIK,
+            ULIK,
+            MANGLER_MAKSDATO,
         }
     }
 
@@ -61,7 +75,20 @@ internal class GjenståendeSykedager(
         }
         if (harOppholdEtter(sisteVedtak.vurdertTilOgMed, utbetalingerIInfotrygd)) return maksdatoIInfotrygd(sisteUtbetaling)
         val beregning = spleisApiClient.beregnGjenståendeSykedager(personidentifikator, infotrygdperioder)
-        return Resultat.SisteUtbetalingIInfotrygd(beregning.gjenståendeDager, beregning.vurdertTilOgMed)
+        return Resultat.SisteUtbetalingIInfotrygd(
+            gjenståendeDager = beregning.gjenståendeDager,
+            vurdertTilOgMed = beregning.vurdertTilOgMed,
+            sammenligning = sammenlign(beregning.maksdato, sisteUtbetaling.maksdato),
+        )
+    }
+
+    private fun sammenlign(
+        maksdatoFraSpleis: LocalDate,
+        maksdatoIInfotrygd: LocalDate?,
+    ): Sammenligning {
+        if (maksdatoIInfotrygd == null) return Sammenligning(Sammenligning.Utfall.MANGLER_MAKSDATO, maksdatoFraSpleis, null, null)
+        val utfall = if (maksdatoIInfotrygd == maksdatoFraSpleis) Sammenligning.Utfall.LIK else Sammenligning.Utfall.ULIK
+        return Sammenligning(utfall, maksdatoFraSpleis, maksdatoIInfotrygd, ukedagerMellom(maksdatoFraSpleis, maksdatoIInfotrygd))
     }
 
     // Minst 182 dager fra dagen etter siste dag med sykepenger til og med i dag.
@@ -105,6 +132,11 @@ internal class GjenståendeSykedager(
             if (tom < fom) return 0
             return (ukedagerFraEnMandagTil(tom.plusDays(1)) - ukedagerFraEnMandagTil(fom)).toInt()
         }
+
+        private fun ukedagerMellom(
+            fra: LocalDate,
+            til: LocalDate,
+        ): Int = (ukedagerFraEnMandagTil(til.plusDays(1)) - ukedagerFraEnMandagTil(fra.plusDays(1))).toInt()
 
         private fun ukedagerFraEnMandagTil(dato: LocalDate): Long {
             val dager = ChronoUnit.DAYS.between(EN_MANDAG, dato)

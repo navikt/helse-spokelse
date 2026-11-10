@@ -107,7 +107,7 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     fun `senere utbetaling i Infotrygd gir SISTE_UTBETALING_I_INFOTRYGD med tallet fra spleis-api`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"))
         infotrygdperioder = listOf(utbetaling("2023-01-01", "2023-02-28"))
-        spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 120, "vurdertTilOgMed": "2023-02-28"}""")
+        spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 120, "vurdertTilOgMed": "2023-02-28", "maksdato": "2023-08-15"}""")
         assertGjenståendeSykedager(
             forventetResponseBody = """{"grunnlag": "SISTE_UTBETALING_I_INFOTRYGD", "gjenståendeDager": 120, "vurdertTilOgMed": "2023-02-28"}""",
         )
@@ -352,6 +352,38 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
             assertEquals(1.0, meterRegistry.find("gjenstaende_sykedager_oppslag").tag("utfall", utfall).counter()?.count(), "utfall=$utfall")
         }
     }
+
+    @Test
+    fun `sammenligner tallet fra spleis-api med Infotrygds maksdato uten å endre svaret`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
+        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28", maksdato = "2023-06-29"))
+        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
+        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28", maksdato = "2023-06-30"))
+        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
+        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28", maksdato = "2023-06-26"))
+        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
+        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28"))
+        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
+
+        mapOf("LIK" to 1.0, "ULIK" to 2.0, "MANGLER_MAKSDATO" to 1.0).forEach { (utfall, antall) ->
+            assertEquals(antall, sammenligninger(utfall), "utfall=$utfall")
+        }
+    }
+
+    @Test
+    fun `sammenligner ikke med Infotrygds maksdato når tallet ikke kommer fra spleis-api`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
+        infotrygdperioder = listOf(utbetaling("2023-01-01", "2023-01-31", maksdato = "2023-06-29"))
+        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
+        listOf("LIK", "ULIK", "MANGLER_MAKSDATO").forEach { utfall -> assertEquals(null, sammenligninger(utfall), "utfall=$utfall") }
+    }
+
+    private fun sammenligninger(utfall: String) =
+        meterRegistry
+            .find("gjenstaende_sykedager_sammenligning_med_infotrygd")
+            .tag("utfall", utfall)
+            .counter()
+            ?.count()
 
     @Test
     fun `ugyldig fødselsnummer gir 400`() {
