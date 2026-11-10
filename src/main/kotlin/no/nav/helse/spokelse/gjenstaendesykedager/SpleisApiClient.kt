@@ -11,8 +11,10 @@ import io.ktor.http.HttpStatusCode
 import no.nav.helse.spokelse.utbetalteperioder.AccessToken
 import no.nav.helse.spokelse.utbetalteperioder.Infotrygdperiode
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
+import no.nav.sykepenger.libs.logging.loggError
 import org.slf4j.MDC
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 import java.time.LocalDate
 
 internal class SpleisApiClient(
@@ -56,15 +58,21 @@ internal class SpleisApiClient(
                 setBody(objectMapper.writeValueAsString(request))
             }
 
-        check(response.status == HttpStatusCode.OK) {
-            "Mottok HTTP ${response.status} ved beregning av gjenstående sykedager i spleis-api"
+        val responseBody = response.bodyAsText()
+        if (response.status != HttpStatusCode.OK) {
+            val melding = "Mottok HTTP ${response.status.value} ved beregning av gjenstående sykedager i spleis-api"
+            loggError(melding, "responseBody" to responseBody)
+            error(melding)
         }
 
-        val body = objectMapper.readTree(response.bodyAsText())
-        return Beregning(
-            gjenståendeDager = body.path("gjenståendeDager").asInt(),
-            vurdertTilOgMed = LocalDate.parse(body.path("vurdertTilOgMed").asString()),
-        )
+        return objectMapper.readValue<Response>(responseBody).tilBeregning()
+    }
+
+    private data class Response(
+        val gjenståendeDager: Int,
+        val vurdertTilOgMed: LocalDate,
+    ) {
+        fun tilBeregning() = Beregning(gjenståendeDager, vurdertTilOgMed)
     }
 
     private companion object {
