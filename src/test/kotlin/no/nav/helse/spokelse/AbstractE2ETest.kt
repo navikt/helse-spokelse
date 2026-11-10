@@ -41,8 +41,17 @@ import javax.sql.DataSource
 
 @TestInstance(PER_CLASS)
 internal abstract class AbstractE2ETest {
-    // Utbetalte perioder i den falske Infotrygd. Som i sparkel svarer den bare med perioder som overlapper fom-tom i requesten. null gir 500.
-    protected var infotrygdperioder: List<ClosedRange<LocalDate>>? = emptyList()
+    protected data class Infotrygdperiode(
+        val fom: LocalDate,
+        val tom: LocalDate,
+        val type: String = "UTBETALING",
+        val maksdato: LocalDate? = null,
+    )
+
+    // Perioder i den falske Infotrygd. Som i sparkel svarer den bare med perioder som overlapper fom-tom i requesten,
+    // og bare med utbetalingstypene hvis ikke inkluderAllePeriodetyper er true. null gir 500.
+    protected var infotrygdperioder: List<Infotrygdperiode>? = emptyList()
+    protected var idag: LocalDate = LocalDate.now()
     private val infotrygd =
         Infotrygd(
             httpClient =
@@ -52,11 +61,16 @@ internal abstract class AbstractE2ETest {
                         val body = jacksonObjectMapper().readTree((request.body as TextContent).text)
                         val fom = LocalDate.parse(body.path("fom").asString())
                         val tom = LocalDate.parse(body.path("tom").asString())
+                        val inkluderAllePeriodetyper = body.path("inkluderAllePeriodetyper").asBoolean(false)
                         val personidentifikator = body.path("personidentifikatorer").first().asString()
                         val utbetaltePerioder =
                             perioder
-                                .filter { it.start <= tom && it.endInclusive >= fom }
-                                .joinToString { """{"personidentifikator": "$personidentifikator", "fom": "${it.start}", "tom": "${it.endInclusive}", "grad": 100}""" }
+                                .filter { it.fom <= tom && it.tom >= fom }
+                                .filter { inkluderAllePeriodetyper || it.type in setOf("UTBETALING", "REDUKSJON_MEDLEM", "ARB_REF", "REDUKSJON_ARB_REF") }
+                                .joinToString {
+                                    val maksdato = it.maksdato?.let { dato -> "\"$dato\"" } ?: "null"
+                                    """{"personidentifikator": "$personidentifikator", "fom": "${it.fom}", "tom": "${it.tom}", "grad": 100, "type": "${it.type}", "maksdato": $maksdato}"""
+                                }
                         respond("""{"utbetaltePerioder": [$utbetaltePerioder]}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
                     },
                 ),
@@ -109,6 +123,7 @@ internal abstract class AbstractE2ETest {
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
         tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
         infotrygdperioder = emptyList()
+        idag = LocalDate.now()
         meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     }
 
@@ -144,6 +159,7 @@ internal abstract class AbstractE2ETest {
                         GjenståendeSykedager(
                             dao = gjenståendeSykedagerDao,
                             infotrygd = infotrygd,
+                            idag = { idag },
                         ),
                     meterRegistry = meterRegistry,
                 )

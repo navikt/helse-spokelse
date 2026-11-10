@@ -30,15 +30,17 @@ internal data class Feil(
     val melding: String,
 )
 
-internal enum class Status {
+internal enum class Grunnlag {
     VEDTAK_I_NY_LØSNING,
     SISTE_UTBETALING_I_INFOTRYGD,
-    INGEN_VEDTAK,
+    MAKSDATO_I_INFOTRYGD,
+    MANGLER_MAKSDATO_I_INFOTRYGD,
+    INGEN_SYKEPENGER_SISTE_26_UKER,
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 internal data class GjenståendeSykedagerResponse(
-    val status: Status,
+    val grunnlag: Grunnlag,
     val gjenståendeDager: Int? = null,
     val vurdertTilOgMed: LocalDate? = null,
 )
@@ -47,7 +49,7 @@ internal fun Route.gjenståendeSykedagerApi(
     gjenståendeSykedager: GjenståendeSykedager,
     meterRegistry: MeterRegistry,
 ) {
-    fun tellUtfall(status: Status?) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", status?.name ?: "FEIL").increment()
+    fun tellUtfall(grunnlag: Grunnlag?) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", grunnlag?.name ?: "FEIL").increment()
 
     post("/gjenstaende-sykedager") {
         if (!Tilgangsstyring.gjenståendeSykedager(call)) return@post call.respond(HttpStatusCode.Forbidden)
@@ -67,11 +69,11 @@ internal fun Route.gjenståendeSykedagerApi(
         logger.info(
             "Svarer på /gjenstaende-sykedager",
             "fødselsnummer" to personidentifikator.toString(),
-            "status" to response.status.name,
+            "grunnlag" to response.grunnlag.name,
             "gjenståendeDager" to response.gjenståendeDager?.toString(),
             "vurdertTilOgMed" to response.vurdertTilOgMed?.toString(),
         )
-        tellUtfall(response.status)
+        tellUtfall(response.grunnlag)
         call.respond(HttpStatusCode.OK, response)
     }
 }
@@ -90,10 +92,12 @@ private val openApi =
 
 private fun GjenståendeSykedager.Resultat.tilResponse() =
     when (this) {
-        is GjenståendeSykedager.Resultat.VedtakINyLøsning -> GjenståendeSykedagerResponse(status, gjenståendeDager, vurdertTilOgMed)
-        GjenståendeSykedager.Resultat.IngenVedtak,
+        is GjenståendeSykedager.Resultat.VedtakINyLøsning -> GjenståendeSykedagerResponse(grunnlag, gjenståendeDager, vurdertTilOgMed)
+        is GjenståendeSykedager.Resultat.MaksdatoIInfotrygd -> GjenståendeSykedagerResponse(grunnlag, gjenståendeDager, vurdertTilOgMed)
+        GjenståendeSykedager.Resultat.ManglerMaksdatoIInfotrygd,
+        GjenståendeSykedager.Resultat.IngenSykepengerSiste26Uker,
         GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd,
-            -> GjenståendeSykedagerResponse(status)
+            -> GjenståendeSykedagerResponse(grunnlag)
     }
 
 private suspend fun RoutingContext.personidentifikatorFraRequest(): Personidentifikator? {

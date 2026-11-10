@@ -3,21 +3,26 @@ info:
   title: Spøkelse – gjenstående sykedager
   version: 1.0.0
   description: |
-    Gir antall gjenstående sykedager for en person, slik det står i siste vedtak i ny løsning for sykepenger.
+    Gir antall gjenstående sykedager for en person, og hva tallet bygger på.
 
-    Alle utfall av oppslaget gir `200` med feltet `status`:
-    - `VEDTAK_I_NY_LØSNING`: Personen har et siste vedtak i ny løsning, og Infotrygd har ingen utbetaling etter det.
-      Bare da er `gjenståendeDager` og `vurdertTilOgMed` med.
-    - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling som slutter etter siste vedtak i ny løsning,
-      eller personen har ingen vedtak i ny løsning, men har utbetalinger i Infotrygd (også gamle).
-      Hent gjenstående sykedager fra Infotrygd.
-    - `INGEN_VEDTAK`: Vi fant ingen vedtak for personen i ny løsning og ingen utbetalinger i Infotrygd.
-      Det betyr **ikke** at personen aldri har hatt sykepenger. Vedtak fra før 16. mars 2022 og annullerte vedtak er ikke med.
+    Alle utfall av oppslaget gir `200` med feltet `grunnlag`:
+    - `VEDTAK_I_NY_LØSNING`: Tallet er beregnet da siste vedtak ble fattet. `vurdertTilOgMed` er siste dag i vedtaket.
+    - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling etter siste vedtak. Inntil videre er ikke tallet med.
+      Senere beregnes det ved oppslaget, med dager fra begge løsninger.
+    - `MAKSDATO_I_INFOTRYGD`: Siste sykefravær er bare i Infotrygd. Personen har bare utbetalinger der, eller det er
+      minst 26 uker opphold etter siste vedtak. Tallet er ukedagene (mandag–fredag, helligdager telles med) fra dagen
+      etter `vurdertTilOgMed` til og med Infotrygds maksdato. `vurdertTilOgMed` er siste dag i siste utbetaling i Infotrygd.
+    - `MANGLER_MAKSDATO_I_INFOTRYGD`: Som `MAKSDATO_I_INFOTRYGD`, men Infotrygd har ingen maksdato. Ingen tall.
+    - `INGEN_SYKEPENGER_SISTE_26_UKER`: Vi finner ingen vedtak eller utbetalinger de siste 26 ukene. Personen får full rett
+      ved ny sykdom. Ingen tall. Sykdom som ikke er behandlet ennå, er ikke med, så personen kan ha brukt dager vi ikke ser.
+      Vedtak fra før 16. mars 2022 og annullerte vedtak er heller ikke med.
 
-    **Tallet gjelder per siste vedtak, ikke per i dag.** `gjenståendeDager` er antall sykedager personen hadde igjen
-    per `vurdertTilOgMed`, som er siste dag i perioden vedtaket gjelder for. Svaret bygger bare på fattede vedtak.
+    Nye verdier i `grunnlag` kan komme. Konsumenten må tåle dem.
 
-    Fram til og med `vurdertTilOgMed` tar tallet hensyn til:
+    **Tallet gjelder per `vurdertTilOgMed`, ikke per i dag.** `gjenståendeDager` er antall sykedager personen hadde igjen
+    per `vurdertTilOgMed`. Det eneste vi sjekker mot dagen i dag, er om personen har fått ny rett etter 26 uker uten sykepenger.
+
+    For `VEDTAK_I_NY_LØSNING` tar tallet hensyn til dette fram til og med `vurdertTilOgMed`:
     - sykedager hos alle arbeidsgivere og sykedager utbetalt i Infotrygd
     - ny rett etter 26 uker uten sykepenger
     - at sykedager eldre enn tre år faller bort
@@ -26,13 +31,13 @@ info:
 
     Det som skjer etter `vurdertTilOgMed`, er ikke med:
     - sykdom som ikke er behandlet ennå
-    - ny rett hvis det går 26 uker uten sykepenger
     - sykedager som blir eldre enn tre år
 
     Personen kan derfor ha både flere og færre dager igjen i dag enn tallet viser.
 
     Siste vedtak er vedtaket med senest `vurdertTilOgMed`. Det kan være et vedtak med eller uten utbetaling.
     Et annullert vedtak regnes ikke med, og da gjelder forrige vedtak.
+    Siste utbetaling i Infotrygd er utbetalingsperioden med senest `tom`. Ferie og andre periodetyper er ikke utbetalinger.
 
     **Kjent begrensning:** Hvis et vedtak uten utbetaling er annullert, fanges ikke annulleringen opp,
     og svaret kan fortsatt bygge på det annullerte vedtaket.
@@ -44,7 +49,7 @@ servers:
 paths:
   /gjenstaende-sykedager:
     post:
-      summary: Hent gjenstående sykedager fra siste vedtak
+      summary: Hent gjenstående sykedager
       security:
         - azureAd: []
       description: Krever et Azure AD-token med rollen `aap-les`.
@@ -58,7 +63,7 @@ paths:
               fødselsnummer: "12345678911"
       responses:
         '200':
-          description: Oppslaget gikk bra. `status` sier hvilket utfall det ble.
+          description: Oppslaget gikk bra. `grunnlag` sier hva svaret bygger på.
           content:
             application/json:
               schema:
@@ -67,17 +72,27 @@ paths:
                 vedtakINyLøsning:
                   summary: Siste vedtak er i ny løsning
                   value:
-                    status: VEDTAK_I_NY_LØSNING
+                    grunnlag: VEDTAK_I_NY_LØSNING
                     gjenståendeDager: 112
                     vurdertTilOgMed: "2026-09-30"
                 sisteUtbetalingIInfotrygd:
-                  summary: Infotrygd har utbetalt etter siste vedtak, eller personen har bare utbetalinger i Infotrygd
+                  summary: Infotrygd har utbetalt etter siste vedtak
                   value:
-                    status: SISTE_UTBETALING_I_INFOTRYGD
-                ingenVedtak:
-                  summary: Ingen vedtak i ny løsning og ingen utbetalinger i Infotrygd
+                    grunnlag: SISTE_UTBETALING_I_INFOTRYGD
+                maksdatoIInfotrygd:
+                  summary: Siste sykefravær er bare i Infotrygd, og Infotrygd har maksdato
                   value:
-                    status: INGEN_VEDTAK
+                    grunnlag: MAKSDATO_I_INFOTRYGD
+                    gjenståendeDager: 10
+                    vurdertTilOgMed: "2026-10-30"
+                manglerMaksdatoIInfotrygd:
+                  summary: Siste sykefravær er bare i Infotrygd, men Infotrygd har ingen maksdato
+                  value:
+                    grunnlag: MANGLER_MAKSDATO_I_INFOTRYGD
+                ingenSykepengerSiste26Uker:
+                  summary: Ingen vedtak eller utbetalinger de siste 26 ukene
+                  value:
+                    grunnlag: INGEN_SYKEPENGER_SISTE_26_UKER
         '400':
           description: Ugyldig request. Body mangler, er ikke JSON, eller `fødselsnummer` er ikke en streng på 11 siffer.
           content:
@@ -109,19 +124,20 @@ components:
           pattern: '^\d{11}$'
     GjenstaendeSykedager:
       type: object
-      required: [status]
+      required: [grunnlag]
       properties:
-        status:
+        grunnlag:
           type: string
-          enum: [VEDTAK_I_NY_LØSNING, SISTE_UTBETALING_I_INFOTRYGD, INGEN_VEDTAK]
-          description: Utfallet av oppslaget. Se beskrivelsen øverst.
+          enum: [VEDTAK_I_NY_LØSNING, SISTE_UTBETALING_I_INFOTRYGD, MAKSDATO_I_INFOTRYGD, MANGLER_MAKSDATO_I_INFOTRYGD, INGEN_SYKEPENGER_SISTE_26_UKER]
+          description: Hva svaret bygger på. Se beskrivelsen øverst. Nye verdier kan komme.
         gjenståendeDager:
           type: integer
-          description: Antall sykedager personen hadde igjen per `vurdertTilOgMed`. Bare med når `status` er `VEDTAK_I_NY_LØSNING`.
+          minimum: 0
+          description: Antall sykedager personen hadde igjen per `vurdertTilOgMed`. Bare med når `grunnlag` er `VEDTAK_I_NY_LØSNING` eller `MAKSDATO_I_INFOTRYGD`.
         vurdertTilOgMed:
           type: string
           format: date
-          description: Siste dag i perioden siste vedtak gjelder for. Bare med når `status` er `VEDTAK_I_NY_LØSNING`.
+          description: Dagen tallet gjelder for. Bare med sammen med `gjenståendeDager`.
     Feil:
       type: object
       required: [feilkode, melding]

@@ -21,7 +21,20 @@ internal class Infotrygd(
         personidentifikatorer: Set<Personidentifikator>,
         fom: LocalDate,
         tom: LocalDate,
-    ): List<SpøkelsePeriode> {
+    ): List<SpøkelsePeriode> = hentPerioder(personidentifikatorer, fom, tom, inkluderAllePeriodetyper = false).map { it.somPeriode() }
+
+    suspend fun hentAllePeriodetyper(
+        personidentifikator: Personidentifikator,
+        fom: LocalDate,
+        tom: LocalDate,
+    ): List<Infotrygdperiode> = hentPerioder(setOf(personidentifikator), fom, tom, inkluderAllePeriodetyper = true).map { it.somInfotrygdperiode() }
+
+    private suspend fun hentPerioder(
+        personidentifikatorer: Set<Personidentifikator>,
+        fom: LocalDate,
+        tom: LocalDate,
+        inkluderAllePeriodetyper: Boolean,
+    ): List<JsonNode> {
         val response =
             httpClient.post(url) {
                 header(HttpHeaders.Authorization, "Bearer ${accessToken.get(scope)}")
@@ -33,7 +46,8 @@ internal class Infotrygd(
                 {
                     "personidentifikatorer": ${personidentifikatorer.map { "\"$it\"" }},
                     "fom": "$fom",
-                    "tom": "$tom"
+                    "tom": "$tom",
+                    "inkluderAllePeriodetyper": $inkluderAllePeriodetyper
                 }
             """
                 setBody(request)
@@ -43,10 +57,20 @@ internal class Infotrygd(
             "Mottok HTTP ${response.status} ved oppslag på Infotrygddata"
         }
 
-        return objectMapper.readTree(response.bodyAsText()).perioder()
+        return objectMapper
+            .readTree(response.bodyAsText())
+            .path("utbetaltePerioder")
+            .values()
+            .toList()
     }
 
-    private fun JsonNode.perioder(): List<SpøkelsePeriode> = path("utbetaltePerioder").values().map { it.somPeriode() }
+    private fun JsonNode.somInfotrygdperiode(): Infotrygdperiode =
+        Infotrygdperiode(
+            fom = LocalDate.parse(path("fom").asString()),
+            tom = LocalDate.parse(path("tom").asString()),
+            type = path("type").asString(),
+            maksdato = path("maksdato").takeUnless { it.isMissingOrNull() }?.let { LocalDate.parse(it.asString()) },
+        )
 
     private fun JsonNode.somPeriode(): SpøkelsePeriode =
         SpøkelsePeriode(
