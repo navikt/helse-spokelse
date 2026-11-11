@@ -1,89 +1,70 @@
 package no.nav.helse.spokelse
 
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import no.nav.sykepenger.libs.logging.loggError
-import no.nav.sykepenger.libs.logging.loggInfo
+import io.ktor.server.request.path
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.RoutingContext
+import io.ktor.server.routing.post
+import no.nav.sykepenger.libs.logging.navngittLogger
 
-internal object Tilgangsstyring {
-    internal fun utbetaltePerioder(call: ApplicationCall) {
-        call.håndhevTilgangTil(endepunkt = "utbetalte-perioder", påkrevdRolle = "spleiselaget-les")
+private val logger = navngittLogger("no.nav.helse.spokelse.Tilgangsstyring")
+
+internal fun Route.postMedRolle(
+    path: String,
+    vararg enAvRollene: String,
+    body: suspend RoutingContext.() -> Unit,
+): Route {
+    require(enAvRollene.isNotEmpty()) { "postMedRolle må ha minst én rolle" }
+    return post(path) {
+        if (!call.harTilgangTil(enAvRollene.toSet())) return@post call.respond(HttpStatusCode.Forbidden)
+        body()
     }
+}
 
-    internal fun utbetaltePerioderAap(call: ApplicationCall) {
-        call.håndhevTilgangTil(endepunkt = "utbetalte-perioder-aap", påkrevdRolle = "aap-les")
-    }
+private val ApplicationCall.applicationId get() =
+    this
+        .principal<JWTPrincipal>()
+        ?.getClaim("azp", String::class)
+        .takeUnless { it.isNullOrBlank() }
+        ?: "n/a"
 
-    internal fun utbetaltePerioderDagpenger(call: ApplicationCall) {
-        call.håndhevTilgangTil(endepunkt = "utbetalte-perioder-dagpenger", påkrevdRolle = "dagpenger-les")
-    }
+private val ApplicationCall.applicationName get() =
+    this
+        .principal<JWTPrincipal>()
+        ?.getClaim("azp_name", String::class)
+        .takeUnless { it.isNullOrBlank() }
+        ?: "n/a"
 
-    internal fun utbetaltePerioderPersonoversikt(call: ApplicationCall) {
-        call.håndhevTilgangTil(endepunkt = "utbetalte-perioder-personoversikt", påkrevdRolle = "personoversikt-les")
-    }
+private val ApplicationCall.roles get() =
+    this
+        .principal<JWTPrincipal>()
+        ?.getListClaim("roles", String::class)
+        ?: emptyList()
 
-    internal fun grunnlag(call: ApplicationCall) {
-        call.håndhevTilgangTil(endepunkt = "grunnlag", enAvRollene = setOf("foreldrepenger-les", "k9-les"))
-    }
-
-    internal fun gjenståendeSykedager(call: ApplicationCall) = call.harTilgangTil(endepunkt = "gjenstaende-sykedager", enAvRollene = setOf("aap-les"))
-
-    private val ApplicationCall.applicationId get() =
-        this
-            .principal<JWTPrincipal>()
-            ?.getClaim("azp", String::class)
-            .takeUnless { it.isNullOrBlank() }
-            ?: "n/a"
-
-    private val ApplicationCall.applicationName get() =
-        this
-            .principal<JWTPrincipal>()
-            ?.getClaim("azp_name", String::class)
-            .takeUnless { it.isNullOrBlank() }
-            ?: "n/a"
-
-    private val ApplicationCall.roles get() =
-        this
-            .principal<JWTPrincipal>()
-            ?.getListClaim("roles", String::class)
-            ?: emptyList()
-
-    private fun ApplicationCall.harTilgangTil(
-        endepunkt: String,
-        enAvRollene: Set<String>,
-    ): Boolean {
-        val rolle = enAvRollene.firstOrNull { it in roles }
-        if (rolle == null) {
-            loggError(
-                "Applikasjon mangler rolle for endepunkt",
-                "endepunkt" to "/$endepunkt",
-                "applicationName" to applicationName,
-                "applicationId" to applicationId,
-                "påkrevdeRoller" to enAvRollene.toString(),
-                "roller" to roles.toString(),
-            )
-            return false
-        }
-
-        loggInfo(
-            "Håndterer request til /$endepunkt",
+private fun ApplicationCall.harTilgangTil(enAvRollene: Set<String>): Boolean {
+    val endepunkt = request.path()
+    val rolle = enAvRollene.firstOrNull { it in roles }
+    if (rolle == null) {
+        logger.error(
+            "Applikasjon mangler rolle for endepunkt",
+            "endepunkt" to endepunkt,
             "applicationName" to applicationName,
             "applicationId" to applicationId,
-            "rolle" to rolle,
+            "påkrevdeRoller" to enAvRollene.toString(),
+            "roller" to roles.toString(),
         )
-        return true
+        return false
     }
 
-    private fun ApplicationCall.håndhevTilgangTil(
-        endepunkt: String,
-        enAvRollene: Set<String>,
-    ) = check(harTilgangTil(endepunkt, enAvRollene)) {
-        "Applikasjonen $applicationName ($applicationId) har ikke tilgang til /$endepunkt - Må ha en av rollene $enAvRollene, har bare $roles"
-    }
-
-    private fun ApplicationCall.håndhevTilgangTil(
-        endepunkt: String,
-        påkrevdRolle: String,
-    ) = håndhevTilgangTil(endepunkt, setOf(påkrevdRolle))
+    logger.info(
+        "Håndterer request til $endepunkt",
+        "applicationName" to applicationName,
+        "applicationId" to applicationId,
+        "rolle" to rolle,
+    )
+    return true
 }

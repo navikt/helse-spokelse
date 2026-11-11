@@ -5,9 +5,9 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import no.nav.helse.spokelse.Tilgangsstyring
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somFpVedtak
+import no.nav.helse.spokelse.postMedRolle
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somFpVedtak
 import no.nav.sykepenger.libs.logging.navngittLogger
@@ -28,7 +28,6 @@ internal fun Route.grunnlagApi(
         fødselsnummer: String,
         fom: LocalDate?,
     ) {
-        Tilgangsstyring.grunnlag(call)
         val time =
             measureTimeMillis {
                 try {
@@ -42,17 +41,17 @@ internal fun Route.grunnlagApi(
         logger.info("Hentet vedtak for /grunnlag ($time ms)", "fødselsnummer" to fødselsnummer, "fom" to fom?.toString())
     }
 
-    post("/grunnlag") {
+    postMedRolle("/grunnlag", "foreldrepenger-les", "k9-les") {
         val request = objectMapper.readTree(call.receiveText())
         val fødselsnummer =
             request.path("fodselsnummer").takeUnless { it.isMissingOrNull() }?.asString()
                 ?: run {
                     logger.error("/grunnlag Mangler fodselsnummer i request body")
-                    return@post call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer request body")
+                    return@postMedRolle call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer request body")
                 }
         val fom =
             request.path("fom").takeUnless { it.isMissingOrNull() }?.asString()?.let {
-                it.asLocalDateOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest, "Ugyldig fom request body")
+                it.asLocalDateOrNull() ?: return@postMedRolle call.respond(HttpStatusCode.BadRequest, "Ugyldig fom request body")
             }
         respond(fødselsnummer, fom)
     }

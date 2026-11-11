@@ -10,9 +10,8 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
-import io.ktor.server.routing.post
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.spokelse.Tilgangsstyring
+import no.nav.helse.spokelse.postMedRolle
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.sykepenger.libs.logging.navngittLogger
 import tools.jackson.module.kotlin.jacksonObjectMapper
@@ -43,12 +42,10 @@ internal fun Route.gjenståendeSykedagerApi(
 ) {
     fun tellUtfall(grunnlag: Grunnlag?) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", grunnlag?.name ?: "FEIL").increment()
 
-    post("/gjenstaende-sykedager") {
-        if (!Tilgangsstyring.gjenståendeSykedager(call)) return@post call.respond(HttpStatusCode.Forbidden)
-
+    postMedRolle("/gjenstaende-sykedager", "aap-les") {
         val personidentifikator =
             personidentifikatorFraRequest()
-                ?: return@post respondFeil(HttpStatusCode.BadRequest, Feilkode.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
+                ?: return@postMedRolle respondFeil(HttpStatusCode.BadRequest, Feilkode.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
 
         val resultat =
             try {

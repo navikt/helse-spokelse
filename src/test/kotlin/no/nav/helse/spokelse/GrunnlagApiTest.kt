@@ -225,13 +225,13 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
         assertApiRequest(
             fødselsnummer = "01010145679",
             rolle = "aap-les",
-            forventetHttpStatus = 500, // burde jo vært noe annet da
+            forventetHttpStatus = 403,
         )
         // Ingen rolle
         assertApiRequest(
             fødselsnummer = "01010145679",
             rolle = null,
-            forventetHttpStatus = 500, // burde jo vært noe annet da
+            forventetHttpStatus = 403,
         )
 
         // Ikke noe token
