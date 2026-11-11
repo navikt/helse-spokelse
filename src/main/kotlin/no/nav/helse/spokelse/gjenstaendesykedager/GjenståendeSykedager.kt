@@ -1,7 +1,6 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.spokelse.utbetalteperioder.Infotrygd
 import no.nav.helse.spokelse.utbetalteperioder.Infotrygdperiode
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.sykepenger.libs.logging.navngittLogger
@@ -21,8 +20,8 @@ internal enum class Grunnlag {
 
 internal class GjenståendeSykedager(
     private val dao: GjenståendeSykedagerDao,
-    private val infotrygd: Infotrygd,
-    private val spleisApiClient: SpleisApiClient,
+    private val infotrygdperioder: Infotrygdperioder,
+    private val maksdatoberegning: Maksdatoberegning,
     private val meterRegistry: MeterRegistry,
     private val idag: () -> LocalDate = { LocalDate.now(ZoneId.of("Europe/Oslo")) },
 ) {
@@ -68,8 +67,8 @@ internal class GjenståendeSykedager(
 
     internal suspend fun hent(personidentifikator: Personidentifikator): Resultat {
         val sisteVedtak = dao.sisteVedtak(personidentifikator)
-        val infotrygdperioder = infotrygd.hentAllePeriodetyper(personidentifikator, INFOTRYGD_FOM, idag())
-        val utbetalingerIInfotrygd = infotrygdperioder.filter { it.erUtbetaling }
+        val perioderIInfotrygd = infotrygdperioder.hentAllePeriodetyper(personidentifikator, INFOTRYGD_FOM, idag())
+        val utbetalingerIInfotrygd = perioderIInfotrygd.filter { it.erUtbetaling }
         val sisteUtbetaling = utbetalingerIInfotrygd.maxByOrNull { it.tom }
 
         val sisteDagMedSykepenger = listOfNotNull(sisteVedtak?.vurdertTilOgMed, sisteUtbetaling?.tom).maxOrNull()
@@ -80,7 +79,7 @@ internal class GjenståendeSykedager(
             return Resultat.vedtakINyLøsning(sisteVedtak.gjenståendeDager, sisteVedtak.vurdertTilOgMed)
         }
         if (harOppholdEtter(sisteVedtak.vurdertTilOgMed, utbetalingerIInfotrygd)) return maksdatoIInfotrygd(sisteUtbetaling)
-        val beregning = spleisApiClient.beregnGjenståendeSykedager(personidentifikator, infotrygdperioder)
+        val beregning = maksdatoberegning.beregnGjenståendeSykedager(personidentifikator, perioderIInfotrygd)
         rapporterSammenligningMedInfotrygd(personidentifikator, sammenlign(beregning.maksdato, sisteUtbetaling.maksdato))
         return Resultat.sisteUtbetalingIInfotrygd(beregning.gjenståendeDager, beregning.vurdertTilOgMed)
     }

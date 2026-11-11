@@ -22,13 +22,7 @@ internal class SpleisApiClient(
     private val scope: String,
     private val accessToken: AccessToken,
     private val url: String,
-) {
-    internal data class Beregning(
-        val gjenståendeDager: Int,
-        val vurdertTilOgMed: LocalDate,
-        val maksdato: LocalDate,
-    )
-
+) : Maksdatoberegning {
     private data class Request(
         val fødselsnummer: String,
         val infotrygdperioder: List<Periode>,
@@ -41,10 +35,10 @@ internal class SpleisApiClient(
         )
     }
 
-    suspend fun beregnGjenståendeSykedager(
+    override suspend fun beregnGjenståendeSykedager(
         personidentifikator: Personidentifikator,
         infotrygdperioder: List<Infotrygdperiode>,
-    ): Beregning {
+    ): Maksdatoberegning.Beregning {
         val request =
             Request(
                 fødselsnummer = personidentifikator.toString(),
@@ -74,7 +68,7 @@ internal class SpleisApiClient(
         val vurdertTilOgMed: LocalDate,
         val maksdato: LocalDate,
     ) {
-        fun tilBeregning() = Beregning(gjenståendeDager, vurdertTilOgMed, maksdato)
+        fun tilBeregning() = Maksdatoberegning.Beregning(gjenståendeDager, vurdertTilOgMed, maksdato)
     }
 
     private companion object {

@@ -34,12 +34,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.skyscreamer.jsonassert.JSONAssert
-import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import java.time.LocalDate
 import java.util.*
-import java.util.concurrent.CopyOnWriteArrayList
 import javax.sql.DataSource
 
 @TestInstance(PER_CLASS)
@@ -57,15 +55,12 @@ internal abstract class AbstractE2ETest {
         val body: String = "",
     )
 
-    // Svaret fra den falske spleis-api. Requestene den har fått, legges i spleisApiRequests.
     protected var spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28", "maksdato": "2023-06-29"}""")
-    protected val spleisApiRequests = CopyOnWriteArrayList<JsonNode>()
     private val spleisApiClient =
         SpleisApiClient(
             httpClient =
                 HttpClient(
-                    MockEngine { request ->
-                        spleisApiRequests.add(jacksonObjectMapper().readTree((request.body as TextContent).text))
+                    MockEngine {
                         respond(spleisApiSvar.body, spleisApiSvar.status, headersOf(HttpHeaders.ContentType, "application/json"))
                     },
                 ),
@@ -154,7 +149,6 @@ internal abstract class AbstractE2ETest {
         tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
         infotrygdperioder = emptyList()
         spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28", "maksdato": "2023-06-29"}""")
-        spleisApiRequests.clear()
         idag = LocalDate.now()
         meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     }
@@ -190,8 +184,8 @@ internal abstract class AbstractE2ETest {
                     gjenståendeSykedager =
                         GjenståendeSykedager(
                             dao = gjenståendeSykedagerDao,
-                            infotrygd = infotrygd,
-                            spleisApiClient = spleisApiClient,
+                            infotrygdperioder = infotrygd,
+                            maksdatoberegning = spleisApiClient,
                             meterRegistry = meterRegistry,
                             idag = { idag },
                         ),

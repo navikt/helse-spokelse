@@ -82,8 +82,8 @@ fun launchApplication(env: Map<String, String>) {
     val gjenståendeSykedager =
         GjenståendeSykedager(
             dao = gjenståendeSykedagerDao,
-            infotrygd = infotrygd,
-            spleisApiClient =
+            infotrygdperioder = infotrygd,
+            maksdatoberegning =
                 SpleisApiClient(
                     httpClient = httpClient,
                     scope = env.hent("SPLEIS_API_SCOPE"),

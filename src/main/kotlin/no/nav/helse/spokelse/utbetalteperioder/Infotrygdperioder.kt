@@ -5,6 +5,7 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import no.nav.helse.spokelse.gjenstaendesykedager.Infotrygdperioder
 import org.intellij.lang.annotations.Language
 import org.slf4j.MDC
 import tools.jackson.databind.JsonNode
@@ -16,14 +17,14 @@ internal class Infotrygd(
     private val scope: String,
     private val accessToken: AccessToken,
     private val url: String,
-) {
+) : Infotrygdperioder {
     suspend fun hent(
         personidentifikatorer: Set<Personidentifikator>,
         fom: LocalDate,
         tom: LocalDate,
     ): List<SpøkelsePeriode> = hentPerioder(personidentifikatorer, fom, tom, inkluderAllePeriodetyper = false).map { it.somPeriode() }
 
-    suspend fun hentAllePeriodetyper(
+    override suspend fun hentAllePeriodetyper(
         personidentifikator: Personidentifikator,
         fom: LocalDate,
         tom: LocalDate,

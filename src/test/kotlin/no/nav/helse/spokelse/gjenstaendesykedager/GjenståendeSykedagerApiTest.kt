@@ -2,13 +2,9 @@ package no.nav.helse.spokelse.gjenstaendesykedager
 
 import io.ktor.http.HttpStatusCode
 import no.nav.helse.spokelse.AbstractE2ETest
-import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.skyscreamer.jsonassert.JSONAssert
-import org.skyscreamer.jsonassert.JSONCompareMode
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -104,51 +100,6 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     }
 
     @Test
-    fun `senere utbetaling i Infotrygd gir SISTE_UTBETALING_I_INFOTRYGD med tallet fra spleis-api`() {
-        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
-        infotrygdperioder = listOf(utbetaling("2023-01-01", "2023-02-28"))
-        spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 120, "vurdertTilOgMed": "2023-02-28", "maksdato": "2023-08-15"}""")
-        assertGjenståendeSykedager(
-            forventetResponseBody = """{"grunnlag": "SISTE_UTBETALING_I_INFOTRYGD", "gjenståendeDager": 120, "vurdertTilOgMed": "2023-02-28"}""",
-        )
-    }
-
-    @Test
-    fun `sender alle periodene i Infotrygd fra 2000-01-01 til spleis-api`() {
-        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
-        infotrygdperioder =
-            listOf(
-                utbetaling("1999-12-01", "1999-12-31", organisasjonsnummer = "999999999"),
-                utbetaling("1999-12-20", "2000-01-10", organisasjonsnummer = "888888888"),
-                utbetaling("2022-06-01", "2022-06-30", type = "FERIE"),
-                utbetaling("2023-02-01", "2023-02-28", type = "ARB_REF", organisasjonsnummer = "999263550", maksdato = "2023-12-01"),
-            )
-        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
-
-        @Language("JSON")
-        val forventetRequest =
-            """
-            {
-              "fødselsnummer": "$FØDSELSNUMMER",
-              "infotrygdperioder": [
-                { "fom": "1999-12-20", "tom": "2000-01-10", "type": "UTBETALING", "organisasjonsnummer": "888888888" },
-                { "fom": "2022-06-01", "tom": "2022-06-30", "type": "FERIE", "organisasjonsnummer": null },
-                { "fom": "2023-02-01", "tom": "2023-02-28", "type": "ARB_REF", "organisasjonsnummer": "999263550" }
-              ]
-            }
-            """
-        JSONAssert.assertEquals(forventetRequest, spleisApiRequests.single().toString(), JSONCompareMode.NON_EXTENSIBLE)
-    }
-
-    @Test
-    fun `spleis-api kalles ikke når Infotrygd ikke har noen senere utbetaling`() {
-        lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
-        infotrygdperioder = listOf(utbetaling("2022-01-01", "2023-01-31"))
-        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
-        assertEquals(emptyList<Any>(), spleisApiRequests)
-    }
-
-    @Test
     fun `feil fra spleis-api gir 500`() {
         lagreVedtak(tom = LocalDate.parse("2023-01-31"))
         infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28"))
@@ -157,172 +108,10 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     }
 
     @Test
-    fun `404 fra spleis-api gir 500`() {
-        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
-        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28"))
-        spleisApiSvar = SpleisApiSvar(HttpStatusCode.NotFound)
-        assertGjenståendeSykedager(forventetHttpStatus = 500)
-    }
-
-    @Test
-    fun `eldre utbetaling i Infotrygd påvirker ikke svaret`() {
-        lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
-        infotrygdperioder = listOf(utbetaling("2022-01-01", "2023-01-31"))
-        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
-    }
-
-    @Test
     fun `feil fra Infotrygd gir 500`() {
         lagreVedtak()
         infotrygdperioder = null
         assertGjenståendeSykedager(forventetHttpStatus = 500)
-    }
-
-    @Test
-    fun `ingen vedtak i ny løsning og feil fra Infotrygd gir 500`() {
-        infotrygdperioder = null
-        assertGjenståendeSykedager(forventetHttpStatus = 500)
-    }
-
-    @Test
-    fun `182 dager etter siste vedtak gir ny rett, 181 dager gjør det ikke`() {
-        lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
-        idag = LocalDate.parse("2023-07-31")
-        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
-        idag = LocalDate.parse("2023-08-01")
-        assertGjenståendeSykedager(forventetResponseBody = ingenSykepenger)
-    }
-
-    @Test
-    fun `182 dager etter siste utbetaling i Infotrygd gir ny rett, 181 dager gjør det ikke`() {
-        infotrygdperioder = listOf(utbetaling("2026-10-01", "2026-10-30", maksdato = "2026-11-13"))
-        idag = LocalDate.parse("2027-04-29")
-        assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 10, vurdertTilOgMed = "2026-10-30"))
-        idag = LocalDate.parse("2027-04-30")
-        assertGjenståendeSykedager(forventetResponseBody = ingenSykepenger)
-    }
-
-    @Test
-    fun `ny rett regnes fra det som er senest av siste vedtak og siste utbetaling i Infotrygd`() {
-        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
-        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28"))
-        idag = LocalDate.parse("2023-08-01")
-        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
-    }
-
-    @Test
-    fun `ferie i Infotrygd utsetter ikke ny rett`() {
-        infotrygdperioder =
-            listOf(
-                utbetaling("2026-10-01", "2026-10-30", maksdato = "2026-11-13"),
-                utbetaling("2026-10-31", "2026-11-30", type = "FERIE"),
-            )
-        idag = LocalDate.parse("2027-04-30")
-        assertGjenståendeSykedager(forventetResponseBody = ingenSykepenger)
-    }
-
-    @Test
-    fun `minst 182 dager opphold etter siste vedtak gir Infotrygds maksdato`() {
-        lagreVedtak(tom = LocalDate.parse("2025-01-31"))
-        idag = LocalDate.parse("2025-10-15")
-        infotrygdperioder = listOf(utbetaling("2025-09-01", "2025-09-30", maksdato = "2025-10-31"))
-        assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 23, vurdertTilOgMed = "2025-09-30"))
-        infotrygdperioder = listOf(utbetaling("2025-09-01", "2025-09-30"))
-        assertGjenståendeSykedager(forventetResponseBody = manglerMaksdatoIInfotrygd)
-    }
-
-    @Test
-    fun `opphold på 182 dager etter siste vedtak gir Infotrygds maksdato, 181 dager gjør det ikke`() {
-        lagreVedtak(tom = LocalDate.parse("2025-01-31"))
-        idag = LocalDate.parse("2025-08-31")
-        infotrygdperioder = listOf(utbetaling("2025-08-01", "2025-08-29", maksdato = "2025-09-05"))
-        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
-        infotrygdperioder = listOf(utbetaling("2025-08-02", "2025-08-29", maksdato = "2025-09-05"))
-        assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 5, vurdertTilOgMed = "2025-08-29"))
-    }
-
-    @Test
-    fun `opphold på minst 182 dager mellom to utbetalinger i Infotrygd etter siste vedtak gir Infotrygds maksdato`() {
-        lagreVedtak(tom = LocalDate.parse("2025-01-31"))
-        idag = LocalDate.parse("2025-10-15")
-        infotrygdperioder =
-            listOf(
-                utbetaling("2025-02-01", "2025-02-28"),
-                utbetaling("2025-09-01", "2025-09-30", maksdato = "2025-10-31"),
-            )
-        assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 23, vurdertTilOgMed = "2025-09-30"))
-    }
-
-    @Test
-    fun `ferie i Infotrygd bryter ikke oppholdet etter siste vedtak`() {
-        lagreVedtak(tom = LocalDate.parse("2025-01-31"))
-        idag = LocalDate.parse("2025-10-15")
-        infotrygdperioder =
-            listOf(
-                utbetaling("2025-05-01", "2025-05-31", type = "FERIE"),
-                utbetaling("2025-09-01", "2025-09-30", maksdato = "2025-10-31"),
-            )
-        assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 23, vurdertTilOgMed = "2025-09-30"))
-    }
-
-    @Test
-    fun `ny rett sjekkes før oppholdet etter siste vedtak`() {
-        lagreVedtak(tom = LocalDate.parse("2025-01-31"))
-        idag = LocalDate.parse("2026-03-31")
-        infotrygdperioder = listOf(utbetaling("2025-09-01", "2025-09-30", maksdato = "2025-10-31"))
-        assertGjenståendeSykedager(forventetResponseBody = ingenSykepenger)
-    }
-
-    @Test
-    fun `bare utbetalinger i Infotrygd gir gjenstående dager fra Infotrygds maksdato`() {
-        idag = LocalDate.parse("2026-11-10")
-        infotrygdperioder = listOf(utbetaling("2026-10-01", "2026-10-30", maksdato = "2026-11-13"))
-        assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 10, vurdertTilOgMed = "2026-10-30"))
-    }
-
-    @Test
-    fun `maksdato samme dag som eller før siste utbetalte dag gir 0`() {
-        idag = LocalDate.parse("2026-11-10")
-        infotrygdperioder = listOf(utbetaling("2026-10-01", "2026-10-30", maksdato = "2026-10-30"))
-        assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 0, vurdertTilOgMed = "2026-10-30"))
-        infotrygdperioder = listOf(utbetaling("2026-10-01", "2026-10-30", maksdato = "2026-10-15"))
-        assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 0, vurdertTilOgMed = "2026-10-30"))
-    }
-
-    @Test
-    fun `mangler perioden med siste utbetaling maksdato, gir det MANGLER_MAKSDATO_I_INFOTRYGD`() {
-        idag = LocalDate.parse("2026-11-10")
-        infotrygdperioder =
-            listOf(
-                utbetaling("2026-09-01", "2026-09-30", maksdato = "2027-06-01"),
-                utbetaling("2026-10-01", "2026-10-30"),
-            )
-        assertGjenståendeSykedager(forventetResponseBody = manglerMaksdatoIInfotrygd)
-    }
-
-    @Test
-    fun `ferie og andre typer enn utbetalinger er ikke siste utbetaling`() {
-        idag = LocalDate.parse("2026-11-10")
-        infotrygdperioder =
-            listOf(
-                utbetaling("2026-10-01", "2026-10-30", maksdato = "2026-11-13"),
-                utbetaling("2026-10-31", "2026-11-05", type = "FERIE"),
-                utbetaling("2026-10-31", "2026-11-06", type = "TILBAKEFØRT"),
-            )
-        assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 10, vurdertTilOgMed = "2026-10-30"))
-    }
-
-    @Test
-    fun `alle utbetalingstypene kan være siste utbetaling`() {
-        idag = LocalDate.parse("2026-11-10")
-        listOf("UTBETALING", "REDUKSJON_MEDLEM", "ARB_REF", "REDUKSJON_ARB_REF").forEach { type ->
-            infotrygdperioder =
-                listOf(
-                    utbetaling("2026-09-01", "2026-09-30", maksdato = "2026-12-31"),
-                    utbetaling("2026-10-01", "2026-10-30", maksdato = "2026-11-13", type = type),
-                )
-            assertGjenståendeSykedager(forventetResponseBody = maksdatoIInfotrygd(gjenståendeDager = 10, vurdertTilOgMed = "2026-10-30"))
-        }
     }
 
     @Test
@@ -352,38 +141,6 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
             assertEquals(1.0, meterRegistry.find("gjenstaende_sykedager_oppslag").tag("utfall", utfall).counter()?.count(), "utfall=$utfall")
         }
     }
-
-    @Test
-    fun `sammenligner tallet fra spleis-api med Infotrygds maksdato uten å endre svaret`() {
-        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
-        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28", maksdato = "2023-06-29"))
-        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
-        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28", maksdato = "2023-06-30"))
-        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
-        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28", maksdato = "2023-06-26"))
-        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
-        infotrygdperioder = listOf(utbetaling("2023-02-01", "2023-02-28"))
-        assertGjenståendeSykedager(forventetResponseBody = sisteUtbetalingIInfotrygd)
-
-        mapOf("LIK" to 1.0, "ULIK" to 2.0, "MANGLER_MAKSDATO" to 1.0).forEach { (utfall, antall) ->
-            assertEquals(antall, sammenligninger(utfall), "utfall=$utfall")
-        }
-    }
-
-    @Test
-    fun `sammenligner ikke med Infotrygds maksdato når tallet ikke kommer fra spleis-api`() {
-        lagreVedtak(tom = LocalDate.parse("2023-01-31"))
-        infotrygdperioder = listOf(utbetaling("2023-01-01", "2023-01-31", maksdato = "2023-06-29"))
-        assertGjenståendeSykedager(forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"))
-        listOf("LIK", "ULIK", "MANGLER_MAKSDATO").forEach { utfall -> assertEquals(null, sammenligninger(utfall), "utfall=$utfall") }
-    }
-
-    private fun sammenligninger(utfall: String) =
-        meterRegistry
-            .find("gjenstaende_sykedager_sammenligning_med_infotrygd")
-            .tag("utfall", utfall)
-            .counter()
-            ?.count()
 
     @Test
     fun `ugyldig fødselsnummer gir 400`() {
@@ -420,52 +177,12 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
         gjenståendeSykedager: Int = 221,
         sendt: LocalDateTime = LocalDateTime.parse("2023-02-01T12:00:00"),
         type: String = "utbetaling_utbetalt",
-    ): UUID {
-        val fom = tom.withDayOfMonth(1)
-        @Language("JSON")
-        val json =
-            """
-            {
-              "event": "$type",
-              "utbetalingId": "${UUID.randomUUID()}",
-              "korrelasjonsId": "$korrelasjonsId",
-              "fødselsnummer": "$fødselsnummer",
-              "organisasjonsnummer": "999263550",
-              "fom": "$fom",
-              "tom": "$tom",
-              "gjenståendeSykedager": $gjenståendeSykedager,
-              "arbeidsgiverOppdrag": {
-                "fagsystemId": "${UUID.randomUUID()}",
-                "utbetalingslinjer": [{ "fom": "$fom", "tom": "$tom", "grad": 100.0 }]
-              },
-              "personOppdrag": { "fagsystemId": "${UUID.randomUUID()}", "utbetalingslinjer": [] }
-            }
-            """
-        tbdUtbetalingHåndterer.håndter(objectMapper.readTree(json), sendt)
-        return korrelasjonsId
-    }
+    ) = tbdUtbetalingHåndterer.lagreVedtak(korrelasjonsId, fødselsnummer, tom, gjenståendeSykedager, sendt, type)
 
     private fun annuller(
         korrelasjonsId: UUID,
         sendt: LocalDateTime,
-    ) {
-        @Language("JSON")
-        val json =
-            """
-            {
-              "event": "utbetaling_annullert",
-              "utbetalingId": "${UUID.randomUUID()}",
-              "korrelasjonsId": "$korrelasjonsId",
-              "fødselsnummer": "$FØDSELSNUMMER",
-              "organisasjonsnummer": "999263550",
-              "fom": "2023-01-01",
-              "tom": "2023-01-31",
-              "arbeidsgiverFagsystemId": "${UUID.randomUUID()}",
-              "personFagsystemId": null
-            }
-            """
-        tbdUtbetalingHåndterer.håndter(objectMapper.readTree(json), sendt)
-    }
+    ) = tbdUtbetalingHåndterer.annuller(korrelasjonsId, sendt)
 
     private fun assertGjenståendeSykedager(
         requestBody: String = """{"fødselsnummer": "$FØDSELSNUMMER"}""",
@@ -501,11 +218,8 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     ) = Infotrygdperiode(LocalDate.parse(fom), LocalDate.parse(tom), type, maksdato?.let(LocalDate::parse), organisasjonsnummer)
 
     private companion object {
-        private const val FØDSELSNUMMER = "12345678911"
-        private val objectMapper = jacksonObjectMapper()
         private val ingenSykepenger = """{"grunnlag": "INGEN_SYKEPENGER_SISTE_26_UKER"}"""
         private val manglerMaksdatoIInfotrygd = """{"grunnlag": "MANGLER_MAKSDATO_I_INFOTRYGD"}"""
-        // Tallet fra den falske spleis-api når testen ikke setter et eget svar.
         private val sisteUtbetalingIInfotrygd = """{"grunnlag": "SISTE_UTBETALING_I_INFOTRYGD", "gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28"}"""
         private val ugyldigForespørsel = """{"feilkode": "UGYLDIG_FORESPØRSEL", "melding": "Forventer en body med fødselsnummer på 11 siffer"}"""
     }
