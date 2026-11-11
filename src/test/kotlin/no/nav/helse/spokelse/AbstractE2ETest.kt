@@ -192,6 +192,7 @@ internal abstract class AbstractE2ETest {
                             dao = gjenståendeSykedagerDao,
                             infotrygd = infotrygd,
                             spleisApiClient = spleisApiClient,
+                            meterRegistry = meterRegistry,
                             idag = { idag },
                         ),
                     meterRegistry = meterRegistry,

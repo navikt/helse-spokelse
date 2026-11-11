@@ -1,59 +1,65 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
+import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.spokelse.utbetalteperioder.Infotrygd
 import no.nav.helse.spokelse.utbetalteperioder.Infotrygdperiode
 import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
+import no.nav.sykepenger.libs.logging.navngittLogger
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+
+private val logger = navngittLogger("no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager")
+
+internal enum class Grunnlag {
+    VEDTAK_I_NY_LØSNING,
+    SISTE_UTBETALING_I_INFOTRYGD,
+    MAKSDATO_I_INFOTRYGD,
+    MANGLER_MAKSDATO_I_INFOTRYGD,
+    INGEN_SYKEPENGER_SISTE_26_UKER,
+}
 
 internal class GjenståendeSykedager(
     private val dao: GjenståendeSykedagerDao,
     private val infotrygd: Infotrygd,
     private val spleisApiClient: SpleisApiClient,
+    private val meterRegistry: MeterRegistry,
     private val idag: () -> LocalDate = { LocalDate.now(ZoneId.of("Europe/Oslo")) },
 ) {
-    internal sealed interface Resultat {
-        val grunnlag: Grunnlag
+    @ConsistentCopyVisibility
+    internal data class Resultat private constructor(
+        val grunnlag: Grunnlag,
+        val gjenståendeDager: Int?,
+        val vurdertTilOgMed: LocalDate?,
+    ) {
+        internal companion object {
+            internal fun vedtakINyLøsning(
+                gjenståendeDager: Int,
+                vurdertTilOgMed: LocalDate,
+            ) = Resultat(Grunnlag.VEDTAK_I_NY_LØSNING, gjenståendeDager, vurdertTilOgMed)
 
-        data class VedtakINyLøsning(
-            val gjenståendeDager: Int,
-            val vurdertTilOgMed: LocalDate,
-        ) : Resultat {
-            override val grunnlag = Grunnlag.VEDTAK_I_NY_LØSNING
-        }
+            internal fun maksdatoIInfotrygd(
+                gjenståendeDager: Int,
+                vurdertTilOgMed: LocalDate,
+            ) = Resultat(Grunnlag.MAKSDATO_I_INFOTRYGD, gjenståendeDager, vurdertTilOgMed)
 
-        data class MaksdatoIInfotrygd(
-            val gjenståendeDager: Int,
-            val vurdertTilOgMed: LocalDate,
-        ) : Resultat {
-            override val grunnlag = Grunnlag.MAKSDATO_I_INFOTRYGD
-        }
+            internal fun sisteUtbetalingIInfotrygd(
+                gjenståendeDager: Int,
+                vurdertTilOgMed: LocalDate,
+            ) = Resultat(Grunnlag.SISTE_UTBETALING_I_INFOTRYGD, gjenståendeDager, vurdertTilOgMed)
 
-        data object ManglerMaksdatoIInfotrygd : Resultat {
-            override val grunnlag = Grunnlag.MANGLER_MAKSDATO_I_INFOTRYGD
-        }
-
-        data object IngenSykepengerSiste26Uker : Resultat {
-            override val grunnlag = Grunnlag.INGEN_SYKEPENGER_SISTE_26_UKER
-        }
-
-        data class SisteUtbetalingIInfotrygd(
-            val gjenståendeDager: Int,
-            val vurdertTilOgMed: LocalDate,
-            val sammenligning: Sammenligning,
-        ) : Resultat {
-            override val grunnlag = Grunnlag.SISTE_UTBETALING_I_INFOTRYGD
+            internal val manglerMaksdatoIInfotrygd = Resultat(Grunnlag.MANGLER_MAKSDATO_I_INFOTRYGD, null, null)
+            internal val ingenSykepengerSiste26Uker = Resultat(Grunnlag.INGEN_SYKEPENGER_SISTE_26_UKER, null, null)
         }
     }
 
-    internal data class Sammenligning(
+    private data class Sammenligning(
         val utfall: Utfall,
         val maksdatoFraSpleis: LocalDate,
         val maksdatoIInfotrygd: LocalDate?,
         val avvikIUkedager: Int?,
     ) {
-        internal enum class Utfall {
+        enum class Utfall {
             LIK,
             ULIK,
             MANGLER_MAKSDATO,
@@ -67,18 +73,30 @@ internal class GjenståendeSykedager(
         val sisteUtbetaling = utbetalingerIInfotrygd.maxByOrNull { it.tom }
 
         val sisteDagMedSykepenger = listOfNotNull(sisteVedtak?.vurdertTilOgMed, sisteUtbetaling?.tom).maxOrNull()
-        if (sisteDagMedSykepenger == null || harNyRett(sisteDagMedSykepenger)) return Resultat.IngenSykepengerSiste26Uker
+        if (sisteDagMedSykepenger == null || harNyRett(sisteDagMedSykepenger)) return Resultat.ingenSykepengerSiste26Uker
 
         if (sisteVedtak == null) return maksdatoIInfotrygd(checkNotNull(sisteUtbetaling))
         if (sisteUtbetaling == null || sisteUtbetaling.tom <= sisteVedtak.vurdertTilOgMed) {
-            return Resultat.VedtakINyLøsning(sisteVedtak.gjenståendeDager, sisteVedtak.vurdertTilOgMed)
+            return Resultat.vedtakINyLøsning(sisteVedtak.gjenståendeDager, sisteVedtak.vurdertTilOgMed)
         }
         if (harOppholdEtter(sisteVedtak.vurdertTilOgMed, utbetalingerIInfotrygd)) return maksdatoIInfotrygd(sisteUtbetaling)
         val beregning = spleisApiClient.beregnGjenståendeSykedager(personidentifikator, infotrygdperioder)
-        return Resultat.SisteUtbetalingIInfotrygd(
-            gjenståendeDager = beregning.gjenståendeDager,
-            vurdertTilOgMed = beregning.vurdertTilOgMed,
-            sammenligning = sammenlign(beregning.maksdato, sisteUtbetaling.maksdato),
+        rapporterSammenligningMedInfotrygd(personidentifikator, sammenlign(beregning.maksdato, sisteUtbetaling.maksdato))
+        return Resultat.sisteUtbetalingIInfotrygd(beregning.gjenståendeDager, beregning.vurdertTilOgMed)
+    }
+
+    private fun rapporterSammenligningMedInfotrygd(
+        personidentifikator: Personidentifikator,
+        sammenligning: Sammenligning,
+    ) {
+        meterRegistry.counter("gjenstaende_sykedager_sammenligning_med_infotrygd", "utfall", sammenligning.utfall.name).increment()
+        logger.info(
+            "Sammenligner maksdatoen fra spleis-api med Infotrygds maksdato",
+            "fødselsnummer" to personidentifikator.toString(),
+            "sammenligningMedInfotrygd" to sammenligning.utfall.name,
+            "maksdatoFraSpleis" to sammenligning.maksdatoFraSpleis.toString(),
+            "maksdatoIInfotrygd" to sammenligning.maksdatoIInfotrygd?.toString(),
+            "avvikIUkedager" to sammenligning.avvikIUkedager?.toString(),
         )
     }
 
@@ -109,9 +127,9 @@ internal class GjenståendeSykedager(
     }
 
     private fun maksdatoIInfotrygd(sisteUtbetaling: Infotrygdperiode): Resultat {
-        val maksdato = sisteUtbetaling.maksdato ?: return Resultat.ManglerMaksdatoIInfotrygd
+        val maksdato = sisteUtbetaling.maksdato ?: return Resultat.manglerMaksdatoIInfotrygd
         val vurdertTilOgMed = sisteUtbetaling.tom
-        return Resultat.MaksdatoIInfotrygd(
+        return Resultat.maksdatoIInfotrygd(
             gjenståendeDager = ukedager(fom = vurdertTilOgMed.plusDays(1), tom = maksdato),
             vurdertTilOgMed = vurdertTilOgMed,
         )

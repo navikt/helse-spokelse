@@ -78,6 +78,7 @@ fun launchApplication(env: Map<String, String>) {
             tbdUtbetalingApi = tbdUtbetalingApi,
             gamleUtbetalingerDao = gamleUtbetalingerDao,
         )
+    val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     val gjenståendeSykedager =
         GjenståendeSykedager(
             dao = gjenståendeSykedagerDao,
@@ -89,11 +90,11 @@ fun launchApplication(env: Map<String, String>) {
                     accessToken = azure,
                     url = env.hent("SPLEIS_API_URL"),
                 ),
+            meterRegistry = meterRegistry,
         )
 
     val tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingHåndterer)
-    val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     RapidApplication
         .create(
             env = env,

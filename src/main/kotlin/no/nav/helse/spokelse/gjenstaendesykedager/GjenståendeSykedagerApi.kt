@@ -30,14 +30,6 @@ internal data class Feil(
     val melding: String,
 )
 
-internal enum class Grunnlag {
-    VEDTAK_I_NY_LØSNING,
-    SISTE_UTBETALING_I_INFOTRYGD,
-    MAKSDATO_I_INFOTRYGD,
-    MANGLER_MAKSDATO_I_INFOTRYGD,
-    INGEN_SYKEPENGER_SISTE_26_UKER,
-}
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
 internal data class GjenståendeSykedagerResponse(
     val grunnlag: Grunnlag,
@@ -65,11 +57,7 @@ internal fun Route.gjenståendeSykedagerApi(
                 tellUtfall(null)
                 throw exception
             }
-        val response = resultat.tilResponse()
-        val sammenligning = (resultat as? GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd)?.sammenligning
-        if (sammenligning != null) {
-            meterRegistry.counter("gjenstaende_sykedager_sammenligning_med_infotrygd", "utfall", sammenligning.utfall.name).increment()
-        }
+        val response = GjenståendeSykedagerResponse(resultat.grunnlag, resultat.gjenståendeDager, resultat.vurdertTilOgMed)
 
         logger.info(
             "Svarer på /gjenstaende-sykedager",
@@ -77,10 +65,6 @@ internal fun Route.gjenståendeSykedagerApi(
             "grunnlag" to response.grunnlag.name,
             "gjenståendeDager" to response.gjenståendeDager?.toString(),
             "vurdertTilOgMed" to response.vurdertTilOgMed?.toString(),
-            "sammenligningMedInfotrygd" to sammenligning?.utfall?.name,
-            "maksdatoFraSpleis" to sammenligning?.maksdatoFraSpleis?.toString(),
-            "maksdatoIInfotrygd" to sammenligning?.maksdatoIInfotrygd?.toString(),
-            "avvikIUkedager" to sammenligning?.avvikIUkedager?.toString(),
         )
         tellUtfall(response.grunnlag)
         call.respond(HttpStatusCode.OK, response)
@@ -97,17 +81,6 @@ internal fun Route.gjenståendeSykedagerDokumentasjon() {
 private const val OPENAPI_FIL = "openapi/gjenstaende-sykedager.yml"
 private val openApi =
     requireNotNull(object {}.javaClass.getResource("/$OPENAPI_FIL")) { "Fant ikke OpenAPI-specen" }.readText()
-
-
-private fun GjenståendeSykedager.Resultat.tilResponse() =
-    when (this) {
-        is GjenståendeSykedager.Resultat.VedtakINyLøsning -> GjenståendeSykedagerResponse(grunnlag, gjenståendeDager, vurdertTilOgMed)
-        is GjenståendeSykedager.Resultat.MaksdatoIInfotrygd -> GjenståendeSykedagerResponse(grunnlag, gjenståendeDager, vurdertTilOgMed)
-        is GjenståendeSykedager.Resultat.SisteUtbetalingIInfotrygd -> GjenståendeSykedagerResponse(grunnlag, gjenståendeDager, vurdertTilOgMed)
-        GjenståendeSykedager.Resultat.ManglerMaksdatoIInfotrygd,
-        GjenståendeSykedager.Resultat.IngenSykepengerSiste26Uker,
-            -> GjenståendeSykedagerResponse(grunnlag)
-    }
 
 private suspend fun RoutingContext.personidentifikatorFraRequest(): Personidentifikator? {
     val body = runCatching { objectMapper.readTree(call.receiveText()) }.getOrNull() ?: return null
