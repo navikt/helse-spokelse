@@ -1,5 +1,6 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
+import com.github.navikt.tbd_libs.access_token.AccessTokenProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -8,7 +9,8 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import no.nav.helse.spokelse.felles.AccessToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import no.nav.helse.spokelse.felles.Infotrygdperiode
 import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.sykepenger.libs.logging.loggError
@@ -20,7 +22,7 @@ import java.time.LocalDate
 internal class SpleisApiClient(
     private val httpClient: HttpClient,
     private val scope: String,
-    private val accessToken: AccessToken,
+    private val accessTokenProvider: AccessTokenProvider,
     private val url: String,
 ) : Maksdatoberegning {
     private data class Request(
@@ -44,9 +46,10 @@ internal class SpleisApiClient(
                 fødselsnummer = personidentifikator.toString(),
                 infotrygdperioder = infotrygdperioder.map { Request.Periode(it.fom, it.tom, it.type, it.organisasjonsnummer) },
             )
+        val token = withContext(Dispatchers.IO) { accessTokenProvider.machineToken(scope) }
         val response =
             httpClient.post("$url/api/maksdato") {
-                header(HttpHeaders.Authorization, "Bearer ${accessToken.get(scope)}")
+                header(HttpHeaders.Authorization, "Bearer $token")
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 header("x-callId", MDC.get("callId"))

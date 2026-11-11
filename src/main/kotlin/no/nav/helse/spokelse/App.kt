@@ -1,5 +1,6 @@
 package no.nav.helse.spokelse
 
+import com.github.navikt.tbd_libs.access_token.TexasClient
 import com.github.navikt.tbd_libs.kafka.AivenConfig
 import com.github.navikt.tbd_libs.kafka.ConsumerProducerFactory
 import com.github.navikt.tbd_libs.naisful.naisApp
@@ -17,7 +18,6 @@ import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import io.prometheus.metrics.model.registry.PrometheusRegistry
 import no.nav.helse.rapids_rivers.RapidApplication
-import no.nav.helse.spokelse.felles.Azure
 import no.nav.helse.spokelse.felles.Infotrygd
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
@@ -38,6 +38,7 @@ import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioderRiver
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
 import org.slf4j.LoggerFactory
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.net.URI
 
 internal fun Map<String, String>.hent(key: String) = get(key) ?: throw IllegalStateException("Mangler config for $key")
 
@@ -64,12 +65,16 @@ fun launchApplication(env: Map<String, String>) {
 
     val tbdUtbetalingApi = TbdUtbetalingApi(tbdUtbetalingDao)
     val httpClient = HttpClient(CIO)
-    val azure = Azure(env, httpClient)
+    val accessTokenProvider =
+        TexasClient(
+            tokenEndpoint = URI(env.hent("NAIS_TOKEN_ENDPOINT")),
+            tokenExchangeEndpoint = URI(env.hent("NAIS_TOKEN_EXCHANGE_ENDPOINT")),
+        )
     val infotrygd =
         Infotrygd(
             httpClient = httpClient,
             scope = env.hent("INFOTRYGD_SCOPE"),
-            accessToken = azure,
+            accessTokenProvider = accessTokenProvider,
             url = env.hent("INFOTRYGD_URL"),
         )
     val utbetaltePerioder =
@@ -87,7 +92,7 @@ fun launchApplication(env: Map<String, String>) {
                 SpleisApiClient(
                     httpClient = httpClient,
                     scope = env.hent("SPLEIS_API_SCOPE"),
-                    accessToken = azure,
+                    accessTokenProvider = accessTokenProvider,
                     url = env.hent("SPLEIS_API_URL"),
                 ),
             meterRegistry = meterRegistry,

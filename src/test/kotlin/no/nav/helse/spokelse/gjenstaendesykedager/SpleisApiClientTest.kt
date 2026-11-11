@@ -9,7 +9,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
-import no.nav.helse.spokelse.felles.AccessToken
+import no.nav.helse.spokelse.felles.FakeAccessTokenProvider
 import no.nav.helse.spokelse.felles.Infotrygdperiode
 import no.nav.helse.spokelse.felles.Personidentifikator
 import org.intellij.lang.annotations.Language
@@ -36,6 +36,7 @@ internal class SpleisApiClientTest {
 
         assertEquals(Maksdatoberegning.Beregning(120, LocalDate.parse("2023-02-28"), LocalDate.parse("2023-08-15")), beregning)
         assertEquals("http://spleis-api/api/maksdato", requests.single().url.toString())
+        assertEquals("Bearer token-for-api://spleis-api", requests.single().headers[HttpHeaders.Authorization])
         @Language("JSON")
         val forventetRequest =
             """
@@ -72,10 +73,7 @@ internal class SpleisApiClientTest {
                 },
             ),
         scope = "api://spleis-api",
-        accessToken =
-            object : AccessToken() {
-                override suspend fun hentNytt(scope: String) = "token" to 3600L
-            },
+        accessTokenProvider = FakeAccessTokenProvider(),
         url = "http://spleis-api",
     )
 }

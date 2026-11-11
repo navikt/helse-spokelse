@@ -1,10 +1,13 @@
 package no.nav.helse.spokelse.felles
 
+import com.github.navikt.tbd_libs.access_token.AccessTokenProvider
 import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import no.nav.helse.spokelse.gjenstaendesykedager.Infotrygdperioder
 import org.intellij.lang.annotations.Language
 import org.slf4j.MDC
@@ -15,7 +18,7 @@ import java.time.LocalDate
 internal class Infotrygd(
     private val httpClient: HttpClient,
     private val scope: String,
-    private val accessToken: AccessToken,
+    private val accessTokenProvider: AccessTokenProvider,
     private val url: String,
 ) : Infotrygdperioder {
     suspend fun hent(
@@ -36,9 +39,10 @@ internal class Infotrygd(
         tom: LocalDate,
         inkluderAllePeriodetyper: Boolean,
     ): List<JsonNode> {
+        val token = withContext(Dispatchers.IO) { accessTokenProvider.machineToken(scope) }
         val response =
             httpClient.post(url) {
-                header(HttpHeaders.Authorization, "Bearer ${accessToken.get(scope)}")
+                header(HttpHeaders.Authorization, "Bearer $token")
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 header("x-callId", MDC.get("callId"))

@@ -43,6 +43,7 @@ internal class InfotrygdTest {
             ),
             perioder,
         )
+        assertEquals("Bearer token-for-api://infotrygd", requests.single().headers[HttpHeaders.Authorization])
         @Language("JSON")
         val forventetRequest =
             """
@@ -76,10 +77,7 @@ internal class InfotrygdTest {
                 },
             ),
         scope = "api://infotrygd",
-        accessToken =
-            object : AccessToken() {
-                override suspend fun hentNytt(scope: String) = "token" to 3600L
-            },
+        accessTokenProvider = FakeAccessTokenProvider(),
         url = "http://infotrygd",
     )
 

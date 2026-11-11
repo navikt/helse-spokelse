@@ -14,7 +14,7 @@ import io.ktor.http.content.TextContent
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
-import no.nav.helse.spokelse.felles.AccessToken
+import no.nav.helse.spokelse.felles.FakeAccessTokenProvider
 import no.nav.helse.spokelse.felles.Infotrygd
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
@@ -65,10 +65,7 @@ internal abstract class AbstractE2ETest {
                     },
                 ),
             scope = "api://spleis-api",
-            accessToken =
-                object : AccessToken() {
-                    override suspend fun hentNytt(scope: String) = "token" to 3600L
-                },
+            accessTokenProvider = FakeAccessTokenProvider(),
             url = "http://spleis-api",
         )
 
@@ -100,10 +97,7 @@ internal abstract class AbstractE2ETest {
                     },
                 ),
             scope = "api://infotrygd",
-            accessToken =
-                object : AccessToken() {
-                    override suspend fun hentNytt(scope: String) = "token" to 3600L
-                },
+            accessTokenProvider = FakeAccessTokenProvider(),
             url = "http://infotrygd",
         )
 
