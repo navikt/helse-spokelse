@@ -1,5 +1,7 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
+import no.nav.helse.spokelse.felles.Personidentifikator
+import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somSpøkelsePerioder
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi

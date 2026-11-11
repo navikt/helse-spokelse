@@ -1,14 +1,14 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
 import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
+import no.nav.helse.spokelse.felles.Personidentifikator
+import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje.Companion.utbetalingslinje
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
-import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import tools.jackson.databind.JsonNode
 import java.time.LocalDateTime
 import java.util.*

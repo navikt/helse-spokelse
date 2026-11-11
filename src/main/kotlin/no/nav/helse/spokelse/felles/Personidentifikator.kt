@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse.utbetalteperioder
+package no.nav.helse.spokelse.felles
 
 class Personidentifikator(
     private val id: String,

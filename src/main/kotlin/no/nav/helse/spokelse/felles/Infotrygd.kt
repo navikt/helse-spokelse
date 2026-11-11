@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse.utbetalteperioder
+package no.nav.helse.spokelse.felles
 
 import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import io.ktor.client.*

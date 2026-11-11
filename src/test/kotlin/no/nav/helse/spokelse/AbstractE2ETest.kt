@@ -14,6 +14,8 @@ import io.ktor.http.content.TextContent
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
+import no.nav.helse.spokelse.felles.AccessToken
+import no.nav.helse.spokelse.felles.Infotrygd
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
@@ -21,8 +23,6 @@ import no.nav.helse.spokelse.gjenstaendesykedager.SpleisApiClient
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
-import no.nav.helse.spokelse.utbetalteperioder.AccessToken
-import no.nav.helse.spokelse.utbetalteperioder.Infotrygd
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.sykepenger.libs.logging.navngittLogger
 import org.awaitility.Awaitility

@@ -1,7 +1,7 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
 import no.nav.helse.spokelse.AbstractE2ETest
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
+import no.nav.helse.spokelse.felles.Personidentifikator
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull

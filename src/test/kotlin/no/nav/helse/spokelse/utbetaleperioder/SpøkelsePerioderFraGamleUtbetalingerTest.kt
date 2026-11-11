@@ -4,10 +4,10 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.spokelse.*
 import no.nav.helse.spokelse.AbstractE2ETest
+import no.nav.helse.spokelse.felles.Personidentifikator
+import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somSpøkelsePerioder
 import no.nav.helse.spokelse.tbdutbetaling.Annullering
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
-import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDate

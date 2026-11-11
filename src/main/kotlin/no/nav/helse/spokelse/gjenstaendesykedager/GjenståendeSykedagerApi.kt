@@ -11,8 +11,8 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
 import io.micrometer.core.instrument.MeterRegistry
+import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.postMedRolle
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import no.nav.sykepenger.libs.logging.navngittLogger
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate

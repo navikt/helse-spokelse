@@ -4,12 +4,12 @@ import com.github.navikt.tbd_libs.test_support.TestDataSource
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import no.nav.helse.spokelse.databaseContainer
+import no.nav.helse.spokelse.felles.Infotrygdperiode
+import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager.Resultat
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
-import no.nav.helse.spokelse.utbetalteperioder.Infotrygdperiode
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach

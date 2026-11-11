@@ -2,14 +2,14 @@ package no.nav.helse.spokelse.utbetaleperioder
 
 import no.nav.helse.spokelse.april
 import no.nav.helse.spokelse.februar
+import no.nav.helse.spokelse.felles.Personidentifikator
+import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.mars
 import no.nav.helse.spokelse.tbdutbetaling.Oppdrag
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somSpøkelsePerioder
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
-import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime

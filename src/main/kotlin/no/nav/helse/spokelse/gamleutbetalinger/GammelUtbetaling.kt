@@ -1,9 +1,9 @@
 package no.nav.helse.spokelse.gamleutbetalinger
 
+import no.nav.helse.spokelse.felles.Personidentifikator
+import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
-import no.nav.helse.spokelse.utbetalteperioder.SpøkelsePeriode
 import java.time.LocalDate
 import java.time.LocalDateTime
 

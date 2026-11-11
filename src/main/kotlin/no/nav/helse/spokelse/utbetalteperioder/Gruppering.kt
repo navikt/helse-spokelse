@@ -1,6 +1,8 @@
 package no.nav.helse.spokelse.utbetalteperioder
 
 import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
+import no.nav.helse.spokelse.felles.Personidentifikator
+import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.utbetalteperioder.Grupperingsnøkkel.Companion.grupperingsnøkkel
 import no.nav.sykepenger.libs.logging.loggInfo
 import tools.jackson.databind.JsonNode

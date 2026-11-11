@@ -1,11 +1,13 @@
 package no.nav.helse.spokelse.utbetaleperioder
 
 import no.nav.helse.spokelse.februar
+import no.nav.helse.spokelse.felles.Personidentifikator
+import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.mars
-import no.nav.helse.spokelse.utbetalteperioder.*
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy
 import no.nav.helse.spokelse.utbetalteperioder.Gruppering
+import no.nav.helse.spokelse.utbetalteperioder.IngenTags
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert

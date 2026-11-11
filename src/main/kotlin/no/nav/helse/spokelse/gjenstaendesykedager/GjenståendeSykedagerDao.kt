@@ -2,7 +2,7 @@ package no.nav.helse.spokelse.gjenstaendesykedager
 
 import kotliquery.queryOf
 import kotliquery.sessionOf
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
+import no.nav.helse.spokelse.felles.Personidentifikator
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID

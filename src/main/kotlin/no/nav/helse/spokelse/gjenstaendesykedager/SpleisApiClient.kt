@@ -8,9 +8,9 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import no.nav.helse.spokelse.utbetalteperioder.AccessToken
-import no.nav.helse.spokelse.utbetalteperioder.Infotrygdperiode
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
+import no.nav.helse.spokelse.felles.AccessToken
+import no.nav.helse.spokelse.felles.Infotrygdperiode
+import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.sykepenger.libs.logging.loggError
 import org.slf4j.MDC
 import tools.jackson.module.kotlin.jacksonObjectMapper

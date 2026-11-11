@@ -9,9 +9,9 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
-import no.nav.helse.spokelse.utbetalteperioder.AccessToken
-import no.nav.helse.spokelse.utbetalteperioder.Infotrygdperiode
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
+import no.nav.helse.spokelse.felles.AccessToken
+import no.nav.helse.spokelse.felles.Infotrygdperiode
+import no.nav.helse.spokelse.felles.Personidentifikator
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

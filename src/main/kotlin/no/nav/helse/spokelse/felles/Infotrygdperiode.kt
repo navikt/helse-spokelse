@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse.utbetalteperioder
+package no.nav.helse.spokelse.felles
 
 import java.time.LocalDate
 

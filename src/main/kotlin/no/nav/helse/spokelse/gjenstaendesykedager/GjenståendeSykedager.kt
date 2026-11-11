@@ -1,8 +1,8 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.spokelse.utbetalteperioder.Infotrygdperiode
-import no.nav.helse.spokelse.utbetalteperioder.Personidentifikator
+import no.nav.helse.spokelse.felles.Infotrygdperiode
+import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.sykepenger.libs.logging.navngittLogger
 import java.time.LocalDate
 import java.time.ZoneId

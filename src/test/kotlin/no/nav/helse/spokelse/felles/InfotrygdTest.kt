@@ -1,4 +1,4 @@
-package no.nav.helse.spokelse.utbetalteperioder
+package no.nav.helse.spokelse.felles
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
