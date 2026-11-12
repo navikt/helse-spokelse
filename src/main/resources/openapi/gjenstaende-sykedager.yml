@@ -53,7 +53,7 @@ paths:
       summary: Hent gjenstående sykedager
       security:
         - azureAd: []
-      description: Krever et Azure AD-token med rollen `aap-les`.
+      description: Krever et Azure AD-token med rollen `aap-les` eller `personoversikt-les`.
       requestBody:
         required: true
         content:
@@ -108,7 +108,7 @@ paths:
         '401':
           description: Mangler gyldig token.
         '403':
-          description: Tokenet mangler rollen `aap-les`.
+          description: Tokenet har verken rollen `aap-les` eller `personoversikt-les`.
         '500':
           description: Uventet feil, for eksempel at oppslaget mot Infotrygd eller beregningen i spleis-api feilet. Prøv igjen senere.
 components:

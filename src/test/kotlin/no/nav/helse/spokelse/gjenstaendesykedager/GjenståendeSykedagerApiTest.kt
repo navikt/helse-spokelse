@@ -155,6 +155,16 @@ internal class GjenståendeSykedagerApiTest : AbstractE2ETest() {
     }
 
     @Test
+    fun `Modia personoversikt får slå opp med personoversikt-les`() {
+        lagreVedtak(tom = LocalDate.parse("2023-01-31"), gjenståendeSykedager = 221)
+        assertGjenståendeSykedager(
+            rolle = "personoversikt-les",
+            app = "modiapersonoversikt-api",
+            forventetResponseBody = vedtakINyLøsning(gjenståendeDager = 221, vurdertTilOgMed = "2023-01-31"),
+        )
+    }
+
+    @Test
     fun `feil rolle gir 403`() {
         assertGjenståendeSykedager(rolle = "foreldrepenger-les", forventetHttpStatus = 403)
     }

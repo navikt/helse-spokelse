@@ -42,7 +42,7 @@ internal fun Route.gjenståendeSykedagerApi(
 ) {
     fun tellUtfall(grunnlag: Grunnlag?) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", grunnlag?.name ?: "FEIL").increment()
 
-    postMedRolle("/gjenstaende-sykedager", "aap-les") {
+    postMedRolle("/gjenstaende-sykedager", "aap-les", "personoversikt-les") {
         val personidentifikator =
             personidentifikatorFraRequest()
                 ?: return@postMedRolle respondFeil(HttpStatusCode.BadRequest, Feilkode.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
