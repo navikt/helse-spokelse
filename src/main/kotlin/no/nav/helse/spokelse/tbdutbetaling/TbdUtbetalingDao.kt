@@ -85,6 +85,8 @@ internal class TbdUtbetalingDao(
         tom: LocalDate? = null,
     ): List<Utbetaling> =
         sessionOf(dataSource()).use { session ->
+            val utbetalingslinjer = session.hentUtbetalingslinjer(fødselsnummer, fom, tom)
+            fun oppdrag(fagsystemId: String?) = fagsystemId?.let { id -> utbetalingslinjer[id]?.let { Oppdrag(id, it) } }
             asSQL(
                 """
                 SELECT gjenstaaendeSykedager, arbeidsgiverFagsystemId, personFagsystemId, korrelasjonsId, sistUtbetalt, organisasjonsnummer
@@ -94,8 +96,8 @@ internal class TbdUtbetalingDao(
                 """.trimIndent(),
                 "fodselsnummer" to fødselsnummer,
             ).list(session) { row ->
-                val arbeidsgiverOppdrag = row.stringOrNull("arbeidsgiverFagsystemId")?.let { session.hentOppdrag(it, fom, tom) }
-                val personOppdrag = row.stringOrNull("personFagsystemId")?.let { session.hentOppdrag(it, fom, tom) }
+                val arbeidsgiverOppdrag = oppdrag(row.stringOrNull("arbeidsgiverFagsystemId"))
+                val personOppdrag = oppdrag(row.stringOrNull("personFagsystemId"))
                 if (arbeidsgiverOppdrag == null && personOppdrag == null) return@list null
                 Utbetaling(
                     fødselsnummer = fødselsnummer,
@@ -196,28 +198,32 @@ internal class TbdUtbetalingDao(
             query.single(session) { row -> row.int(1) } ?: 0
         }
 
-    private fun Session.hentOppdrag(
-        fagsystemId: String,
+    private fun Session.hentUtbetalingslinjer(
+        fødselsnummer: String,
         fom: LocalDate?,
         tom: LocalDate?,
-    ): Oppdrag? =
+    ): Map<String, List<Utbetalingslinje>> =
         asSQL(
             """
-            SELECT fom, tom, grad
+            SELECT fagsystemId, fom, tom, grad
             FROM tbdUtbetaling_Utbetalingslinje
-            WHERE fagsystemId = :fagsystemId
+            WHERE fagsystemId IN (
+                SELECT unnest(ARRAY[arbeidsgiverFagsystemId, personFagsystemId])
+                FROM tbdUtbetaling_Utbetaling
+                WHERE fodselsnummer = :fodselsnummer
+            )
             AND (CAST(:fom AS date) IS NULL OR tom >= :fom)
             AND (CAST(:tom AS date) IS NULL OR NOT fom > :tom)
             """.trimIndent(),
-            "fagsystemId" to fagsystemId,
+            "fodselsnummer" to fødselsnummer,
             "fom" to fom,
             "tom" to tom,
         ).list(this) { row ->
-            Utbetalingslinje(
-                fom = row.localDate("fom"),
-                tom = row.localDate("tom"),
-                grad = row.double("grad"),
-            )
-        }.takeUnless { it.isEmpty() }
-            ?.let { Oppdrag(fagsystemId, it) }
+            row.string("fagsystemId") to
+                Utbetalingslinje(
+                    fom = row.localDate("fom"),
+                    tom = row.localDate("tom"),
+                    grad = row.double("grad"),
+                )
+        }.groupBy({ it.first }, { it.second })
 }
