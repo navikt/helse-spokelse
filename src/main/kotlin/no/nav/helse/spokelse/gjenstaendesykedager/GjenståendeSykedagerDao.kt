@@ -1,7 +1,6 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
 import kotliquery.TransactionalSession
-import kotliquery.sessionOf
 import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.felles.asSQL
 import no.nav.helse.spokelse.felles.single
@@ -68,25 +67,23 @@ internal class GjenståendeSykedagerDao(
     }
 
     internal fun sisteVedtak(personidentifikator: Personidentifikator): SisteVedtak? =
-        sessionOf(dataSource()).use { session ->
-            asSQL(
-                """
-                SELECT gjenstående_sykedager, tom
-                FROM gjenstående_sykedager
-                WHERE fødselsnummer = :fodselsnummer
-                AND annullert_kilde IS NULL
-                AND sendt > :brukVedtakEtter
-                ORDER BY tom DESC, sendt DESC
-                LIMIT 1
-                """.trimIndent(),
-                "fodselsnummer" to personidentifikator.toString(),
-                "brukVedtakEtter" to brukVedtakEtter,
-            ).single(session) { row ->
-                SisteVedtak(
-                    gjenståendeDager = row.int("gjenstående_sykedager"),
-                    vurdertTilOgMed = row.localDate("tom"),
-                )
-            }
+        asSQL(
+            """
+            SELECT gjenstående_sykedager, tom
+            FROM gjenstående_sykedager
+            WHERE fødselsnummer = :fodselsnummer
+            AND annullert_kilde IS NULL
+            AND sendt > :brukVedtakEtter
+            ORDER BY tom DESC, sendt DESC
+            LIMIT 1
+            """.trimIndent(),
+            "fodselsnummer" to personidentifikator.toString(),
+            "brukVedtakEtter" to brukVedtakEtter,
+        ).single(dataSource()) { row ->
+            SisteVedtak(
+                gjenståendeDager = row.int("gjenstående_sykedager"),
+                vurdertTilOgMed = row.localDate("tom"),
+            )
         }
 
     private companion object {

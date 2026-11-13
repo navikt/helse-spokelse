@@ -1,7 +1,6 @@
 package no.nav.helse.spokelse.gamleutbetalinger
 
 import kotliquery.TransactionalSession
-import kotliquery.sessionOf
 import no.nav.helse.spokelse.felles.asSQL
 import no.nav.helse.spokelse.felles.list
 import no.nav.helse.spokelse.felles.update
@@ -45,67 +44,65 @@ internal class GamleUtbetalingerDao(
     ): List<GammelUtbetaling> {
         val (perioder, duration) =
             measureTimedValue {
-                sessionOf(dataSource()).use { session ->
-                    asSQL(
-                        """
-                        WITH alle_gamle_utbetalinger AS (
-                            SELECT o.fagsystemid fagsystem_id,
-                                u.fom         fom,
-                                u.tom         tom,
-                                u.grad        grad,
-                                v.opprettet   utbetalt_tidspunkt,
-                                v.orgnummer   organisasjonsnummer,
-                                'VedtakOppdragOgUtbetaling' kilde
-                            FROM vedtak v
-                            INNER JOIN oppdrag o on v.id = o.vedtak_id
-                            INNER JOIN utbetaling u on o.id = u.oppdrag_id
-                            WHERE v.fodselsnummer = :fodselsnummer
-                            AND u.tom >= :fom AND NOT u.fom > :tom
-                            UNION ALL
-                            SELECT
-                                (SELECT distinct vu.utbetalingsref FROM vedtak_utbetalingsref vu WHERE vu.vedtaksperiode_id = ov.vedtaksperiode_id) fagsystem_id,
-                                ou.fom fom,
-                                ou.tom tom,
-                                ou.grad grad,
-                                ov.opprettet utbetalt_tidspunkt,
-                                ov.orgnummer organisasjonsnummer,
-                                'OldVedtakOgOldUtbetaling' kilde
-                            FROM old_vedtak ov
-                            INNER JOIN old_utbetaling ou on ov.id = ou.vedtak_id
-                            WHERE ov.fodselsnummer = :fodselsnummer
-                            AND ou.tom >= :fom AND NOT ou.fom > :tom
-                            UNION ALL
-                            SELECT
-                                fagsystem_id,
-                                fom,
-                                tom,
-                                grad,
-                                opprettet utbetalt_tidspunkt,
-                                orgnummer organisasjonsnummer,
-                                'GamleUtbetalinger' kilde
-                            FROM gamle_utbetalinger
-                            WHERE fodselsnummer = :fodselsnummer
-                            AND tom >= :fom AND NOT fom > :tom
-                        )
-                        SELECT * FROM alle_gamle_utbetalinger agu
-                        LEFT JOIN alle_annulleringer aa ON agu.fagsystem_id = aa.fagsystem_id
-                        WHERE aa.fagsystem_id is null
-                        """.trimIndent(),
-                        "fodselsnummer" to fødselsnummer,
-                        "fom" to fom,
-                        "tom" to tom,
-                    ).list(session) { row ->
-                        GammelUtbetaling(
-                            fødselsnummer = fødselsnummer,
-                            fagsystemId = row.string("fagsystem_id"),
-                            organisasjonsnummer = row.string("organisasjonsnummer"),
-                            fom = row.localDate("fom"),
-                            tom = row.localDate("tom"),
-                            grad = row.int("grad"),
-                            kilde = row.string("kilde"),
-                            utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
-                        )
-                    }
+                asSQL(
+                    """
+                    WITH alle_gamle_utbetalinger AS (
+                        SELECT o.fagsystemid fagsystem_id,
+                            u.fom         fom,
+                            u.tom         tom,
+                            u.grad        grad,
+                            v.opprettet   utbetalt_tidspunkt,
+                            v.orgnummer   organisasjonsnummer,
+                            'VedtakOppdragOgUtbetaling' kilde
+                        FROM vedtak v
+                        INNER JOIN oppdrag o on v.id = o.vedtak_id
+                        INNER JOIN utbetaling u on o.id = u.oppdrag_id
+                        WHERE v.fodselsnummer = :fodselsnummer
+                        AND u.tom >= :fom AND NOT u.fom > :tom
+                        UNION ALL
+                        SELECT
+                            (SELECT distinct vu.utbetalingsref FROM vedtak_utbetalingsref vu WHERE vu.vedtaksperiode_id = ov.vedtaksperiode_id) fagsystem_id,
+                            ou.fom fom,
+                            ou.tom tom,
+                            ou.grad grad,
+                            ov.opprettet utbetalt_tidspunkt,
+                            ov.orgnummer organisasjonsnummer,
+                            'OldVedtakOgOldUtbetaling' kilde
+                        FROM old_vedtak ov
+                        INNER JOIN old_utbetaling ou on ov.id = ou.vedtak_id
+                        WHERE ov.fodselsnummer = :fodselsnummer
+                        AND ou.tom >= :fom AND NOT ou.fom > :tom
+                        UNION ALL
+                        SELECT
+                            fagsystem_id,
+                            fom,
+                            tom,
+                            grad,
+                            opprettet utbetalt_tidspunkt,
+                            orgnummer organisasjonsnummer,
+                            'GamleUtbetalinger' kilde
+                        FROM gamle_utbetalinger
+                        WHERE fodselsnummer = :fodselsnummer
+                        AND tom >= :fom AND NOT fom > :tom
+                    )
+                    SELECT * FROM alle_gamle_utbetalinger agu
+                    LEFT JOIN alle_annulleringer aa ON agu.fagsystem_id = aa.fagsystem_id
+                    WHERE aa.fagsystem_id is null
+                    """.trimIndent(),
+                    "fodselsnummer" to fødselsnummer,
+                    "fom" to fom,
+                    "tom" to tom,
+                ).list(dataSource()) { row ->
+                    GammelUtbetaling(
+                        fødselsnummer = fødselsnummer,
+                        fagsystemId = row.string("fagsystem_id"),
+                        organisasjonsnummer = row.string("organisasjonsnummer"),
+                        fom = row.localDate("fom"),
+                        tom = row.localDate("tom"),
+                        grad = row.int("grad"),
+                        kilde = row.string("kilde"),
+                        utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
+                    )
                 }
             }
         loggInfo("Oppslag mot gamle utbetalinger tok ${duration.inWholeMilliseconds}ms")

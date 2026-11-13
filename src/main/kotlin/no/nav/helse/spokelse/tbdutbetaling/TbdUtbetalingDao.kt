@@ -193,10 +193,7 @@ internal class TbdUtbetalingDao(
         return "$first ${second.name.lowercase()}"
     }
 
-    private fun tell(query: Query): Int =
-        sessionOf(dataSource()).use { session ->
-            query.single(session) { row -> row.int(1) } ?: 0
-        }
+    private fun tell(query: Query): Int = query.single(dataSource()) { row -> row.int(1) } ?: 0
 
     private fun Session.hentUtbetalingslinjer(
         fødselsnummer: String,
