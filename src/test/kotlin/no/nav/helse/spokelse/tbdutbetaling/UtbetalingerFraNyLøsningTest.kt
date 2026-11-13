@@ -3,6 +3,8 @@ package no.nav.helse.spokelse.tbdutbetaling
 import no.nav.helse.spokelse.AbstractE2ETest
 import no.nav.helse.spokelse.april
 import no.nav.helse.spokelse.februar
+import no.nav.helse.spokelse.felles.asSQL
+import no.nav.helse.spokelse.felles.single
 import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.mai
 import no.nav.helse.spokelse.mars
@@ -113,6 +115,26 @@ internal class UtbetalingerFraNyLøsningTest : AbstractE2ETest() {
         annuller(arbeidsgiverFagsystemId = ARBEIDSGIVER_FAGSYSTEM_ID, personFagsystemId = PERSON_FAGSYSTEM_ID)
         assertEquals(emptyList<Utbetaling>(), tbdUtbetalingDao.hentUtbetalinger(FØDSELSNUMMER))
     }
+
+    @Test
+    fun `annulleringen lagres med meldingen som kilde for riktig oppdrag`() {
+        lagreDelvisRefusjon()
+
+        annuller(arbeidsgiverFagsystemId = ARBEIDSGIVER_FAGSYSTEM_ID)
+        val arbeidsgiverannullering = sisteMeldingId()
+        assertEquals(arbeidsgiverannullering to null, annulleringskilder())
+
+        annuller(personFagsystemId = PERSON_FAGSYSTEM_ID)
+        assertEquals(arbeidsgiverannullering to sisteMeldingId(), annulleringskilder())
+    }
+
+    private fun sisteMeldingId() = asSQL("SELECT max(id) FROM tbdUtbetaling_Melding").single(dataSource) { it.long(1) }
+
+    private fun annulleringskilder() =
+        asSQL(
+            "SELECT arbeidsgiverAnnuleringskilde, personAnnuleringskilde FROM tbdUtbetaling_Utbetaling WHERE arbeidsgiverFagsystemId = :arbeidsgiverFagsystemId",
+            "arbeidsgiverFagsystemId" to ARBEIDSGIVER_FAGSYSTEM_ID,
+        ).single(dataSource) { it.longOrNull("arbeidsgiverAnnuleringskilde") to it.longOrNull("personAnnuleringskilde") }
 
     @Test
     fun `flere utbetalinger på samme person`() {
