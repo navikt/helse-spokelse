@@ -1,5 +1,6 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
+import kotliquery.Query
 import kotliquery.Session
 import kotliquery.TransactionalSession
 import kotliquery.sessionOf
@@ -137,25 +138,63 @@ internal class TbdUtbetalingDao(
         ).update(transaksjon)
     }
 
-    internal fun arbeidsgiverutbetalinger(tidsrom: Pair<Int, ChronoUnit>) = helsesjekk("arbeidsgiverfagsystemid IS NOT NULL AND arbeidsgiverannuleringskilde IS NULL", tidsrom)
-
-    internal fun arbeidsgiverannulleringer(tidsrom: Pair<Int, ChronoUnit>) = helsesjekk("arbeidsgiverannuleringskilde IS NOT NULL", tidsrom)
-
-    internal fun personutbetalinger(tidsrom: Pair<Int, ChronoUnit>) = helsesjekk("personfagsystemid IS NOT NULL AND personannuleringskilde IS NULL", tidsrom)
-
-    internal fun personannulleringer(tidsrom: Pair<Int, ChronoUnit>) = helsesjekk("personannuleringskilde IS NOT NULL", tidsrom)
-
-    private fun helsesjekk(
-        where: String,
-        tidsrom: Pair<Int, ChronoUnit>,
-    ): Int {
-        check(tidsrom.first >= 1) { "Ugyldig tidsrom ${tidsrom.first} ${tidsrom.second}" }
-        return sessionOf(dataSource()).use { session ->
+    internal fun arbeidsgiverutbetalinger(tidsrom: Pair<Int, ChronoUnit>) =
+        tell(
             asSQL(
-                "SELECT count(1) FROM tbdutbetaling_utbetaling WHERE $where AND sistutbetalt > now() - INTERVAL '${tidsrom.first} ${tidsrom.second}'",
-            ).single(session) { row -> row.int(1) } ?: 0
-        }
+                """
+                SELECT count(1) FROM tbdUtbetaling_Utbetaling
+                WHERE arbeidsgiverFagsystemId IS NOT NULL AND arbeidsgiverAnnuleringskilde IS NULL
+                AND sistUtbetalt > now() - CAST(:intervall AS interval)
+                """.trimIndent(),
+                "intervall" to tidsrom.somIntervall(),
+            ),
+        )
+
+    internal fun arbeidsgiverannulleringer(tidsrom: Pair<Int, ChronoUnit>) =
+        tell(
+            asSQL(
+                """
+                SELECT count(1) FROM tbdUtbetaling_Utbetaling
+                WHERE arbeidsgiverAnnuleringskilde IS NOT NULL
+                AND sistUtbetalt > now() - CAST(:intervall AS interval)
+                """.trimIndent(),
+                "intervall" to tidsrom.somIntervall(),
+            ),
+        )
+
+    internal fun personutbetalinger(tidsrom: Pair<Int, ChronoUnit>) =
+        tell(
+            asSQL(
+                """
+                SELECT count(1) FROM tbdUtbetaling_Utbetaling
+                WHERE personFagsystemId IS NOT NULL AND personAnnuleringskilde IS NULL
+                AND sistUtbetalt > now() - CAST(:intervall AS interval)
+                """.trimIndent(),
+                "intervall" to tidsrom.somIntervall(),
+            ),
+        )
+
+    internal fun personannulleringer(tidsrom: Pair<Int, ChronoUnit>) =
+        tell(
+            asSQL(
+                """
+                SELECT count(1) FROM tbdUtbetaling_Utbetaling
+                WHERE personAnnuleringskilde IS NOT NULL
+                AND sistUtbetalt > now() - CAST(:intervall AS interval)
+                """.trimIndent(),
+                "intervall" to tidsrom.somIntervall(),
+            ),
+        )
+
+    private fun Pair<Int, ChronoUnit>.somIntervall(): String {
+        check(first >= 1) { "Ugyldig tidsrom $first $second" }
+        return "$first ${second.name.lowercase()}"
     }
+
+    private fun tell(query: Query): Int =
+        sessionOf(dataSource()).use { session ->
+            query.single(session) { row -> row.int(1) } ?: 0
+        }
 
     private fun Session.hentOppdrag(
         fagsystemId: String,
