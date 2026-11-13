@@ -113,30 +113,28 @@ internal class TbdUtbetalingDao(
         meldingId: Long,
         annullering: Annullering,
     ) {
-        annullering.arbeidsgiverFagsystemId?.let { fagsystemId ->
-            transaksjon.slettUtbetalingslinjer(fagsystemId)
-            asSQL(
-                """
-                UPDATE tbdUtbetaling_Utbetaling
-                SET arbeidsgiverAnnuleringskilde = :meldingId
-                WHERE arbeidsgiverFagsystemId = :fagsystemId
-                """.trimIndent(),
+        val parametere =
+            arrayOf(
                 "meldingId" to meldingId,
-                "fagsystemId" to fagsystemId,
-            ).update(transaksjon)
-        }
-        annullering.personFagsystemId?.let { fagsystemId ->
-            transaksjon.slettUtbetalingslinjer(fagsystemId)
-            asSQL(
-                """
-                UPDATE tbdUtbetaling_Utbetaling
-                SET personAnnuleringskilde = :meldingId
-                WHERE personFagsystemId = :fagsystemId
-                """.trimIndent(),
-                "meldingId" to meldingId,
-                "fagsystemId" to fagsystemId,
-            ).update(transaksjon)
-        }
+                "arbeidsgiverFagsystemId" to annullering.arbeidsgiverFagsystemId,
+                "personFagsystemId" to annullering.personFagsystemId,
+            )
+        asSQL(
+            """
+            DELETE FROM tbdUtbetaling_Utbetalingslinje
+            WHERE fagsystemId IN (:arbeidsgiverFagsystemId, :personFagsystemId)
+            """.trimIndent(),
+            *parametere,
+        ).update(transaksjon)
+        asSQL(
+            """
+            UPDATE tbdUtbetaling_Utbetaling
+            SET arbeidsgiverAnnuleringskilde = CASE WHEN arbeidsgiverFagsystemId = :arbeidsgiverFagsystemId THEN :meldingId ELSE arbeidsgiverAnnuleringskilde END,
+                personAnnuleringskilde = CASE WHEN personFagsystemId = :personFagsystemId THEN :meldingId ELSE personAnnuleringskilde END
+            WHERE arbeidsgiverFagsystemId = :arbeidsgiverFagsystemId OR personFagsystemId = :personFagsystemId
+            """.trimIndent(),
+            *parametere,
+        ).update(transaksjon)
     }
 
     internal fun arbeidsgiverutbetalinger(tidsrom: Pair<Int, ChronoUnit>) = helsesjekk("arbeidsgiverfagsystemid IS NOT NULL AND arbeidsgiverannuleringskilde IS NULL", tidsrom)
@@ -183,11 +181,4 @@ internal class TbdUtbetalingDao(
             )
         }.takeUnless { it.isEmpty() }
             ?.let { Oppdrag(fagsystemId, it) }
-
-    private fun TransactionalSession.slettUtbetalingslinjer(fagsystemId: String) {
-        asSQL(
-            "DELETE FROM tbdUtbetaling_Utbetalingslinje WHERE fagsystemId = :fagsystemId",
-            "fagsystemId" to fagsystemId,
-        ).update(this)
-    }
 }
