@@ -1,10 +1,9 @@
 package no.nav.helse.spokelse
 
 import no.nav.helse.spokelse.tbdutbetaling.Annullering
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingObserver
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
 import no.nav.sykepenger.libs.logging.loggInfo
-import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerRecord
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
@@ -14,20 +13,14 @@ import java.time.OffsetDateTime
     dings som legger fnr og timestamp på en helt egen topic hver gang spøkelse får vite om en utbetaling
  */
 internal class UtbetalingVarsel(
-    private val producer: KafkaProducer<String, String>,
+    private val producer: Producer<String, String>,
     private val topic: String = "tbd.boo",
-) : TbdUtbetalingObserver {
-    override fun utbetaling(
-        meldingId: Long,
-        utbetaling: Utbetaling,
-    ) {
+) {
+    fun utbetaling(utbetaling: Utbetaling) {
         noeHarSkjedd(utbetaling.fødselsnummer, utbetaling.fom, "utbetaling")
     }
 
-    override fun annullering(
-        meldingId: Long,
-        annullering: Annullering,
-    ) {
+    fun annullering(annullering: Annullering) {
         noeHarSkjedd(annullering.fødselsnummer, annullering.fom, "annullering")
     }
 

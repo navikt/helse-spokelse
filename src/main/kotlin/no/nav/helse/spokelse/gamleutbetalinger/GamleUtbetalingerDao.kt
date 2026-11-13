@@ -1,10 +1,9 @@
 package no.nav.helse.spokelse.gamleutbetalinger
 
+import kotliquery.TransactionalSession
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.spokelse.tbdutbetaling.Annullering
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingObserver
-import no.nav.helse.spokelse.tbdutbetaling.Utbetaling
 import no.nav.sykepenger.libs.logging.loggInfo
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
@@ -13,7 +12,7 @@ import kotlin.time.measureTimedValue
 
 internal class GamleUtbetalingerDao(
     private val dataSource: () -> DataSource,
-) : TbdUtbetalingObserver {
+) {
     internal companion object {
         private val harDataFraOgMed = LocalDate.parse("2019-10-25")
         private val harDataTilOgMed = LocalDate.parse("2022-03-16")
@@ -120,25 +119,16 @@ internal class GamleUtbetalingerDao(
         return perioder
     }
 
-    override fun utbetaling(
-        meldingId: Long,
-        utbetaling: Utbetaling,
-    ) {
-        // Nye utbetalinger er ikke aktuelt å lagre, det er kun annulleringer av gamle utbetalinger som er viktig å få med seg.
-    }
-
-    override fun annullering(
-        meldingId: Long,
+    internal fun lagreAnnullering(
+        transaksjon: TransactionalSession,
         annullering: Annullering,
     ) {
         @Language("PostgreSQL")
         val sql = "INSERT INTO alle_annulleringer (fagsystem_id) VALUES(:fagsystem_id) ON CONFLICT DO NOTHING"
 
-        sessionOf(dataSource()).use { session ->
-            listOfNotNull(annullering.arbeidsgiverFagsystemId, annullering.personFagsystemId).forEach { fagsystemId ->
-                loggInfo("Lagrer annullering i tabellen alle_annulleringer", "fagsystemId" to fagsystemId)
-                session.run(queryOf(sql, mapOf("fagsystem_id" to fagsystemId)).asExecute)
-            }
+        listOfNotNull(annullering.arbeidsgiverFagsystemId, annullering.personFagsystemId).forEach { fagsystemId ->
+            loggInfo("Lagrer annullering i tabellen alle_annulleringer", "fagsystemId" to fagsystemId)
+            transaksjon.run(queryOf(sql, mapOf("fagsystem_id" to fagsystemId)).asExecute)
         }
     }
 }

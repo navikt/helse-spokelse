@@ -98,7 +98,7 @@ fun launchApplication(env: Map<String, String>) {
             meterRegistry = meterRegistry,
         )
 
-    val tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao, utbetalingVarsel))
+    val tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(dataSource::dataSource, tbdUtbetalingDao, gjenståendeSykedagerDao, gamleUtbetalingerDao, utbetalingVarsel)
     val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingHåndterer)
     RapidApplication
         .create(

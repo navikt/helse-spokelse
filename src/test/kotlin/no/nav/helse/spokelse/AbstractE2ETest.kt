@@ -25,6 +25,8 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.sykepenger.libs.logging.navngittLogger
+import org.apache.kafka.clients.producer.MockProducer
+import org.apache.kafka.common.serialization.StringSerializer
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
@@ -111,6 +113,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var gjenståendeSykedagerDao: GjenståendeSykedagerDao
     protected lateinit var tbdUtbetalingHåndterer: TbdUtbetalingHåndterer
     protected lateinit var meterRegistry: PrometheusMeterRegistry
+    protected lateinit var booProducer: MockProducer<String, String>
 
     private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
     private val auth by lazy {
@@ -140,7 +143,8 @@ internal abstract class AbstractE2ETest {
         lagreVedtakDao = LagreVedtakDao(dataSource)
         tbdUtbetalingDao = TbdUtbetalingDao(::dataSource)
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
-        tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, gamleUtbetalingerDao))
+        booProducer = MockProducer(true, null, StringSerializer(), StringSerializer())
+        tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(::dataSource, tbdUtbetalingDao, gjenståendeSykedagerDao, gamleUtbetalingerDao, UtbetalingVarsel(booProducer))
         infotrygdperioder = emptyList()
         spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28", "maksdato": "2023-06-29"}""")
         idag = LocalDate.now()

@@ -11,38 +11,37 @@ import javax.sql.DataSource
 
 internal class TbdUtbetalingDao(
     private val dataSource: () -> DataSource,
-) : TbdUtbetalingObserver {
-    internal fun lagreMelding(melding: Melding): Long =
-        sessionOf(dataSource = dataSource(), returnGeneratedKey = true).use { session ->
-            val parameters =
-                mapOf(
-                    "melding" to "$melding",
-                    "sendt" to melding.meldingSendt,
-                    "type" to melding.type,
-                    "fodselsnummer" to melding.fødselsnummer,
-                )
-            requireNotNull(session.run(queryOf(leggTilMelding, parameters).asUpdateAndReturnGeneratedKey)) {
-                "Klart ikke å lagre melding"
-            }
+) {
+    internal fun lagreMelding(
+        transaksjon: TransactionalSession,
+        melding: Melding,
+    ): Long {
+        val parameters =
+            mapOf(
+                "melding" to "$melding",
+                "sendt" to melding.meldingSendt,
+                "type" to melding.type,
+                "fodselsnummer" to melding.fødselsnummer,
+            )
+        return requireNotNull(transaksjon.run(queryOf(leggTilMelding, parameters).map { it.long("id") }.asSingle)) {
+            "Klart ikke å lagre melding"
         }
+    }
 
-    private fun lagreUtbetaling(
+    internal fun lagreUtbetaling(
+        transaksjon: TransactionalSession,
         meldingId: Long,
         utbetaling: Utbetaling,
     ) {
-        sessionOf(dataSource()).use { session ->
-            session.transaction { transactionalSession ->
-                // Sletter eventuell eksisterende utbetaling (og tilhørende utbetalingslinjer)
-                transactionalSession.execute(queryOf(slettUtbetaling, mapOf("korrelasjonsId" to utbetaling.korrelasjonsId)))
+        // Sletter eventuell eksisterende utbetaling (og tilhørende utbetalingslinjer)
+        transaksjon.execute(queryOf(slettUtbetaling, mapOf("korrelasjonsId" to utbetaling.korrelasjonsId)))
 
-                // Oppretter utbetalingen på ny
-                transactionalSession.opprettUtbetaling(meldingId, utbetaling)
+        // Oppretter utbetalingen på ny
+        transaksjon.opprettUtbetaling(meldingId, utbetaling)
 
-                // Legger til nye utbetalingslinjer
-                utbetaling.arbeidsgiverOppdrag?.let { transactionalSession.leggTilUtbetalingslinjer(utbetaling, meldingId, it) }
-                utbetaling.personOppdrag?.let { transactionalSession.leggTilUtbetalingslinjer(utbetaling, meldingId, it) }
-            }
-        }
+        // Legger til nye utbetalingslinjer
+        utbetaling.arbeidsgiverOppdrag?.let { transaksjon.leggTilUtbetalingslinjer(utbetaling, meldingId, it) }
+        utbetaling.personOppdrag?.let { transaksjon.leggTilUtbetalingslinjer(utbetaling, meldingId, it) }
     }
 
     internal fun hentUtbetalinger(
@@ -77,51 +76,17 @@ internal class TbdUtbetalingDao(
             )
         }
 
-    private fun annuller(
+    internal fun annuller(
+        transaksjon: TransactionalSession,
         meldingId: Long,
         annullering: Annullering,
     ) {
-        sessionOf(dataSource()).use { session ->
-            session.transaction { transactionalSession ->
-                annullering.arbeidsgiverFagsystemId?.let { arbeidsgiverFagsystemId ->
-                    transactionalSession.run(
-                        queryOf(
-                            slettUtbetalingslinjer,
-                            mapOf(
-                                "fagsystemId" to arbeidsgiverFagsystemId,
-                            ),
-                        ).asUpdate,
-                    )
-                    transactionalSession.run(
-                        queryOf(
-                            arbeidsgiverUtbetalingAnnullert,
-                            mapOf(
-                                "fagsystemId" to arbeidsgiverFagsystemId,
-                                "meldingId" to meldingId,
-                            ),
-                        ).asUpdate,
-                    )
-                }
-                annullering.personFagsystemId?.let { personFagsystemId ->
-                    transactionalSession.run(
-                        queryOf(
-                            slettUtbetalingslinjer,
-                            mapOf(
-                                "fagsystemId" to personFagsystemId,
-                            ),
-                        ).asUpdate,
-                    )
-                    transactionalSession.run(
-                        queryOf(
-                            personUtbetalingAnnullert,
-                            mapOf(
-                                "fagsystemId" to personFagsystemId,
-                                "meldingId" to meldingId,
-                            ),
-                        ).asUpdate,
-                    )
-                }
-            }
+        listOfNotNull(
+            annullering.arbeidsgiverFagsystemId?.let { it to arbeidsgiverUtbetalingAnnullert },
+            annullering.personFagsystemId?.let { it to personUtbetalingAnnullert },
+        ).forEach { (fagsystemId, utbetalingAnnullert) ->
+            transaksjon.run(queryOf(slettUtbetalingslinjer, mapOf("fagsystemId" to fagsystemId)).asUpdate)
+            transaksjon.run(queryOf(utbetalingAnnullert, mapOf("fagsystemId" to fagsystemId, "meldingId" to meldingId)).asUpdate)
         }
     }
 
@@ -203,7 +168,7 @@ internal class TbdUtbetalingDao(
 
     private companion object {
         @Language("PostgreSQL")
-        val leggTilMelding = "INSERT INTO tbdUtbetaling_Melding(melding, sendt, type, fodselsnummer) VALUES (:melding::json, :sendt, :type, :fodselsnummer)"
+        val leggTilMelding = "INSERT INTO tbdUtbetaling_Melding(melding, sendt, type, fodselsnummer) VALUES (:melding::json, :sendt, :type, :fodselsnummer) RETURNING id"
 
         @Language("PostgreSQL")
         val slettUtbetaling = "DELETE FROM tbdUtbetaling_Utbetaling WHERE korrelasjonsId = :korrelasjonsId"
@@ -268,14 +233,4 @@ internal class TbdUtbetalingDao(
             WHERE personFagsystemId = :fagsystemId
         """
     }
-
-    override fun annullering(
-        meldingId: Long,
-        annullering: Annullering,
-    ) = annuller(meldingId, annullering)
-
-    override fun utbetaling(
-        meldingId: Long,
-        utbetaling: Utbetaling,
-    ) = lagreUtbetaling(meldingId, utbetaling)
 }

@@ -7,7 +7,7 @@ import no.nav.helse.spokelse.AbstractE2ETest
 import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somSpøkelsePerioder
-import no.nav.helse.spokelse.tbdutbetaling.Annullering
+import no.nav.helse.spokelse.tbdutbetaling.utbetalingAnnullert
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -137,6 +137,6 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
     }
 
     private fun annuller(vararg fagsystemIder: String) {
-        fagsystemIder.forEach { gamleUtbetalingerDao.annullering(1L, Annullering(fødselsnummer, 1.januar, it, null)) }
+        fagsystemIder.forEach { tbdUtbetalingHåndterer.håndter(utbetalingAnnullert(fødselsnummer = fødselsnummer, arbeidsgiverFagsystemId = it), LocalDateTime.now()) }
     }
 }

@@ -3,6 +3,7 @@ package no.nav.helse.spokelse.gjenstaendesykedager
 import com.github.navikt.tbd_libs.test_support.TestDataSource
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
+import no.nav.helse.spokelse.UtbetalingVarsel
 import no.nav.helse.spokelse.databaseContainer
 import no.nav.helse.spokelse.felles.Infotrygdperiode
 import no.nav.helse.spokelse.felles.Personidentifikator
@@ -10,6 +11,8 @@ import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager.Resultat
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
+import org.apache.kafka.clients.producer.MockProducer
+import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -31,7 +34,8 @@ internal class GjenståendeSykedagerTest {
         val dataSource = { testDataSource.ds }
         val tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
         val gjenståendeSykedagerDao = GjenståendeSykedagerDao(dataSource)
-        tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(tbdUtbetalingDao, gjenståendeSykedagerDao, observers = listOf(tbdUtbetalingDao, GamleUtbetalingerDao(dataSource)))
+        val gamleUtbetalingerDao = GamleUtbetalingerDao(dataSource)
+        tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(dataSource, tbdUtbetalingDao, gjenståendeSykedagerDao, gamleUtbetalingerDao, UtbetalingVarsel(MockProducer(true, null, StringSerializer(), StringSerializer())))
         meterRegistry = SimpleMeterRegistry()
         infotrygd = FalskInfotrygd()
         spleisApi = FalskSpleisApi()

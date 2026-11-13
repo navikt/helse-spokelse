@@ -1,5 +1,6 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
+import kotliquery.TransactionalSession
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.spokelse.felles.Personidentifikator
@@ -17,59 +18,57 @@ internal class GjenståendeSykedagerDao(
     private val dataSource: () -> DataSource,
 ) {
     internal fun lagreVedtak(
+        transaksjon: TransactionalSession,
         meldingId: Long,
         vedtak: Vedtak,
     ) {
-        sessionOf(dataSource()).use { session ->
-            session.run(
-                queryOf(
-                    //language="PostgreSQL"
-                    """
-                        INSERT INTO gjenstående_sykedager(korrelasjons_id, fødselsnummer, fom, tom, gjenstående_sykedager, sendt, kilde)
-                        VALUES (:korrelasjonsId, :fodselsnummer, :fom, :tom, :gjenstaendeSykedager, :sendt, :kilde)
-                        ON CONFLICT (korrelasjons_id) DO UPDATE SET
-                            fødselsnummer = excluded.fødselsnummer,
-                            fom = excluded.fom,
-                            tom = excluded.tom,
-                            gjenstående_sykedager = excluded.gjenstående_sykedager,
-                            sendt = excluded.sendt,
-                            kilde = excluded.kilde,
-                            annullert_kilde = NULL
-                        WHERE excluded.sendt >= gjenstående_sykedager.sendt
-                    """,
-                    mapOf(
-                        "korrelasjonsId" to vedtak.korrelasjonsId,
-                        "fodselsnummer" to vedtak.fødselsnummer,
-                        "fom" to vedtak.fom,
-                        "tom" to vedtak.tom,
-                        "gjenstaendeSykedager" to vedtak.gjenståendeSykedager,
-                        "sendt" to vedtak.sendt,
-                        "kilde" to meldingId,
-                    ),
-                ).asUpdate,
-            )
-        }
+        transaksjon.run(
+            queryOf(
+                //language="PostgreSQL"
+                """
+                    INSERT INTO gjenstående_sykedager(korrelasjons_id, fødselsnummer, fom, tom, gjenstående_sykedager, sendt, kilde)
+                    VALUES (:korrelasjonsId, :fodselsnummer, :fom, :tom, :gjenstaendeSykedager, :sendt, :kilde)
+                    ON CONFLICT (korrelasjons_id) DO UPDATE SET
+                        fødselsnummer = excluded.fødselsnummer,
+                        fom = excluded.fom,
+                        tom = excluded.tom,
+                        gjenstående_sykedager = excluded.gjenstående_sykedager,
+                        sendt = excluded.sendt,
+                        kilde = excluded.kilde,
+                        annullert_kilde = NULL
+                    WHERE excluded.sendt >= gjenstående_sykedager.sendt
+                """,
+                mapOf(
+                    "korrelasjonsId" to vedtak.korrelasjonsId,
+                    "fodselsnummer" to vedtak.fødselsnummer,
+                    "fom" to vedtak.fom,
+                    "tom" to vedtak.tom,
+                    "gjenstaendeSykedager" to vedtak.gjenståendeSykedager,
+                    "sendt" to vedtak.sendt,
+                    "kilde" to meldingId,
+                ),
+            ).asUpdate,
+        )
     }
 
     internal fun annuller(
+        transaksjon: TransactionalSession,
         meldingId: Long,
         korrelasjonsId: UUID,
         sendt: LocalDateTime,
     ) {
-        sessionOf(dataSource()).use { session ->
-            session.run(
-                queryOf(
-                    //language="PostgreSQL"
-                    """
-                        UPDATE gjenstående_sykedager
-                        SET annullert_kilde = :kilde
-                        WHERE korrelasjons_id = :korrelasjonsId
-                        AND sendt < :sendt
-                    """,
-                    mapOf("kilde" to meldingId, "korrelasjonsId" to korrelasjonsId, "sendt" to sendt),
-                ).asUpdate,
-            )
-        }
+        transaksjon.run(
+            queryOf(
+                //language="PostgreSQL"
+                """
+                    UPDATE gjenstående_sykedager
+                    SET annullert_kilde = :kilde
+                    WHERE korrelasjons_id = :korrelasjonsId
+                    AND sendt < :sendt
+                """,
+                mapOf("kilde" to meldingId, "korrelasjonsId" to korrelasjonsId, "sendt" to sendt),
+            ).asUpdate,
+        )
     }
 
     internal fun sisteVedtak(personidentifikator: Personidentifikator): SisteVedtak? =
