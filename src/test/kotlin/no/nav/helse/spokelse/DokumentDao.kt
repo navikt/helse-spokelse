@@ -1,8 +1,8 @@
 package no.nav.helse.spokelse
 
-import kotliquery.queryOf
 import kotliquery.sessionOf
-import org.intellij.lang.annotations.Language
+import no.nav.helse.spokelse.felles.asSQL
+import no.nav.helse.spokelse.felles.update
 import java.util.*
 import javax.sql.DataSource
 
@@ -10,17 +10,13 @@ class DokumentDao(
     val datasource: DataSource,
 ) {
     fun opprett(hendelse: Hendelse) {
-        @Language("PostgreSQL")
-        val query = "INSERT INTO hendelse(hendelse_id, dokument_id, type) VALUES(?,?,?) ON CONFLICT DO NOTHING"
         sessionOf(datasource).use { session ->
-            session.run(
-                queryOf(
-                    query,
-                    hendelse.hendelseId,
-                    hendelse.dokumentId,
-                    hendelse.type.name,
-                ).asUpdate,
-            )
+            asSQL(
+                "INSERT INTO hendelse(hendelse_id, dokument_id, type) VALUES (:hendelseId, :dokumentId, :type) ON CONFLICT DO NOTHING",
+                "hendelseId" to hendelse.hendelseId,
+                "dokumentId" to hendelse.dokumentId,
+                "type" to hendelse.type.name,
+            ).update(session)
         }
     }
 
@@ -28,16 +24,12 @@ class DokumentDao(
         vedtaksperiodeId: UUID,
         fagsystemId: String,
     ) {
-        @Language("PostgreSQL")
-        val query = "INSERT INTO vedtak_utbetalingsref(vedtaksperiode_id, utbetalingsref) VALUES(?,?) ON CONFLICT DO NOTHING"
         sessionOf(datasource).use { session ->
-            session.run(
-                queryOf(
-                    query,
-                    vedtaksperiodeId,
-                    fagsystemId,
-                ).asUpdate,
-            )
+            asSQL(
+                "INSERT INTO vedtak_utbetalingsref(vedtaksperiode_id, utbetalingsref) VALUES (:vedtaksperiodeId, :fagsystemId) ON CONFLICT DO NOTHING",
+                "vedtaksperiodeId" to vedtaksperiodeId,
+                "fagsystemId" to fagsystemId,
+            ).update(session)
         }
     }
 }

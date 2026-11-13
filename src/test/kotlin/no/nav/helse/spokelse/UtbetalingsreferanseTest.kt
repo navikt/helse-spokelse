@@ -1,8 +1,7 @@
 package no.nav.helse.spokelse
 
-import kotliquery.queryOf
-import kotliquery.sessionOf
-import org.intellij.lang.annotations.Language
+import no.nav.helse.spokelse.felles.asSQL
+import no.nav.helse.spokelse.felles.list
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -16,20 +15,10 @@ internal class UtbetalingsreferanseTest : AbstractE2ETest() {
         dokumentDao.lagre(vedtaksperiodeId, fagsystemId)
 
         val refs =
-            sessionOf(dataSource).use { session ->
-                @Language("PostgreSQL")
-                val query = """SELECT utbetalingsref
-            FROM vedtak_utbetalingsref
-            WHERE vedtaksperiode_id = ?"""
-                session.run(
-                    queryOf(
-                        query,
-                        vedtaksperiodeId,
-                    ).map { row ->
-                        row.string("utbetalingsref")
-                    }.asList,
-                )
-            }
+            asSQL(
+                "SELECT utbetalingsref FROM vedtak_utbetalingsref WHERE vedtaksperiode_id = :vedtaksperiodeId",
+                "vedtaksperiodeId" to vedtaksperiodeId,
+            ).list(dataSource) { row -> row.string("utbetalingsref") }
 
         assertEquals(1, refs.size)
         assertEquals(fagsystemId, refs.first())

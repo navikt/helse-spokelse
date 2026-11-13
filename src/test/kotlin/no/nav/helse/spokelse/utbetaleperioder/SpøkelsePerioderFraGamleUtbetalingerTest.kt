@@ -1,11 +1,12 @@
 package no.nav.helse.spokelse.utbetaleperioder
 
-import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.spokelse.*
 import no.nav.helse.spokelse.AbstractE2ETest
 import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.felles.SpøkelsePeriode
+import no.nav.helse.spokelse.felles.asSQL
+import no.nav.helse.spokelse.felles.update
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somSpøkelsePerioder
 import no.nav.helse.spokelse.tbdutbetaling.utbetalingAnnullert
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -128,11 +129,17 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
         fagsystemId: String,
     ) {
         sessionOf(dataSource).use { session ->
-            val query = """
+            asSQL(
+                """
                 INSERT INTO gamle_utbetalinger (fodselsnummer, orgnummer, opprettet, fom, tom, grad, fagsystem_id, fagomrade, gjenstaende_sykedager)
-                VALUES('$fødselsnummer', '$organisasjonsnummer', now(), '$fom', '$tom', 100.0, '$fagsystemId', 'JA', 1)
-            """
-            session.run(queryOf(query).asExecute)
+                VALUES (:fodselsnummer, :orgnummer, now(), :fom, :tom, 100.0, :fagsystemId, 'JA', 1)
+                """.trimIndent(),
+                "fodselsnummer" to fødselsnummer,
+                "orgnummer" to organisasjonsnummer,
+                "fom" to fom,
+                "tom" to tom,
+                "fagsystemId" to fagsystemId,
+            ).update(session)
         }
     }
 

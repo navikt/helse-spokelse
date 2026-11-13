@@ -1,9 +1,10 @@
 package no.nav.helse.spokelse.tbdutbetaling
 
-import kotliquery.queryOf
 import kotliquery.sessionOf
 import no.nav.helse.spokelse.AbstractE2ETest
 import no.nav.helse.spokelse.felles.Personidentifikator
+import no.nav.helse.spokelse.felles.asSQL
+import no.nav.helse.spokelse.felles.single
 import no.nav.helse.spokelse.gjenstaendesykedager.SisteVedtak
 import no.nav.helse.spokelse.januar
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -107,13 +108,10 @@ internal class TbdUtbetalingHåndtererTest : AbstractE2ETest() {
     }
 
     private fun sql(statement: String) {
-        sessionOf(dataSource).use { it.run(queryOf(statement).asExecute) }
+        sessionOf(dataSource).use { it.run(asSQL(statement).asExecute) }
     }
 
-    private fun antallRåmeldinger() =
-        sessionOf(dataSource).use { session ->
-            session.run(queryOf("SELECT count(1) FROM tbdutbetaling_melding").map { it.int(1) }.asSingle)
-        }
+    private fun antallRåmeldinger() = asSQL("SELECT count(1) FROM tbdUtbetaling_Melding").single(dataSource) { it.int(1) }
 
     private companion object {
         private const val FØDSELSNUMMER = "12345678911"
