@@ -3,7 +3,8 @@
 Spøkelse deler informasjon om utbetalte sykepengeperioder og gjenstående sykedager fra Spleis og Infotrygd gjennom et HTTP-API.
 
 [![Bygg, test og deploy](https://github.com/navikt/helse-spokelse/actions/workflows/main.yml/badge.svg)](https://github.com/navikt/helse-spokelse/actions/workflows/main.yml)
-[Swagger Doc](https://spokelse.intern.nav.no/swagger)
+
+[Swagger Doc](https://spokelse.intern.nav.no/swagger). Specen ligger på `/openapi.json`.
 
 ## Dataflyt
 

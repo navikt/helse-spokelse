@@ -1,40 +1,88 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import io.github.smiley4.ktoropenapi.config.RouteConfig
+import io.github.smiley4.schemakenerator.core.annotations.Description
+import io.github.smiley4.schemakenerator.core.annotations.Example
+import io.github.smiley4.schemakenerator.core.annotations.Min
+import io.github.smiley4.schemakenerator.core.annotations.Name
+import io.github.smiley4.schemakenerator.core.annotations.Optional
+import io.github.smiley4.schemakenerator.core.annotations.Pattern
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
-import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
-import io.ktor.server.routing.get
 import io.micrometer.core.instrument.MeterRegistry
+import no.nav.helse.spokelse.Tags
 import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.postMedRolle
+import no.nav.helse.spokelse.problemJson
 import no.nav.sykepenger.libs.logging.navngittLogger
-import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.databind.cfg.CoercionAction
+import tools.jackson.databind.cfg.CoercionInputShape
+import tools.jackson.databind.type.LogicalType
+import tools.jackson.module.kotlin.jacksonMapperBuilder
+import tools.jackson.module.kotlin.readValue
 import java.time.LocalDate
 
 private val logger = navngittLogger("no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerApi")
-private val objectMapper = jacksonObjectMapper()
 
-internal enum class Feilkode {
-    UGYLDIG_FORESPØRSEL,
+private val objectMapper =
+    jacksonMapperBuilder()
+        .withCoercionConfig(LogicalType.Textual) { config ->
+            config
+                .setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail)
+        }.build()
+
+@Name("GjenstaendeSykedagerRequest")
+internal data class GjenståendeSykedagerRequestDto(
+    @Description("Fødselsnummeret eller D-nummeret til personen.")
+    @Pattern("^\\d{11}$")
+    @Example("12345678911")
+    val fødselsnummer: String,
+)
+
+@Name("GjenstaendeSykedager")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+internal data class GjenståendeSykedagerResponseDto(
+    @Description("Hva svaret bygger på. Se beskrivelsen av endepunktet. Nye verdier kan komme. Konsumenten må tåle dem.")
+    val grunnlag: GrunnlagDto,
+    @Description(
+        "Antall sykedager personen hadde igjen per `vurdertTilOgMed`. Bare med når `grunnlag` er `VEDTAK_I_NY_LØSNING`, " +
+            "`SISTE_UTBETALING_I_INFOTRYGD` eller `MAKSDATO_I_INFOTRYGD`. Mangler ellers. Er aldri `null`.",
+    )
+    @Min(0)
+    @Optional
+    val gjenståendeDager: Int? = null,
+    @Description("Dagen tallet gjelder for. Bare med sammen med `gjenståendeDager`. Mangler ellers.")
+    @Optional
+    val vurdertTilOgMed: LocalDate? = null,
+)
+
+@Name("GjenstaendeSykedagerGrunnlag")
+internal enum class GrunnlagDto {
+    VEDTAK_I_NY_LØSNING,
+    SISTE_UTBETALING_I_INFOTRYGD,
+    MAKSDATO_I_INFOTRYGD,
+    MANGLER_MAKSDATO_I_INFOTRYGD,
+    INGEN_SYKEPENGER_SISTE_26_UKER,
 }
 
-internal data class Feil(
-    val feilkode: Feilkode,
+@Name("GjenstaendeSykedagerFeil")
+internal data class FeilDto(
+    val feilkode: FeilkodeDto,
+    @Description("Forklaring for mennesker. Ikke bruk den til å styre logikk.")
     val melding: String,
 )
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-internal data class GjenståendeSykedagerResponse(
-    val grunnlag: Grunnlag,
-    val gjenståendeDager: Int? = null,
-    val vurdertTilOgMed: LocalDate? = null,
-)
+@Name("GjenstaendeSykedagerFeilkode")
+internal enum class FeilkodeDto {
+    UGYLDIG_FORESPØRSEL,
+}
 
 internal fun Route.gjenståendeSykedagerApi(
     gjenståendeSykedager: GjenståendeSykedager,
@@ -42,10 +90,10 @@ internal fun Route.gjenståendeSykedagerApi(
 ) {
     fun tellUtfall(grunnlag: Grunnlag?) = meterRegistry.counter("gjenstaende_sykedager_oppslag", "utfall", grunnlag?.name ?: "FEIL").increment()
 
-    postMedRolle("/gjenstaende-sykedager", "aap-les", "personoversikt-les") {
+    postMedRolle("/gjenstaende-sykedager", "aap-les", "personoversikt-les", dokumentasjon = { gjenståendeSykedagerDokumentasjon() }) {
         val personidentifikator =
             personidentifikatorFraRequest()
-                ?: return@postMedRolle respondFeil(HttpStatusCode.BadRequest, Feilkode.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
+                ?: return@postMedRolle call.respond(HttpStatusCode.BadRequest, ugyldigForespørsel)
 
         val resultat =
             try {
@@ -54,7 +102,7 @@ internal fun Route.gjenståendeSykedagerApi(
                 tellUtfall(null)
                 throw exception
             }
-        val response = GjenståendeSykedagerResponse(resultat.grunnlag, resultat.gjenståendeDager, resultat.vurdertTilOgMed)
+        val response = resultat.tilDto()
 
         logger.info(
             "Svarer på /gjenstaende-sykedager",
@@ -63,30 +111,123 @@ internal fun Route.gjenståendeSykedagerApi(
             "gjenståendeDager" to response.gjenståendeDager?.toString(),
             "vurdertTilOgMed" to response.vurdertTilOgMed?.toString(),
         )
-        tellUtfall(response.grunnlag)
+        tellUtfall(resultat.grunnlag)
         call.respond(HttpStatusCode.OK, response)
     }
 }
 
-internal fun Route.gjenståendeSykedagerDokumentasjon() {
-    get("/$OPENAPI_FIL") {
-        call.respondText(openApi, ContentType.parse("application/yaml"))
-    }
-    swaggerUI(path = "swagger", swaggerFile = OPENAPI_FIL)
-}
+private val ugyldigForespørsel = FeilDto(FeilkodeDto.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
 
-private const val OPENAPI_FIL = "openapi/gjenstaende-sykedager.yml"
-private val openApi =
-    requireNotNull(object {}.javaClass.getResource("/$OPENAPI_FIL")) { "Fant ikke OpenAPI-specen" }.readText()
+private fun GjenståendeSykedager.Resultat.tilDto() =
+    GjenståendeSykedagerResponseDto(
+        grunnlag =
+            when (grunnlag) {
+                Grunnlag.VEDTAK_I_NY_LØSNING -> GrunnlagDto.VEDTAK_I_NY_LØSNING
+                Grunnlag.SISTE_UTBETALING_I_INFOTRYGD -> GrunnlagDto.SISTE_UTBETALING_I_INFOTRYGD
+                Grunnlag.MAKSDATO_I_INFOTRYGD -> GrunnlagDto.MAKSDATO_I_INFOTRYGD
+                Grunnlag.MANGLER_MAKSDATO_I_INFOTRYGD -> GrunnlagDto.MANGLER_MAKSDATO_I_INFOTRYGD
+                Grunnlag.INGEN_SYKEPENGER_SISTE_26_UKER -> GrunnlagDto.INGEN_SYKEPENGER_SISTE_26_UKER
+            },
+        gjenståendeDager = gjenståendeDager,
+        vurdertTilOgMed = vurdertTilOgMed,
+    )
 
 private suspend fun RoutingContext.personidentifikatorFraRequest(): Personidentifikator? {
-    val body = runCatching { objectMapper.readTree(call.receiveText()) }.getOrNull() ?: return null
-    val fødselsnummer = body.path("fødselsnummer").takeIf { it.isString }?.asString() ?: return null
-    return runCatching { Personidentifikator(fødselsnummer) }.getOrNull()
+    val request = runCatching { objectMapper.readValue<GjenståendeSykedagerRequestDto>(call.receiveText()) }.getOrNull() ?: return null
+    return runCatching { Personidentifikator(request.fødselsnummer) }.getOrNull()
 }
 
-private suspend fun RoutingContext.respondFeil(
-    status: HttpStatusCode,
-    feilkode: Feilkode,
-    melding: String,
-) = call.respond(status, Feil(feilkode, melding))
+private fun RouteConfig.gjenståendeSykedagerDokumentasjon() {
+    tags(Tags.GJENSTÅENDE_SYKEDAGER)
+    operationId = "hentGjenstaendeSykedager"
+    summary = "Hent gjenstående sykedager"
+    description = BESKRIVELSE
+    request {
+        body<GjenståendeSykedagerRequestDto> {
+            required = true
+            example("fødselsnummer") { value = GjenståendeSykedagerRequestDto("12345678911") }
+        }
+    }
+    response {
+        code(HttpStatusCode.OK) {
+            description = "Oppslaget gikk bra. `grunnlag` sier hva svaret bygger på."
+            body<GjenståendeSykedagerResponseDto> {
+                example("vedtakINyLøsning") {
+                    summary = "Siste vedtak er i ny løsning"
+                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.VEDTAK_I_NY_LØSNING, 112, LocalDate.parse("2026-09-30"))
+                }
+                example("sisteUtbetalingIInfotrygd") {
+                    summary = "Infotrygd har utbetalt etter siste vedtak"
+                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.SISTE_UTBETALING_I_INFOTRYGD, 87, LocalDate.parse("2026-10-30"))
+                }
+                example("maksdatoIInfotrygd") {
+                    summary = "Siste sykefravær er bare i Infotrygd, og Infotrygd har maksdato"
+                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.MAKSDATO_I_INFOTRYGD, 10, LocalDate.parse("2026-10-30"))
+                }
+                example("manglerMaksdatoIInfotrygd") {
+                    summary = "Siste sykefravær er bare i Infotrygd, men Infotrygd har ingen maksdato"
+                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.MANGLER_MAKSDATO_I_INFOTRYGD)
+                }
+                example("ingenSykepengerSiste26Uker") {
+                    summary = "Ingen vedtak eller utbetalinger de siste 26 ukene"
+                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.INGEN_SYKEPENGER_SISTE_26_UKER)
+                }
+            }
+        }
+        code(HttpStatusCode.BadRequest) {
+            description = "Ugyldig request. Body mangler, er ikke JSON, eller `fødselsnummer` er ikke en streng på 11 siffer."
+            body<FeilDto> {
+                example("ugyldigForespørsel") { value = ugyldigForespørsel }
+            }
+        }
+        code(HttpStatusCode.InternalServerError) {
+            description = "Uventet feil, for eksempel at oppslaget mot Infotrygd eller beregningen i spleis-api feilet. Prøv igjen senere."
+            problemJson()
+        }
+    }
+}
+
+private val BESKRIVELSE =
+    """
+    Gir antall gjenstående sykedager for en person, og hva tallet bygger på.
+
+    Konsumenter: AAP (`behandlingsflyt` og `postmottak-backend`) og Personoversikt (`modiapersonoversikt-api`).
+
+    Alle utfall av oppslaget gir `200` med feltet `grunnlag`:
+    - `VEDTAK_I_NY_LØSNING`: Tallet er beregnet da siste vedtak ble fattet. `vurdertTilOgMed` er siste dag i vedtaket.
+    - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling etter siste vedtak. Tallet beregnes ved oppslaget, med dager
+      fra begge løsninger og de samme reglene som saksbehandlingen i ny løsning. `vurdertTilOgMed` er siste dag i siste utbetaling
+      i Infotrygd. Alle hverdager i en utbetalingsperiode i Infotrygd teller som utbetalt, så tallet kan bli for lavt.
+    - `MAKSDATO_I_INFOTRYGD`: Siste sykefravær er bare i Infotrygd. Personen har bare utbetalinger der, eller det er
+      minst 26 uker opphold etter siste vedtak. Tallet er ukedagene (mandag–fredag, helligdager telles med) fra dagen
+      etter `vurdertTilOgMed` til og med Infotrygds maksdato. `vurdertTilOgMed` er siste dag i siste utbetaling i Infotrygd.
+    - `MANGLER_MAKSDATO_I_INFOTRYGD`: Som `MAKSDATO_I_INFOTRYGD`, men Infotrygd har ingen maksdato. Ingen tall.
+    - `INGEN_SYKEPENGER_SISTE_26_UKER`: Vi finner ingen vedtak eller utbetalinger de siste 26 ukene. Personen får full rett
+      ved ny sykdom. Ingen tall. Sykdom som ikke er behandlet ennå, er ikke med, så personen kan ha brukt dager vi ikke ser.
+      Vedtak fra før 16. mars 2022 og annullerte vedtak er heller ikke med.
+
+    Nye verdier i `grunnlag` kan komme. Konsumenten må tåle dem.
+
+    **Tallet gjelder per `vurdertTilOgMed`, ikke per i dag.** `gjenståendeDager` er antall sykedager personen hadde igjen
+    per `vurdertTilOgMed`. Det eneste vi sjekker mot dagen i dag, er om personen har fått ny rett etter 26 uker uten sykepenger.
+
+    For `VEDTAK_I_NY_LØSNING` tar tallet hensyn til dette fram til og med `vurdertTilOgMed`:
+    - sykedager hos alle arbeidsgivere og sykedager utbetalt i Infotrygd
+    - ny rett etter 26 uker uten sykepenger
+    - at sykedager eldre enn tre år faller bort
+    - at personen har rett til høyst 60 sykedager etter fylte 67 år, og ingen rett etter fylte 70 år
+    - at graderte dager teller som hele dager, slik loven sier
+
+    Det som skjer etter `vurdertTilOgMed`, er ikke med:
+    - sykdom som ikke er behandlet ennå
+    - sykedager som blir eldre enn tre år
+
+    Personen kan derfor ha både flere og færre dager igjen i dag enn tallet viser.
+
+    Siste vedtak er vedtaket med senest `vurdertTilOgMed`. Det kan være et vedtak med eller uten utbetaling.
+    Et annullert vedtak regnes ikke med, og da gjelder forrige vedtak.
+    Siste utbetaling i Infotrygd er utbetalingsperioden med senest `tom`. Ferie og andre periodetyper er ikke utbetalinger.
+
+    **Kjent begrensning:** Hvis et vedtak uten utbetaling er annullert, fanges ikke annulleringen opp,
+    og svaret kan fortsatt bygge på det annullerte vedtaket.
+    """.trimIndent()

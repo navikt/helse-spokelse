@@ -3,6 +3,8 @@ tbdLibs = "20261029.1843"
 # Nyere versjon bruker wiremock-jetty12, som kreves av Jetty 12-BOM-en i sykepenger-pluginen
 tbdLibsSignedJwtIssuerTest = "20261029.1843"
 sykepengerGradlePlugins = "20261029.1945"
+smiley4KtorOpenapiTools = "5.7.0"
+smiley4SchemaKenerator = "2.7.2"
 
 [libraries]
 awaitility = "org.awaitility:awaitility:4.3.0"
@@ -14,10 +16,14 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio" }
 ktor-client-core = { module = "io.ktor:ktor-client-core" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock" }
 ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt" }
-ktor-server-swagger = { module = "io.ktor:ktor-server-swagger" }
 mockk = "io.mockk:mockk:1.14.12"
 postgresql = "org.postgresql:postgresql:42.7.14"
 rapidsAndRivers = "com.github.navikt:rapids-and-rivers:2026110308421793691732"
+smiley4-ktor-openapi = { module = "io.github.smiley4:ktor-openapi", version.ref = "smiley4KtorOpenapiTools" }
+smiley4-ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version.ref = "smiley4KtorOpenapiTools" }
+smiley4-schema-kenerator-core = { module = "io.github.smiley4:schema-kenerator-core", version.ref = "smiley4SchemaKenerator" }
+smiley4-schema-kenerator-reflection = { module = "io.github.smiley4:schema-kenerator-reflection", version.ref = "smiley4SchemaKenerator" }
+smiley4-schema-kenerator-swagger = { module = "io.github.smiley4:schema-kenerator-swagger", version.ref = "smiley4SchemaKenerator" }
 sykepengerLibs-logging = "no.nav.sykepenger.libs:logging:20261116.0849"
 tbdLibs-accessTokenProviderApi = { module = "com.github.navikt.tbd-libs:access-token-provider-api", version.ref = "tbdLibs" }
 tbdLibs-accessTokenProviderTexas = { module = "com.github.navikt.tbd-libs:access-token-provider-texas", version.ref = "tbdLibs" }
@@ -25,6 +31,15 @@ tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", versio
 tbdLibs-naisfulTestApp = { module = "com.github.navikt.tbd-libs:naisful-test-app", version.ref = "tbdLibs" }
 tbdLibs-postgresTestdatabaser = { module = "com.github.navikt.tbd-libs:postgres-testdatabaser", version.ref = "tbdLibs" }
 tbdLibs-signedJwtIssuerTest = { module = "com.github.navikt.tbd-libs:signed-jwt-issuer-test", version.ref = "tbdLibsSignedJwtIssuerTest" }
+
+[bundles]
+smiley4-ktor-openapi-tools = [
+    "smiley4-ktor-openapi",
+    "smiley4-ktor-swagger-ui",
+    "smiley4-schema-kenerator-core",
+    "smiley4-schema-kenerator-reflection",
+    "smiley4-schema-kenerator-swagger",
+]
 
 [plugins]
 sykepenger-deployable = { id = "no.nav.sykepenger.deployable", version.ref = "sykepengerGradlePlugins" }

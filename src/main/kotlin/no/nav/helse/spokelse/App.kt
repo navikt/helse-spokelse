@@ -24,7 +24,6 @@ import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.SpleisApiClient
 import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerApi
-import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerDokumentasjon
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisKjennerTilRiver
@@ -166,8 +165,8 @@ internal fun Application.spokelse(
     meterRegistry: MeterRegistry,
 ) {
     azureAdAppAuthentication(auth)
+    openApiDokumentasjon()
     routing {
-        gjenståendeSykedagerDokumentasjon()
         authenticate {
             grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
             utbetaltePerioderApi(utbetaltePerioder)

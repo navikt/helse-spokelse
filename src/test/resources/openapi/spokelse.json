@@ -1,0 +1,263 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "Spøkelse",
+    "description" : "Spøkelse deler informasjon om utbetalte sykepengeperioder og gjenstående sykedager fra Spleis og Infotrygd.\n\nAlle endepunktene krever et Azure AD-token (bearer JWT) med spøkelse som audience og en av rollene\nendepunktet krever i `roles`-claimet. Hvilke roller som gir tilgang, står i beskrivelsen av hvert endepunkt.\nUten gyldig token svarer spøkelse `401`. Med gyldig token uten noen av rollene svarer spøkelse `403`.",
+    "version" : "1.0.0"
+  },
+  "servers" : [ {
+    "url" : "https://spokelse.intern.dev.nav.no",
+    "description" : "dev"
+  }, {
+    "url" : "https://spokelse.intern.nav.no",
+    "description" : "prod"
+  } ],
+  "tags" : [ {
+    "name" : "Gjenstående sykedager",
+    "description" : "Antall sykedager en person har igjen, og hva tallet bygger på."
+  } ],
+  "paths" : {
+    "/gjenstaende-sykedager" : {
+      "post" : {
+        "tags" : [ "Gjenstående sykedager" ],
+        "summary" : "Hent gjenstående sykedager",
+        "description" : "Gir antall gjenstående sykedager for en person, og hva tallet bygger på.\n\nKonsumenter: AAP (`behandlingsflyt` og `postmottak-backend`) og Personoversikt (`modiapersonoversikt-api`).\n\nAlle utfall av oppslaget gir `200` med feltet `grunnlag`:\n- `VEDTAK_I_NY_LØSNING`: Tallet er beregnet da siste vedtak ble fattet. `vurdertTilOgMed` er siste dag i vedtaket.\n- `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling etter siste vedtak. Tallet beregnes ved oppslaget, med dager\n  fra begge løsninger og de samme reglene som saksbehandlingen i ny løsning. `vurdertTilOgMed` er siste dag i siste utbetaling\n  i Infotrygd. Alle hverdager i en utbetalingsperiode i Infotrygd teller som utbetalt, så tallet kan bli for lavt.\n- `MAKSDATO_I_INFOTRYGD`: Siste sykefravær er bare i Infotrygd. Personen har bare utbetalinger der, eller det er\n  minst 26 uker opphold etter siste vedtak. Tallet er ukedagene (mandag–fredag, helligdager telles med) fra dagen\n  etter `vurdertTilOgMed` til og med Infotrygds maksdato. `vurdertTilOgMed` er siste dag i siste utbetaling i Infotrygd.\n- `MANGLER_MAKSDATO_I_INFOTRYGD`: Som `MAKSDATO_I_INFOTRYGD`, men Infotrygd har ingen maksdato. Ingen tall.\n- `INGEN_SYKEPENGER_SISTE_26_UKER`: Vi finner ingen vedtak eller utbetalinger de siste 26 ukene. Personen får full rett\n  ved ny sykdom. Ingen tall. Sykdom som ikke er behandlet ennå, er ikke med, så personen kan ha brukt dager vi ikke ser.\n  Vedtak fra før 16. mars 2022 og annullerte vedtak er heller ikke med.\n\nNye verdier i `grunnlag` kan komme. Konsumenten må tåle dem.\n\n**Tallet gjelder per `vurdertTilOgMed`, ikke per i dag.** `gjenståendeDager` er antall sykedager personen hadde igjen\nper `vurdertTilOgMed`. Det eneste vi sjekker mot dagen i dag, er om personen har fått ny rett etter 26 uker uten sykepenger.\n\nFor `VEDTAK_I_NY_LØSNING` tar tallet hensyn til dette fram til og med `vurdertTilOgMed`:\n- sykedager hos alle arbeidsgivere og sykedager utbetalt i Infotrygd\n- ny rett etter 26 uker uten sykepenger\n- at sykedager eldre enn tre år faller bort\n- at personen har rett til høyst 60 sykedager etter fylte 67 år, og ingen rett etter fylte 70 år\n- at graderte dager teller som hele dager, slik loven sier\n\nDet som skjer etter `vurdertTilOgMed`, er ikke med:\n- sykdom som ikke er behandlet ennå\n- sykedager som blir eldre enn tre år\n\nPersonen kan derfor ha både flere og færre dager igjen i dag enn tallet viser.\n\nSiste vedtak er vedtaket med senest `vurdertTilOgMed`. Det kan være et vedtak med eller uten utbetaling.\nEt annullert vedtak regnes ikke med, og da gjelder forrige vedtak.\nSiste utbetaling i Infotrygd er utbetalingsperioden med senest `tom`. Ferie og andre periodetyper er ikke utbetalinger.\n\n**Kjent begrensning:** Hvis et vedtak uten utbetaling er annullert, fanges ikke annulleringen opp,\nog svaret kan fortsatt bygge på det annullerte vedtaket.\n\nKrever et Azure AD-token med rollen `aap-les` eller `personoversikt-les`.",
+        "operationId" : "hentGjenstaendeSykedager",
+        "parameters" : [ ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GjenstaendeSykedagerRequest"
+              },
+              "examples" : {
+                "fødselsnummer" : {
+                  "value" : {
+                    "fødselsnummer" : "12345678911"
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Oppslaget gikk bra. `grunnlag` sier hva svaret bygger på.",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GjenstaendeSykedager"
+                },
+                "examples" : {
+                  "vedtakINyLøsning" : {
+                    "summary" : "Siste vedtak er i ny løsning",
+                    "value" : {
+                      "grunnlag" : "VEDTAK_I_NY_LØSNING",
+                      "gjenståendeDager" : 112,
+                      "vurdertTilOgMed" : "2026-09-30"
+                    }
+                  },
+                  "sisteUtbetalingIInfotrygd" : {
+                    "summary" : "Infotrygd har utbetalt etter siste vedtak",
+                    "value" : {
+                      "grunnlag" : "SISTE_UTBETALING_I_INFOTRYGD",
+                      "gjenståendeDager" : 87,
+                      "vurdertTilOgMed" : "2026-10-30"
+                    }
+                  },
+                  "maksdatoIInfotrygd" : {
+                    "summary" : "Siste sykefravær er bare i Infotrygd, og Infotrygd har maksdato",
+                    "value" : {
+                      "grunnlag" : "MAKSDATO_I_INFOTRYGD",
+                      "gjenståendeDager" : 10,
+                      "vurdertTilOgMed" : "2026-10-30"
+                    }
+                  },
+                  "manglerMaksdatoIInfotrygd" : {
+                    "summary" : "Siste sykefravær er bare i Infotrygd, men Infotrygd har ingen maksdato",
+                    "value" : {
+                      "grunnlag" : "MANGLER_MAKSDATO_I_INFOTRYGD"
+                    }
+                  },
+                  "ingenSykepengerSiste26Uker" : {
+                    "summary" : "Ingen vedtak eller utbetalinger de siste 26 ukene",
+                    "value" : {
+                      "grunnlag" : "INGEN_SYKEPENGER_SISTE_26_UKER"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Ugyldig request. Body mangler, er ikke JSON, eller `fødselsnummer` er ikke en streng på 11 siffer.",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GjenstaendeSykedagerFeil"
+                },
+                "examples" : {
+                  "ugyldigForespørsel" : {
+                    "value" : {
+                      "feilkode" : "UGYLDIG_FORESPØRSEL",
+                      "melding" : "Forventer en body med fødselsnummer på 11 siffer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Tokenet mangler eller er ugyldig.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Tokenet har ikke rollen `aap-les` eller `personoversikt-les`.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Uventet feil, for eksempel at oppslaget mot Infotrygd eller beregningen i spleis-api feilet. Prøv igjen senere.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "azureAd" : [ ]
+        } ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "GjenstaendeSykedagerRequest" : {
+        "type" : "object",
+        "properties" : {
+          "fødselsnummer" : {
+            "type" : "string",
+            "description" : "Fødselsnummeret eller D-nummeret til personen.",
+            "example" : "12345678911",
+            "pattern" : "^\\d{11}$"
+          }
+        },
+        "required" : [ "fødselsnummer" ]
+      },
+      "Problem" : {
+        "type" : "object",
+        "description" : "Problem Details (RFC 9457). Spøkelse svarer med dette når tilgangen mangler eller noe uventet går galt.",
+        "properties" : {
+          "callId" : {
+            "type" : [ "null", "string" ],
+            "description" : "Id-en til kallet. Oppgi den hvis du spør oss om feilen."
+          },
+          "detail" : {
+            "type" : [ "null", "string" ],
+            "description" : "Mer om feilen, for mennesker. Ikke bruk den til å styre logikk."
+          },
+          "instance" : {
+            "type" : "string",
+            "format" : "uri",
+            "description" : "Stien i requesten som feilet.",
+            "example" : "/gjenstaende-sykedager"
+          },
+          "stacktrace" : {
+            "type" : [ "null", "string" ],
+            "description" : "Stacktracen ved uventede feil. Bare til feilsøking. Ikke bruk den til å styre logikk."
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "HTTP-statuskoden."
+          },
+          "title" : {
+            "type" : "string",
+            "description" : "Kort beskrivelse av statuskoden.",
+            "example" : "Internal Server Error"
+          },
+          "type" : {
+            "type" : "string",
+            "format" : "uri",
+            "description" : "Hva slags feil det er.",
+            "example" : "urn:error:internal_error"
+          }
+        },
+        "required" : [ "callId", "detail", "instance", "stacktrace", "status", "title", "type" ]
+      },
+      "GjenstaendeSykedagerGrunnlag" : {
+        "type" : "string",
+        "enum" : [ "VEDTAK_I_NY_LØSNING", "SISTE_UTBETALING_I_INFOTRYGD", "MAKSDATO_I_INFOTRYGD", "MANGLER_MAKSDATO_I_INFOTRYGD", "INGEN_SYKEPENGER_SISTE_26_UKER" ]
+      },
+      "GjenstaendeSykedager" : {
+        "type" : "object",
+        "properties" : {
+          "gjenståendeDager" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Antall sykedager personen hadde igjen per `vurdertTilOgMed`. Bare med når `grunnlag` er `VEDTAK_I_NY_LØSNING`, `SISTE_UTBETALING_I_INFOTRYGD` eller `MAKSDATO_I_INFOTRYGD`. Mangler ellers. Er aldri `null`.",
+            "minimum" : 0
+          },
+          "grunnlag" : {
+            "$ref" : "#/components/schemas/GjenstaendeSykedagerGrunnlag",
+            "description" : "Hva svaret bygger på. Se beskrivelsen av endepunktet. Nye verdier kan komme. Konsumenten må tåle dem."
+          },
+          "vurdertTilOgMed" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Dagen tallet gjelder for. Bare med sammen med `gjenståendeDager`. Mangler ellers."
+          }
+        },
+        "required" : [ "grunnlag" ]
+      },
+      "GjenstaendeSykedagerFeilkode" : {
+        "type" : "string",
+        "enum" : [ "UGYLDIG_FORESPØRSEL" ]
+      },
+      "GjenstaendeSykedagerFeil" : {
+        "type" : "object",
+        "properties" : {
+          "feilkode" : {
+            "$ref" : "#/components/schemas/GjenstaendeSykedagerFeilkode"
+          },
+          "melding" : {
+            "type" : "string",
+            "description" : "Forklaring for mennesker. Ikke bruk den til å styre logikk."
+          }
+        },
+        "required" : [ "feilkode", "melding" ]
+      }
+    },
+    "examples" : { },
+    "securitySchemes" : {
+      "azureAd" : {
+        "type" : "http",
+        "description" : "Azure AD-token med spøkelse som audience og en av rollene endepunktet krever i `roles`-claimet.",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT"
+      }
+    }
+  },
+  "webhooks" : { }
+}

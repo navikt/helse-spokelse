@@ -165,7 +165,8 @@ internal abstract class AbstractE2ETest {
         timeout: Duration = Duration.ofSeconds(5),
         rolle: String?,
         app: String?,
-    ) {
+    ): String {
+        var body = ""
         naisfulTestApp(
             testApplicationModule = {
                 val tbdUtbetalingApi = TbdUtbetalingApi(tbdUtbetalingDao)
@@ -215,7 +216,7 @@ internal abstract class AbstractE2ETest {
                             }
                         }
                     }
-                val body = runBlocking { response.bodyAsText() }
+                body = runBlocking { response.bodyAsText() }
                 logg.info("Fikk svar tilbake fra /$path", "body" to body)
                 assertEquals(HttpStatusCode.fromValue(forventetHttpStatus), response.status)
                 forventetResponseBody?.let {
@@ -228,6 +229,7 @@ internal abstract class AbstractE2ETest {
                 }
             }
         }
+        return body
     }
 
     protected fun nyeDokumenter(): Triple<Hendelse, Hendelse, Hendelse> {

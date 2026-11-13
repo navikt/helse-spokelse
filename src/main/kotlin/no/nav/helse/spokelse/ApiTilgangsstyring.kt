@@ -1,5 +1,7 @@
 package no.nav.helse.spokelse
 
+import io.github.smiley4.ktoropenapi.config.RouteConfig
+import io.github.smiley4.ktoropenapi.post
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -8,7 +10,6 @@ import io.ktor.server.request.path
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
-import io.ktor.server.routing.post
 import no.nav.sykepenger.libs.logging.navngittLogger
 
 private val logger = navngittLogger("no.nav.helse.spokelse.Tilgangsstyring")
@@ -16,10 +17,34 @@ private val logger = navngittLogger("no.nav.helse.spokelse.Tilgangsstyring")
 internal fun Route.postMedRolle(
     path: String,
     vararg enAvRollene: String,
+    dokumentasjon: (RouteConfig.() -> Unit)? = null,
     body: suspend RoutingContext.() -> Unit,
 ): Route {
     require(enAvRollene.isNotEmpty()) { "postMedRolle må ha minst én rolle" }
-    return post(path) {
+    val roller = enAvRollene.joinToString(" eller ") { "`$it`" }
+    return post(path, {
+        if (dokumentasjon == null) {
+            hidden = true
+        } else {
+            securitySchemeNames(AZURE_AD)
+            response {
+                code(HttpStatusCode.Unauthorized) {
+                    description = "Tokenet mangler eller er ugyldig."
+                    problemJson()
+                }
+                code(HttpStatusCode.Forbidden) {
+                    description = "Tokenet har ikke rollen $roller."
+                    problemJson()
+                }
+                code(HttpStatusCode.InternalServerError) {
+                    description = "Uventet feil. Prøv igjen senere."
+                    problemJson()
+                }
+            }
+            dokumentasjon()
+            description = listOfNotNull(description, "Krever et Azure AD-token med rollen $roller.").joinToString("\n\n")
+        }
+    }) {
         if (!call.harTilgangTil(enAvRollene.toSet())) return@post call.respond(HttpStatusCode.Forbidden)
         body()
     }

@@ -17,7 +17,7 @@ dependencies {
         exclude(group = "junit")
     }
 
-    implementation(libs.ktor.server.swagger)
+    implementation(libs.bundles.smiley4.ktor.openapi.tools)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
     implementation(libs.postgresql)
@@ -43,5 +43,6 @@ tasks {
         systemProperty("junit.jupiter.execution.parallel.mode.default", "concurrent")
         systemProperty("junit.jupiter.execution.parallel.config.strategy", "fixed")
         systemProperty("junit.jupiter.execution.parallel.config.fixed.parallelism", "8")
+        systemProperty("oppdaterOpenApiSnapshot", System.getProperty("oppdaterOpenApiSnapshot", "false"))
     }
 }
