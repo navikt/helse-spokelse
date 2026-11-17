@@ -30,7 +30,7 @@ dependencies {
 
     testImplementation(libs.awaitility)
 
-    testImplementation(libs.tbdLibs.postgresTestdatabaser)
+    testImplementation(testFixtures(libs.sykepengerLibs.postgres))
     testImplementation(libs.tbdLibs.naisfulTestApp)
     testImplementation(libs.tbdLibs.signedJwtIssuerTest)
     testImplementation(libs.jsonassert)

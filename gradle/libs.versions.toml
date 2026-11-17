@@ -25,11 +25,11 @@ smiley4-schema-kenerator-core = { module = "io.github.smiley4:schema-kenerator-c
 smiley4-schema-kenerator-reflection = { module = "io.github.smiley4:schema-kenerator-reflection", version.ref = "smiley4SchemaKenerator" }
 smiley4-schema-kenerator-swagger = { module = "io.github.smiley4:schema-kenerator-swagger", version.ref = "smiley4SchemaKenerator" }
 sykepengerLibs-logging = "no.nav.sykepenger.libs:logging:20261116.0849"
+sykepengerLibs-postgres = "no.nav.sykepenger.libs:postgres:20261116.0849"
 tbdLibs-accessTokenProviderApi = { module = "com.github.navikt.tbd-libs:access-token-provider-api", version.ref = "tbdLibs" }
 tbdLibs-accessTokenProviderTexas = { module = "com.github.navikt.tbd-libs:access-token-provider-texas", version.ref = "tbdLibs" }
 tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", version.ref = "tbdLibs" }
 tbdLibs-naisfulTestApp = { module = "com.github.navikt.tbd-libs:naisful-test-app", version.ref = "tbdLibs" }
-tbdLibs-postgresTestdatabaser = { module = "com.github.navikt.tbd-libs:postgres-testdatabaser", version.ref = "tbdLibs" }
 tbdLibs-signedJwtIssuerTest = { module = "com.github.navikt.tbd-libs:signed-jwt-issuer-test", version.ref = "tbdLibsSignedJwtIssuerTest" }
 
 [bundles]

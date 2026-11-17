@@ -2,7 +2,6 @@ package no.nav.helse.spokelse
 
 import com.github.navikt.tbd_libs.naisful.test.naisfulTestApp
 import com.github.navikt.tbd_libs.signed_jwt_issuer_test.Issuer
-import com.github.navikt.tbd_libs.test_support.TestDataSource
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -25,6 +24,7 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.sykepenger.libs.logging.navngittLogger
+import no.nav.sykepenger.libs.postgres.TestDatabase
 import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.awaitility.Awaitility
@@ -103,8 +103,8 @@ internal abstract class AbstractE2ETest {
             url = "http://infotrygd",
         )
 
-    private lateinit var testDataSource: TestDataSource
-    protected val dataSource: DataSource get() = testDataSource.ds
+    private lateinit var testDatabase: TestDatabase
+    protected val dataSource: DataSource get() = testDatabase.dataSource
     protected lateinit var dokumentDao: DokumentDao
     protected lateinit var utbetaltDao: UtbetaltDao
     protected lateinit var gamleUtbetalingerDao: GamleUtbetalingerDao
@@ -136,7 +136,7 @@ internal abstract class AbstractE2ETest {
 
     @BeforeEach
     fun setup() {
-        testDataSource = databaseContainer.nyTilkobling()
+        testDatabase = databaseContainer.nyTilkobling()
         dokumentDao = DokumentDao(dataSource)
         utbetaltDao = UtbetaltDao(dataSource)
         gamleUtbetalingerDao = GamleUtbetalingerDao(::dataSource)
@@ -153,7 +153,7 @@ internal abstract class AbstractE2ETest {
 
     @AfterEach
     protected fun reset() {
-        databaseContainer.droppTilkobling(testDataSource)
+        databaseContainer.droppTilkobling(testDatabase)
     }
 
     protected fun assertApiRequest(

@@ -1,6 +1,5 @@
 package no.nav.helse.spokelse.gjenstaendesykedager
 
-import com.github.navikt.tbd_libs.test_support.TestDataSource
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import no.nav.helse.spokelse.UtbetalingVarsel
@@ -11,6 +10,7 @@ import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager.Resultat
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
+import no.nav.sykepenger.libs.postgres.TestDatabase
 import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.jupiter.api.AfterEach
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 internal class GjenståendeSykedagerTest {
-    private lateinit var testDataSource: TestDataSource
+    private lateinit var testDatabase: TestDatabase
     private lateinit var tbdUtbetalingHåndterer: TbdUtbetalingHåndterer
     private lateinit var gjenståendeSykedager: GjenståendeSykedager
     private lateinit var meterRegistry: SimpleMeterRegistry
@@ -30,8 +30,8 @@ internal class GjenståendeSykedagerTest {
 
     @BeforeEach
     fun setup() {
-        testDataSource = databaseContainer.nyTilkobling()
-        val dataSource = { testDataSource.ds }
+        testDatabase = databaseContainer.nyTilkobling()
+        val dataSource = { testDatabase.dataSource }
         val tbdUtbetalingDao = TbdUtbetalingDao(dataSource)
         val gjenståendeSykedagerDao = GjenståendeSykedagerDao(dataSource)
         val gamleUtbetalingerDao = GamleUtbetalingerDao(dataSource)
@@ -44,7 +44,7 @@ internal class GjenståendeSykedagerTest {
 
     @AfterEach
     fun reset() {
-        databaseContainer.droppTilkobling(testDataSource)
+        databaseContainer.droppTilkobling(testDatabase)
     }
 
     @Test
