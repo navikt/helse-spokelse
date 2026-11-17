@@ -162,6 +162,7 @@ internal abstract class AbstractE2ETest {
         requestBody: String? = null,
         forventetHttpStatus: Int = 200,
         forventetResponseBody: String? = null,
+        forventetContentType: ContentType? = null,
         timeout: Duration = Duration.ofSeconds(5),
         rolle: String?,
         app: String?,
@@ -219,6 +220,7 @@ internal abstract class AbstractE2ETest {
                 body = runBlocking { response.bodyAsText() }
                 logg.info("Fikk svar tilbake fra /$path", "body" to body)
                 assertEquals(HttpStatusCode.fromValue(forventetHttpStatus), response.status)
+                forventetContentType?.let { assertEquals(it, response.contentType()?.withoutParameters()) }
                 forventetResponseBody?.let {
                     try {
                         JSONAssert.assertEquals(it, body, true)
