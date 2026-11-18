@@ -13,6 +13,9 @@
     "description" : "prod"
   } ],
   "tags" : [ {
+    "name" : "Grunnlag",
+    "description" : "Vedtak med utbetalinger fra Spleis, til Foreldrepenger og K9."
+  }, {
     "name" : "Gjenstående sykedager",
     "description" : "Antall sykedager en person har igjen, og hva tallet bygger på."
   }, {
@@ -20,6 +23,139 @@
     "description" : "Utbetalte sykepengeperioder fra Spleis og Infotrygd. Hver konsument har sin egen variant."
   } ],
   "paths" : {
+    "/grunnlag" : {
+      "post" : {
+        "tags" : [ "Grunnlag" ],
+        "summary" : "Hent vedtak med utbetalinger",
+        "description" : "Gir vedtakene med utbetalinger i Spleis for en person, eventuelt bare de med utbetalinger fra og med `fom`.\n\nKonsumenter: Foreldrepenger (`fpsak`, `fprisk` og `fpabakus`) og K9 (`k9-abakus`).\n\nHvert oppdrag er et eget vedtak, så utbetalinger til arbeidsgiver og til personen kommer hver for seg.\nSvaret på `400`, og på `500` når oppslaget feiler, er ren tekst. Andre feil kommer som `application/problem+json`.\n\nKrever et Azure AD-token med rollen `foreldrepenger-les` eller `k9-les`.",
+        "operationId" : "hentGrunnlag",
+        "parameters" : [ ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ApiGrunnlagRequest"
+              },
+              "examples" : {
+                "utenFom" : {
+                  "summary" : "Alle vedtakene",
+                  "value" : {
+                    "fodselsnummer" : "12345678911"
+                  }
+                },
+                "medFom" : {
+                  "summary" : "Bare vedtak med utbetalinger fra og med `fom`",
+                  "value" : {
+                    "fodselsnummer" : "12345678911",
+                    "fom" : "2024-01-01"
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Oppslaget gikk bra. Listen er tom når personen ikke har vedtak med utbetalinger.",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApiGrunnlagVedtak"
+                  }
+                },
+                "examples" : {
+                  "ettVedtak" : {
+                    "value" : [ {
+                      "vedtaksreferanse" : "VNDG2PFPMNB4FKMC4ORASZ2JJ4",
+                      "utbetalinger" : [ {
+                        "fom" : "2024-01-01",
+                        "tom" : "2024-01-31",
+                        "grad" : 100.0
+                      }, {
+                        "fom" : "2024-02-01",
+                        "tom" : "2024-02-15",
+                        "grad" : 50.0
+                      } ],
+                      "vedtattTidspunkt" : "2024-03-01T12:34:56.789"
+                    } ]
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Ugyldig request. `fodselsnummer` mangler eller er `null`, body er ikke et JSON-objekt, eller `fom` er ikke en gyldig dato. Svaret er ren tekst.",
+            "headers" : { },
+            "content" : {
+              "text/plain" : {
+                "schema" : {
+                  "type" : "string"
+                },
+                "examples" : {
+                  "manglerFødselsnummer" : {
+                    "value" : "Mangler fodselsnummer request body"
+                  },
+                  "ugyldigFom" : {
+                    "value" : "Ugyldig fom request body"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Tokenet mangler eller er ugyldig.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Tokenet har ikke rollen `foreldrepenger-les` eller `k9-les`.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Oppslaget feilet, eller en uventet feil. Når oppslaget feiler, er svaret ren tekst. Når body ikke kan leses, eller noe annet uventet går galt, er svaret `application/problem+json`.",
+            "headers" : { },
+            "content" : {
+              "text/plain" : {
+                "schema" : {
+                  "type" : "string"
+                },
+                "examples" : {
+                  "feilVedOppslag" : {
+                    "value" : "Feil ved henting av vedtak"
+                  }
+                }
+              },
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "azureAd" : [ ]
+        } ]
+      }
+    },
     "/utbetalte-perioder" : {
       "post" : {
         "tags" : [ "Utbetalte perioder" ],
@@ -548,39 +684,22 @@
   },
   "components" : {
     "schemas" : {
-      "ApiOppløsning" : {
-        "type" : "string",
-        "enum" : [ "organisasjonsnummer", "personidentifikator", "grad", "kilde" ]
-      },
-      "ApiUtbetaltePerioderMedOppløsningRequest" : {
+      "ApiGrunnlagRequest" : {
         "type" : "object",
         "properties" : {
-          "personidentifikatorer" : {
-            "type" : "array",
-            "description" : "Fødselsnummerne eller D-nummerne til personen, hvert på 11 siffer. Minst én.",
-            "items" : {
-              "type" : "string"
-            }
+          "fodselsnummer" : {
+            "type" : "string",
+            "description" : "Fødselsnummeret eller D-nummeret til personen. Formatet valideres ikke.",
+            "example" : "12345678911"
           },
           "fom" : {
             "type" : "string",
             "format" : "date",
-            "description" : "Første dag i perioden det skal hentes utbetalinger for."
-          },
-          "tom" : {
-            "type" : "string",
-            "format" : "date",
-            "description" : "Siste dag i perioden det skal hentes utbetalinger for. Kan ikke være før `fom`."
-          },
-          "oppløsning" : {
-            "type" : "array",
-            "description" : "Hva periodene skal grupperes på, og dermed hvilke felter hver periode har. Kan være tom. `personidentifikator`, `organisasjonsnummer` og `grad` gir feltet med samme navn. `kilde` legger ikke til noe felt, men gjør at perioder fra Infotrygd og Spleis grupperes hver for seg.",
-            "items" : {
-              "$ref" : "#/components/schemas/ApiOppløsning"
-            }
+            "description" : "Gir bare vedtak med utbetalinger fra og med denne datoen. Uten `fom` får du alle vedtakene.",
+            "example" : "2024-01-01"
           }
         },
-        "required" : [ "fom", "oppløsning", "personidentifikatorer", "tom" ]
+        "required" : [ "fodselsnummer" ]
       },
       "ApiProblem" : {
         "type" : "object",
@@ -622,6 +741,88 @@
           }
         },
         "required" : [ "callId", "detail", "instance", "stacktrace", "status", "title", "type" ]
+      },
+      "ApiGrunnlagVedtak" : {
+        "type" : "object",
+        "description" : "Et vedtak i Spleis med utbetalinger. Hvert oppdrag er et eget vedtak, så utbetalinger til arbeidsgiver og til personen kommer hver for seg.",
+        "properties" : {
+          "vedtaksreferanse" : {
+            "type" : "string",
+            "description" : "Fagsystem-id-en til oppdraget.",
+            "example" : "VNDG2PFPMNB4FKMC4ORASZ2JJ4"
+          },
+          "utbetalinger" : {
+            "type" : "array",
+            "description" : "Utbetalingsperiodene i vedtaket.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiGrunnlagUtbetaling"
+            }
+          },
+          "vedtattTidspunkt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Når vedtaket ble utbetalt. Tidspunktet har ikke tidssone, for eksempel `2024-03-01T12:34:56.789`.",
+            "example" : "2024-03-01T12:34:56.789"
+          }
+        },
+        "required" : [ "utbetalinger", "vedtaksreferanse", "vedtattTidspunkt" ]
+      },
+      "ApiGrunnlagUtbetaling" : {
+        "type" : "object",
+        "properties" : {
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i utbetalingsperioden.",
+            "example" : "2024-01-01"
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i utbetalingsperioden.",
+            "example" : "2024-01-31"
+          },
+          "grad" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Sykmeldingsgraden i prosent, som desimaltall, for eksempel `100.0`."
+          }
+        },
+        "required" : [ "fom", "grad", "tom" ]
+      },
+      "ApiOppløsning" : {
+        "type" : "string",
+        "enum" : [ "organisasjonsnummer", "personidentifikator", "grad", "kilde" ]
+      },
+      "ApiUtbetaltePerioderMedOppløsningRequest" : {
+        "type" : "object",
+        "properties" : {
+          "personidentifikatorer" : {
+            "type" : "array",
+            "description" : "Fødselsnummerne eller D-nummerne til personen, hvert på 11 siffer. Minst én.",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i perioden det skal hentes utbetalinger for."
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i perioden det skal hentes utbetalinger for. Kan ikke være før `fom`."
+          },
+          "oppløsning" : {
+            "type" : "array",
+            "description" : "Hva periodene skal grupperes på, og dermed hvilke felter hver periode har. Kan være tom. `personidentifikator`, `organisasjonsnummer` og `grad` gir feltet med samme navn. `kilde` legger ikke til noe felt, men gjør at perioder fra Infotrygd og Spleis grupperes hver for seg.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiOppløsning"
+            }
+          }
+        },
+        "required" : [ "fom", "oppløsning", "personidentifikatorer", "tom" ]
       },
       "ApiUtbetaltPeriode" : {
         "type" : "object",

@@ -18,6 +18,8 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import io.swagger.v3.oas.models.media.MediaType
+import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.responses.ApiResponses
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -26,18 +28,28 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
+import no.nav.helse.spokelse.grunnlag.ApiGrunnlagRequest
+import no.nav.helse.spokelse.grunnlag.HENT_GRUNNLAG
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.Optional
 
 internal const val AZURE_AD = "azureAd"
 
 internal object Tags {
+    const val GRUNNLAG = "Grunnlag"
     const val GJENSTÅENDE_SYKEDAGER = "Gjenstående sykedager"
     const val UTBETALTE_PERIODER = "Utbetalte perioder"
 }
 
 private val valgfrieFelterSomKanVæreNull = mapOf("ApiUtbetaltPeriode" to setOf("organisasjonsnummer"))
+
+// Nullbare i Kotlin slik at valider() kan gi riktig feilmelding, men null er ikke gyldig i kontrakten.
+private val påkrevdeFelterSomIkkeKanVæreNull = mapOf(ApiGrunnlagRequest::class.simpleName to setOf("fodselsnummer"))
+
+// Et svar kan bare ha én body i route-konfigurasjonen. Disse svarene kan også være problem+json fra naisful-app.
+private val svarSomOgsåKanVæreProblemJson = mapOf(HENT_GRUNNLAG to setOf("500"))
 
 private object LocalDateIsoSerializer : KSerializer<LocalDate> {
     override val descriptor = PrimitiveSerialDescriptor(LocalDate::class.qualifiedName!!, PrimitiveKind.STRING)
@@ -48,6 +60,17 @@ private object LocalDateIsoSerializer : KSerializer<LocalDate> {
     ) = encoder.encodeString(value.toString())
 
     override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())
+}
+
+private object LocalDateTimeIsoSerializer : KSerializer<LocalDateTime> {
+    override val descriptor = PrimitiveSerialDescriptor(LocalDateTime::class.qualifiedName!!, PrimitiveKind.STRING)
+
+    override fun serialize(
+        encoder: Encoder,
+        value: LocalDateTime,
+    ) = encoder.encodeString(value.toString())
+
+    override fun deserialize(decoder: Decoder): LocalDateTime = LocalDateTime.parse(decoder.decodeString())
 }
 
 internal object OptionalStringSerializer : KSerializer<Optional<String>> {
@@ -61,7 +84,11 @@ internal object OptionalStringSerializer : KSerializer<Optional<String>> {
     override fun deserialize(decoder: Decoder): Optional<String> = Optional.of(decoder.decodeString())
 }
 
-private val kontekstuelleSerializers = SerializersModule { contextual(LocalDate::class, LocalDateIsoSerializer) }
+private val kontekstuelleSerializers =
+    SerializersModule {
+        contextual(LocalDate::class, LocalDateIsoSerializer)
+        contextual(LocalDateTime::class, LocalDateTimeIsoSerializer)
+    }
 
 private val openApiObjectMapper = jacksonObjectMapper()
 
@@ -87,6 +114,9 @@ internal fun Application.openApiDokumentasjon() {
         }
         pathFilter = { _, url -> url.firstOrNull() !in naisEndepunkter }
         tags {
+            tag(Tags.GRUNNLAG) {
+                description = "Vedtak med utbetalinger fra Spleis, til Foreldrepenger og K9."
+            }
             tag(Tags.GJENSTÅENDE_SYKEDAGER) {
                 description = "Antall sykedager en person har igjen, og hva tallet bygger på."
             }
@@ -102,6 +132,7 @@ internal fun Application.openApiDokumentasjon() {
                     title = null
                     nullables = RequiredHandling.REQUIRED
                     overwrite(SchemaGenerator.TypeOverwrites.LocalDate())
+                    overwrite(SchemaGenerator.TypeOverwrites.LocalDateTime())
                 }
         }
         examples {
@@ -124,11 +155,23 @@ internal fun Application.openApiDokumentasjon() {
                     ?.forEach { (feltnavn, felt) ->
                         felt.types = if (feltnavn in kanVæreNull) felt.types?.plus("null") else felt.types?.minus("null")
                     }
+                påkrevdeFelterSomIkkeKanVæreNull[navn].orEmpty().forEach { feltnavn ->
+                    skjema.properties?.get(feltnavn)?.let { it.types = it.types?.minus("null") }
+                }
             }
             openApi.paths
                 ?.values
                 ?.flatMap { it.readOperations() }
                 ?.forEach { operasjon ->
+                    svarSomOgsåKanVæreProblemJson[operasjon.operationId].orEmpty().forEach { kode ->
+                        operasjon.responses
+                            ?.get(kode)
+                            ?.content
+                            ?.addMediaType(
+                                ContentType.Application.ProblemJson.toString(),
+                                MediaType().schema(Schema<Any>().`$ref`("#/components/schemas/${ApiProblem::class.simpleName}")),
+                            )
+                    }
                     operasjon.responses =
                         operasjon.responses?.entries?.sortedBy { it.key }?.fold(ApiResponses()) { sortert, (kode, svar) ->
                             sortert.addApiResponse(kode, svar)
