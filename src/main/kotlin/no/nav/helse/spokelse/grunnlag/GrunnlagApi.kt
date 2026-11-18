@@ -5,6 +5,9 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import no.nav.helse.spokelse.Tags
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somFpVedtak
@@ -53,6 +56,9 @@ internal fun Route.grunnlagApi(
                                         ).somFpVedtak()
                             call.respond<List<ApiGrunnlagVedtak>>(HttpStatusCode.OK, vedtak.tilApiGrunnlagVedtak())
                         } catch (e: Exception) {
+                            if (e is CancellationException) {
+                                currentCoroutineContext().ensureActive()
+                            }
                             logger.error("Feil ved henting av vedtak", e, "fødselsnummer" to validering.fødselsnummer)
                             call.respond<String>(HttpStatusCode.InternalServerError, FEIL_VED_OPPSLAG)
                         }
