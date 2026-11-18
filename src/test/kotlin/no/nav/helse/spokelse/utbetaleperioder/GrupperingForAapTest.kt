@@ -7,11 +7,12 @@ import no.nav.helse.spokelse.januar
 import no.nav.helse.spokelse.mars
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy
 import no.nav.helse.spokelse.utbetalteperioder.Gruppering
-import no.nav.helse.spokelse.utbetalteperioder.IngenTags
+import no.nav.helse.spokelse.utbetalteperioder.tilApiUtbetaltePerioderMedGrad
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import org.skyscreamer.jsonassert.JSONCompareMode
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 internal class GrupperingForAapTest {
     @Test
@@ -48,7 +49,7 @@ internal class GrupperingForAapTest {
     ) {
         // Bare stokker periodene med en partalls-tag som Spleis og oddetall som Infotrygd. Ettersom det ikke grupperes på kilde skal det ikke ha noe å si
         val (spleis, infotrygd) = perioder.partition { it.tags.mapNotNull { tag -> tag.toIntOrNull() }.any { int -> int % 2 == 0 } }
-        val faktisk = Gruppering(AapGruppering, infotrygd, spleis, IngenTags).gruppér()
+        val faktisk = jacksonObjectMapper().writeValueAsString(Gruppering(AapGruppering, infotrygd, spleis).gruppér().tilApiUtbetaltePerioderMedGrad())
         JSONAssert.assertEquals(forventet, faktisk, JSONCompareMode.NON_EXTENSIBLE)
     }
 }

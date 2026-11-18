@@ -8,7 +8,9 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.runBlocking
+import no.nav.sykepenger.libs.logging.loggInfo
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 
 internal class UtbetaltePerioderRiver(
     rapidsConnection: RapidsConnection,
@@ -31,8 +33,12 @@ internal class UtbetaltePerioderRiver(
         meterRegistry: MeterRegistry,
     ) {
         withMDC("callId" to packet["@id"].asString()) {
-            val request = objectMapper.readTree(packet.toJson())
-            runBlocking { utbetaltePerioder.hent(request) }
+            val request = objectMapper.readValue<ApiUtbetaltePerioderMedOppløsningRequest>(packet.toJson())
+            val response =
+                runBlocking {
+                    utbetaltePerioder.hent(request.tilPersonidentifikatorer(), request.fom, request.tom, request.tilGroupBy()).tilApiUtbetaltePerioder(request.tilGroupBy())
+                }
+            loggInfo("/utbetalte-perioder: request og response", "request" to packet.toJson(), "response" to objectMapper.writeValueAsString(response))
         }
     }
 

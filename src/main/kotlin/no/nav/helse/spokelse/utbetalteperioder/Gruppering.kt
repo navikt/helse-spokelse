@@ -5,24 +5,12 @@ import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.utbetalteperioder.Grupperingsnøkkel.Companion.grupperingsnøkkel
 import no.nav.sykepenger.libs.logging.loggInfo
-import tools.jackson.databind.JsonNode
-import tools.jackson.module.kotlin.jacksonObjectMapper
 
 internal enum class GroupBy {
     organisasjonsnummer,
     personidentifikator,
     grad,
     kilde,
-    ;
-
-    internal companion object {
-        internal val JsonNode.groupBy get(): Set<GroupBy> {
-            val oppløsning =
-                path("oppløsning").takeIf { it.isArray }
-                    ?: throw IllegalStateException("oppløsning må settes i requesten. Men kan settes til en tom liste om man kun ønsker utbetalte perioder per person")
-            return oppløsning.values().map { GroupBy.valueOf(it.asString()) }.toSet()
-        }
-    }
 }
 
 private data class Grupperingsnøkkel(
@@ -40,23 +28,10 @@ private data class Grupperingsnøkkel(
     }
 }
 
-internal sealed interface TagsFilter {
-    fun filter(tags: Set<String>): Set<String>?
-}
-
-internal data object AlleTags : TagsFilter {
-    override fun filter(tags: Set<String>) = tags
-}
-
-internal data object IngenTags : TagsFilter {
-    override fun filter(tags: Set<String>) = null
-}
-
 internal class Gruppering(
     private val groupBy: Set<GroupBy>,
     private val infotrygd: Iterable<SpøkelsePeriode>,
     private val spleis: Iterable<SpøkelsePeriode>,
-    private val tagsFilter: TagsFilter = AlleTags,
 ) {
     private fun Iterable<SpøkelsePeriode>.gruppér(): List<SpøkelsePeriode> {
         val (medOrganisasjonsnummer, utenOrganisasjonsnummer) = partition { it.organisasjonsnummer != null }
@@ -87,45 +62,11 @@ internal class Gruppering(
             .flatten() + utenOrganisasjonsnummer
     }
 
-    private fun List<SpøkelsePeriode>.json(): String {
-        val utbetaltePerioder =
-            map {
-                objectMapper.createObjectNode().apply {
-                    // personidentifikator, organisasjonsnummer & grad legges kun til om det er gruppert på dem
-                    //  - når vi ikke grupperer på verdiene tar vi bare verdiene fra `first()` - så det er ikke gitt at det er rett for alle periodene
-                    //  - derfor kan vi heller ikke legge til disse verdiene i responsen
-                    if (GroupBy.personidentifikator in groupBy) put("personidentifikator", "${it.personidentifikator}")
-                    if (GroupBy.organisasjonsnummer in groupBy) put("organisasjonsnummer", it.organisasjonsnummer)
-                    if (GroupBy.grad in groupBy) put("grad", it.grad)
-                    put("fom", "${it.fom}")
-                    put("tom", "${it.tom}")
-
-                    tagsFilter.filter(it.tags)?.let { filtrerteTags ->
-                        putArray("tags").let { jsonTags ->
-                            filtrerteTags.forEach(jsonTags::add)
-                        }
-                    }
-                }
-            }
-        return objectMapper
-            .createObjectNode()
-            .apply {
-                putArray("utbetaltePerioder").addAll(utbetaltePerioder)
-            }.toString()
-    }
-
-    internal fun gruppér(): String {
-        loggRådataFørGruppering()
-        if (GroupBy.kilde in groupBy) return (infotrygd.gruppér() + spleis.gruppér()).json() // Om vi grupperer på kilde gjøres gruppér på hver enkelt kilde
-        return (infotrygd + spleis).gruppér().json() // Om ikke skal gruppere på kilde slår vi de samme før de grupperes
-    }
-
-    private fun loggRådataFørGruppering() {
-        val rådata = (infotrygd + spleis).json()
-        loggInfo("/utbetalte-perioder: rådata før gruppering", "rådata" to rådata)
-    }
-
-    private companion object {
-        private val objectMapper = jacksonObjectMapper()
+    // Personidentifikator, organisasjonsnummer og grad er bare riktige for perioden når det er gruppert på dem.
+    // Ellers er verdiene hentet fra første periode i gruppen. Svarene må derfor bare vise feltene det er gruppert på.
+    internal fun gruppér(): List<SpøkelsePeriode> {
+        loggInfo("/utbetalte-perioder: rådata før gruppering", "rådata" to (infotrygd + spleis).toString())
+        if (GroupBy.kilde in groupBy) return infotrygd.gruppér() + spleis.gruppér() // Om vi grupperer på kilde gjøres gruppér på hver enkelt kilde
+        return (infotrygd + spleis).gruppér() // Om ikke skal gruppere på kilde slår vi de samme før de grupperes
     }
 }

@@ -4,24 +4,30 @@ import no.nav.helse.spokelse.februar
 import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.januar
+import no.nav.helse.spokelse.utbetalteperioder.ApiUtbetaltePerioderMedOppløsningRequest
 import no.nav.helse.spokelse.utbetalteperioder.GroupBy
-import no.nav.helse.spokelse.utbetalteperioder.GroupBy.Companion.groupBy
 import no.nav.helse.spokelse.utbetalteperioder.Gruppering
+import no.nav.helse.spokelse.utbetalteperioder.tilApiUtbetaltePerioder
+import no.nav.helse.spokelse.utbetalteperioder.tilGroupBy
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.skyscreamer.jsonassert.JSONAssert
+import tools.jackson.core.JacksonException
+import tools.jackson.module.kotlin.convertValue
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 
 internal class GrupperingTest {
     @Test
     fun `hente grupperingsnøkler fra requesten`() {
-        assertEquals("oppløsning må settes i requesten. Men kan settes til en tom liste om man kun ønsker utbetalte perioder per person", assertThrows<IllegalStateException> { "{}".jsonNode.groupBy }.message)
-        assertEquals("No enum constant no.nav.helse.spokelse.utbetalteperioder.GroupBy.404", assertThrows<IllegalArgumentException> { """{"oppløsning":["grad", "404"]}""".jsonNode.groupBy }.message)
-        assertEquals(emptySet<GroupBy>(), """{"oppløsning":[]}""".jsonNode.groupBy)
-        assertEquals(setOf(GroupBy.organisasjonsnummer, GroupBy.grad), """{"oppløsning": ["organisasjonsnummer", "grad"]}""".jsonNode.groupBy)
-        assertEquals(setOf(GroupBy.organisasjonsnummer, GroupBy.grad, GroupBy.personidentifikator, GroupBy.kilde), """{"oppløsning":["organisasjonsnummer", "grad", "personidentifikator", "kilde"]}""".jsonNode.groupBy)
+        assertThrows<JacksonException> { "{}".request.tilGroupBy() }
+        assertThrows<JacksonException> { """{"oppløsning":["grad", "404"]}""".request.tilGroupBy() }
+        assertEquals(emptySet<GroupBy>(), """{"oppløsning":[]}""".request.tilGroupBy())
+        assertEquals(emptySet<GroupBy>(), """{"oppløsning":[], "@event_name": "behov", "ukjent": {"felt": 1}}""".request.tilGroupBy())
+        assertEquals(setOf(GroupBy.organisasjonsnummer, GroupBy.grad), """{"oppløsning": ["organisasjonsnummer", "grad"]}""".request.tilGroupBy())
+        assertEquals(setOf(GroupBy.organisasjonsnummer, GroupBy.grad, GroupBy.personidentifikator, GroupBy.kilde), """{"oppløsning":["organisasjonsnummer", "grad", "personidentifikator", "kilde"]}""".request.tilGroupBy())
     }
 
     @Test
@@ -45,7 +51,7 @@ internal class GrupperingTest {
           ]
         }
         """
-        assertJsonEquals(forventetIngenGruppering, Gruppering(groupBy = emptySet(), infotrygd = infotrygd, spleis = spleis).gruppér())
+        assertJsonEquals(forventetIngenGruppering, Gruppering(groupBy = emptySet(), infotrygd = infotrygd, spleis = spleis), emptySet())
 
         @Language("JSON")
         val forventetKildeGruppering = """
@@ -55,7 +61,7 @@ internal class GrupperingTest {
           ]
         }
         """
-        assertJsonEquals(forventetKildeGruppering, Gruppering(groupBy = setOf(GroupBy.kilde), infotrygd = infotrygd, spleis = spleis).gruppér())
+        assertJsonEquals(forventetKildeGruppering, Gruppering(groupBy = setOf(GroupBy.kilde), infotrygd = infotrygd, spleis = spleis), setOf(GroupBy.kilde))
 
         @Language("JSON")
         val forventetPersonidentifikatorGruppering = """
@@ -68,7 +74,7 @@ internal class GrupperingTest {
               ]
             }
         """
-        assertJsonEquals(forventetPersonidentifikatorGruppering, Gruppering(groupBy = setOf(GroupBy.personidentifikator), infotrygd = infotrygd, spleis = spleis).gruppér())
+        assertJsonEquals(forventetPersonidentifikatorGruppering, Gruppering(groupBy = setOf(GroupBy.personidentifikator), infotrygd = infotrygd, spleis = spleis), setOf(GroupBy.personidentifikator))
 
         @Language("JSON")
         val forventetAlleGrupperinger = """
@@ -81,16 +87,21 @@ internal class GrupperingTest {
           ]
         }
         """
-        assertJsonEquals(forventetAlleGrupperinger, Gruppering(groupBy = GroupBy.values().toSet(), infotrygd = infotrygd, spleis = spleis).gruppér())
+        assertJsonEquals(forventetAlleGrupperinger, Gruppering(groupBy = GroupBy.values().toSet(), infotrygd = infotrygd, spleis = spleis), GroupBy.values().toSet())
     }
 
     private companion object {
+        private val objectMapper = jacksonObjectMapper()
+
         private fun assertJsonEquals(
             forventet: String,
-            faktisk: String,
-        ) = JSONAssert.assertEquals(forventet, faktisk, true)
+            faktisk: Gruppering,
+            groupBy: Set<GroupBy>,
+        ) = JSONAssert.assertEquals(forventet, objectMapper.writeValueAsString(faktisk.gruppér().tilApiUtbetaltePerioder(groupBy)), true)
 
-        private val objectMapper = jacksonObjectMapper()
-        private val String.jsonNode get() = objectMapper.readTree(this)
+        private val String.request get() =
+            objectMapper.convertValue<ApiUtbetaltePerioderMedOppløsningRequest>(
+                objectMapper.readValue<Map<String, Any?>>(this) + mapOf("personidentifikatorer" to listOf("11111111111"), "fom" to "2018-01-01", "tom" to "2018-01-31"),
+            )
     }
 }
