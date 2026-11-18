@@ -33,7 +33,6 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
-import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioderRiver
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
 import org.slf4j.LoggerFactory
 import tools.jackson.module.kotlin.jacksonObjectMapper
@@ -133,7 +132,7 @@ fun launchApplication(env: Map<String, String>) {
                 }
             },
         ).apply {
-            registerRivers(tbdUtbetalingDao, utbetaltePerioder, utbetalingVarsel)
+            registerRivers(tbdUtbetalingDao, utbetalingVarsel)
             register(tbdUtbetalingConsumer)
             register(
                 object : RapidsConnection.StatusListener {
@@ -147,11 +146,9 @@ fun launchApplication(env: Map<String, String>) {
 
 internal fun RapidsConnection.registerRivers(
     tbdUtbetalingDao: TbdUtbetalingDao,
-    utbetaltePerioder: UtbetaltePerioder,
     utbetalingVarsel: UtbetalingVarsel,
 ) {
     HelsesjekkRiver(this, tbdUtbetalingDao)
-    UtbetaltePerioderRiver(this, utbetaltePerioder)
     NyInformasjonIInfotrygdPåPersonSpleisKjennerTilRiver(this, utbetalingVarsel)
     NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver(this, utbetalingVarsel)
 }
