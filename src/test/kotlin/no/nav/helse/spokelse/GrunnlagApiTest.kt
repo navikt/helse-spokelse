@@ -250,6 +250,11 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
             forventetHttpStatus = 400,
             forventetTekst = "Ugyldig fom request body",
         )
+        assertFeilITekst(
+            requestBody = """{"fodselsnummer": "01010145679", "fom": "2020-04-01T10:00:00"}""",
+            forventetHttpStatus = 400,
+            forventetTekst = "Ugyldig fom request body",
+        )
     }
 
     @Test

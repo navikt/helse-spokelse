@@ -1,6 +1,5 @@
 package no.nav.helse.spokelse.grunnlag
 
-import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -12,47 +11,54 @@ import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.Utbetaling.Companion.somFpVedtak
 import no.nav.sykepenger.libs.logging.navngittLogger
 import tools.jackson.module.kotlin.jacksonObjectMapper
-import java.time.LocalDate
+import tools.jackson.module.kotlin.treeToValue
 import kotlin.system.measureTimeMillis
 
 private val logger = navngittLogger("no.nav.helse.spokelse.grunnlag.GrunnlagApi")
-private val objectMapper = jacksonObjectMapper()
 
-private fun String.asLocalDateOrNull() = kotlin.runCatching { LocalDate.parse(this) }.getOrNull()
+private val objectMapper = jacksonObjectMapper()
 
 internal fun Route.grunnlagApi(
     gamleUtbetalingerDao: GamleUtbetalingerDao,
     tbdUtbetalingApi: TbdUtbetalingApi,
 ) {
-    suspend fun RoutingContext.respond(
-        fødselsnummer: String,
-        fom: LocalDate?,
-    ) {
-        val time =
-            measureTimeMillis {
-                try {
-                    val vedtak: List<FpVedtak> = gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, fom).somFpVedtak() + tbdUtbetalingApi.utbetalinger(fødselsnummer, fom, null).somFpVedtak()
-                    call.respond(HttpStatusCode.OK, vedtak)
-                } catch (e: Exception) {
-                    logger.error("Feil ved henting av vedtak", e, "fødselsnummer" to fødselsnummer)
-                    call.respond(HttpStatusCode.InternalServerError, "Feil ved henting av vedtak")
-                }
-            }
-        logger.info("Hentet vedtak for /grunnlag ($time ms)", "fødselsnummer" to fødselsnummer, "fom" to fom?.toString())
-    }
-
     postMedRolle("/grunnlag", "foreldrepenger-les", "k9-les") {
-        val request = objectMapper.readTree(call.receiveText())
-        val fødselsnummer =
-            request.path("fodselsnummer").takeUnless { it.isMissingOrNull() }?.asString()
-                ?: run {
+        val json = objectMapper.readTree(call.receiveText())
+        val request = if (json.isObject) objectMapper.treeToValue<ApiGrunnlagRequest>(json) else ApiGrunnlagRequest()
+        when (val validering = request.valider()) {
+            is UgyldigGrunnlagRequest -> {
+                if (validering == UgyldigGrunnlagRequest.MANGLER_FØDSELSNUMMER) {
                     logger.error("/grunnlag Mangler fodselsnummer i request body")
-                    return@postMedRolle call.respond(HttpStatusCode.BadRequest, "Mangler fodselsnummer request body")
                 }
-        val fom =
-            request.path("fom").takeUnless { it.isMissingOrNull() }?.asString()?.let {
-                it.asLocalDateOrNull() ?: return@postMedRolle call.respond(HttpStatusCode.BadRequest, "Ugyldig fom request body")
+                call.respond(HttpStatusCode.BadRequest, validering.feilmelding)
             }
-        respond(fødselsnummer, fom)
+
+            is GyldigGrunnlagRequest -> {
+                val time =
+                    measureTimeMillis {
+                        try {
+                            val vedtak: List<FpVedtak> =
+                                gamleUtbetalingerDao
+                                    .hentUtbetalinger(validering.fødselsnummer, validering.fom)
+                                    .somFpVedtak() +
+                                    tbdUtbetalingApi
+                                        .utbetalinger(
+                                            validering.fødselsnummer,
+                                            validering.fom,
+                                            null,
+                                        ).somFpVedtak()
+                            call.respond<List<ApiGrunnlagVedtak>>(HttpStatusCode.OK, vedtak.tilApiGrunnlagVedtak())
+                        } catch (e: Exception) {
+                            logger.error("Feil ved henting av vedtak", e, "fødselsnummer" to validering.fødselsnummer)
+                            call.respond<String>(HttpStatusCode.InternalServerError, "Feil ved henting av vedtak")
+                        }
+                    }
+                logger.info(
+                    "Hentet vedtak for /grunnlag ($time ms)",
+                    "fødselsnummer" to validering.fødselsnummer,
+                    "fom" to validering.fom?.toString(),
+                )
+            }
+        }
     }
 }
