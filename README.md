@@ -6,6 +6,13 @@ Spøkelse deler informasjon om utbetalte sykepengeperioder og gjenstående syked
 
 [Swagger Doc](https://spokelse.intern.nav.no/swagger). Specen ligger på `/openapi.json`.
 
+## Teste i dev
+
+Medlemmer av tbd-dev kan kalle endepunktene i dev fra Swagger:
+
+1. Hent et token fra [azure-token-generator](https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:tbd:spokelse). Logg inn med dev-brukeren din.
+2. Åpn [Swagger i dev](https://spokelse.intern.dev.nav.no/swagger), trykk **Authorize** og lim inn `access_token`.
+
 ## Dataflyt
 
 Spøkelse lagrer utbetalinger, vedtak uten utbetaling og annulleringer fra Spleis i egen database. Ved forespørsler om utbetalte perioder
