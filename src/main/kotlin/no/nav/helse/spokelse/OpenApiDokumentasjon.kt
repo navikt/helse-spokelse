@@ -11,7 +11,6 @@ import io.github.smiley4.ktorswaggerui.swaggerUI
 import io.github.smiley4.schemakenerator.core.annotations.Description
 import io.github.smiley4.schemakenerator.core.annotations.Example
 import io.github.smiley4.schemakenerator.core.annotations.Format
-import io.github.smiley4.schemakenerator.core.annotations.Name
 import io.github.smiley4.schemakenerator.swagger.SwaggerSteps.RequiredHandling
 import io.github.smiley4.schemakenerator.swagger.data.RefType
 import io.ktor.http.ContentType
@@ -20,13 +19,49 @@ import io.ktor.server.application.install
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.swagger.v3.oas.models.responses.ApiResponses
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.modules.SerializersModule
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.time.LocalDate
+import java.util.Optional
 
 internal const val AZURE_AD = "azureAd"
 
 internal object Tags {
     const val GJENSTÅENDE_SYKEDAGER = "Gjenstående sykedager"
+    const val UTBETALTE_PERIODER = "Utbetalte perioder"
 }
+
+private val valgfrieFelterSomKanVæreNull = mapOf("ApiUtbetaltPeriode" to setOf("organisasjonsnummer"))
+
+private object LocalDateIsoSerializer : KSerializer<LocalDate> {
+    override val descriptor = PrimitiveSerialDescriptor(LocalDate::class.qualifiedName!!, PrimitiveKind.STRING)
+
+    override fun serialize(
+        encoder: Encoder,
+        value: LocalDate,
+    ) = encoder.encodeString(value.toString())
+
+    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())
+}
+
+internal object OptionalStringSerializer : KSerializer<Optional<String>> {
+    override val descriptor = PrimitiveSerialDescriptor("${Optional::class.qualifiedName}<String>", PrimitiveKind.STRING)
+
+    override fun serialize(
+        encoder: Encoder,
+        value: Optional<String>,
+    ) = if (value.isPresent) encoder.encodeString(value.get()) else encoder.encodeNull()
+
+    override fun deserialize(decoder: Decoder): Optional<String> = Optional.of(decoder.decodeString())
+}
+
+private val kontekstuelleSerializers = SerializersModule { contextual(LocalDate::class, LocalDateIsoSerializer) }
 
 private val openApiObjectMapper = jacksonObjectMapper()
 
@@ -55,15 +90,18 @@ internal fun Application.openApiDokumentasjon() {
             tag(Tags.GJENSTÅENDE_SYKEDAGER) {
                 description = "Antall sykedager en person har igjen, og hva tallet bygger på."
             }
+            tag(Tags.UTBETALTE_PERIODER) {
+                description = "Utbetalte sykepengeperioder fra Spleis og Infotrygd. Hver konsument har sin egen variant."
+            }
         }
         schemas {
             generator =
-                SchemaGenerator.reflection {
+                SchemaGenerator.kotlinx {
+                    serializersModule = kontekstuelleSerializers
                     referencePath = RefType.OPENAPI_SIMPLE
                     title = null
                     nullables = RequiredHandling.REQUIRED
                     overwrite(SchemaGenerator.TypeOverwrites.LocalDate())
-                    overwrite(SchemaGenerator.TypeOverwrites.LocalDateTime())
                 }
         }
         examples {
@@ -79,11 +117,13 @@ internal fun Application.openApiDokumentasjon() {
         }
         postBuild = { openApi, _ ->
             openApi.externalDocs = null
-            openApi.components?.schemas?.values?.forEach { skjema ->
+            openApi.components?.schemas?.forEach { (navn, skjema) ->
+                val kanVæreNull = valgfrieFelterSomKanVæreNull[navn].orEmpty()
                 skjema.properties
                     ?.filterKeys { it !in skjema.required.orEmpty() }
-                    ?.values
-                    ?.forEach { felt -> felt.types = felt.types?.minus("null") }
+                    ?.forEach { (feltnavn, felt) ->
+                        felt.types = if (feltnavn in kanVæreNull) felt.types?.plus("null") else felt.types?.minus("null")
+                    }
             }
             openApi.paths
                 ?.values
@@ -106,12 +146,12 @@ internal fun Application.openApiDokumentasjon() {
     }
 }
 
-internal fun ResponseConfig.problemJson() = body<ProblemDto> { mediaTypes = setOf(ContentType.Application.ProblemJson) }
+internal fun ResponseConfig.problemJson() = body<ApiProblem> { mediaTypes = setOf(ContentType.Application.ProblemJson) }
 
 // Formatet kommer fra defaultStatusPagesConfig i naisful-app.
-@Name("Problem")
+@Serializable
 @Description("Problem Details (RFC 9457). Spøkelse svarer med dette når tilgangen mangler eller noe uventet går galt.")
-internal data class ProblemDto(
+internal data class ApiProblem(
     @Description("Hva slags feil det er.")
     @Format("uri")
     @Example("urn:error:internal_error")

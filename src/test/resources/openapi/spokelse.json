@@ -15,8 +15,403 @@
   "tags" : [ {
     "name" : "Gjenstående sykedager",
     "description" : "Antall sykedager en person har igjen, og hva tallet bygger på."
+  }, {
+    "name" : "Utbetalte perioder",
+    "description" : "Utbetalte sykepengeperioder fra Spleis og Infotrygd. Hver konsument har sin egen variant."
   } ],
   "paths" : {
+    "/utbetalte-perioder" : {
+      "post" : {
+        "tags" : [ "Utbetalte perioder" ],
+        "summary" : "Hent utbetalte perioder gruppert etter oppløsning",
+        "description" : "Gir de utbetalte sykepengeperiodene til en person mellom `fom` og `tom`, fra Spleis og Infotrygd.\n\nKonsument: spapi.\n\n`oppløsning` i requesten bestemmer hva periodene grupperes på, og dermed hvilke felter hver periode har.\nSammenhengende og overlappende perioder med like verdier for det som er valgt, slås sammen til én periode.\n`fom`, `tom` og `tags` er alltid med. Gyldige verdier i `oppløsning`:\n- `personidentifikator`: gir feltet `personidentifikator`.\n- `organisasjonsnummer`: gir feltet `organisasjonsnummer`. Det er `null` når perioden ikke har arbeidsgiver.\n- `grad`: gir feltet `grad`.\n- `kilde`: legger ikke til noe felt, men gjør at perioder fra Infotrygd og Spleis grupperes hver for seg.\n\n`oppløsning` kan være tom. Da får du bare `fom`, `tom` og `tags`. Perioder uten arbeidsgiver grupperes aldri.\n\nKrever et Azure AD-token med rollen `spleiselaget-les`.",
+        "operationId" : "hentUtbetaltePerioder",
+        "parameters" : [ ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ApiUtbetaltePerioderMedOppløsningRequest"
+              },
+              "examples" : {
+                "gruppertPåArbeidsgiverOgGrad" : {
+                  "value" : {
+                    "personidentifikatorer" : [ "12345678911" ],
+                    "fom" : "2024-01-01",
+                    "tom" : "2024-01-31",
+                    "oppløsning" : [ "organisasjonsnummer", "grad" ]
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Oppslaget gikk bra. Listen er tom når personen ikke har utbetalte perioder mellom `fom` og `tom`.",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiUtbetaltePerioder"
+                },
+                "examples" : {
+                  "gruppertPåArbeidsgiverOgGrad" : {
+                    "summary" : "`oppløsning` er `organisasjonsnummer` og `grad`",
+                    "value" : {
+                      "utbetaltePerioder" : [ {
+                        "organisasjonsnummer" : "999999999",
+                        "grad" : 100,
+                        "fom" : "2024-01-01",
+                        "tom" : "2024-01-10",
+                        "tags" : [ "Spleis", "TbdUtbetaling" ]
+                      }, {
+                        "organisasjonsnummer" : null,
+                        "grad" : 100,
+                        "fom" : "2024-01-11",
+                        "tom" : "2024-01-20",
+                        "tags" : [ "Infotrygd" ]
+                      } ]
+                    }
+                  },
+                  "utenOppløsning" : {
+                    "summary" : "`oppløsning` er tom",
+                    "value" : {
+                      "utbetaltePerioder" : [ {
+                        "fom" : "2024-01-01",
+                        "tom" : "2024-01-20",
+                        "tags" : [ "Spleis", "TbdUtbetaling", "Infotrygd" ]
+                      } ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Tokenet mangler eller er ugyldig.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Tokenet har ikke rollen `spleiselaget-les`.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Ugyldig request eller uventet feil. Spøkelse svarer `500`, ikke `400`, også når requesten er ugyldig: body er ikke JSON, et påkrevd felt mangler, `personidentifikatorer` er tom eller har en verdi som ikke er 11 siffer, eller `tom` er før `fom`. Det gjelder også når `oppløsning` mangler eller har en ukjent verdi.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "azureAd" : [ ]
+        } ]
+      }
+    },
+    "/utbetalte-perioder-aap" : {
+      "post" : {
+        "tags" : [ "Utbetalte perioder" ],
+        "summary" : "Hent utbetalte perioder med grad",
+        "description" : "Gir de utbetalte sykepengeperiodene til en person mellom `fom` og `tom`, fra Spleis og Infotrygd.\n\nKonsumenter: AAP (`behandlingsflyt` og `postmottak-backend`).\n\nPeriodene er gruppert på grad: sammenhengende og overlappende perioder med samme grad slås sammen til én periode.\nHver periode har bare `grad`, `fom` og `tom`. Et eventuelt `oppløsning` i requesten ignoreres.\n\nKrever et Azure AD-token med rollen `aap-les`.",
+        "operationId" : "hentUtbetaltePerioderAap",
+        "parameters" : [ ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ApiUtbetaltePerioderRequest"
+              },
+              "examples" : {
+                "enPerson" : {
+                  "value" : {
+                    "personidentifikatorer" : [ "12345678911" ],
+                    "fom" : "2024-01-01",
+                    "tom" : "2024-01-31"
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Oppslaget gikk bra. Listen er tom når personen ikke har utbetalte perioder mellom `fom` og `tom`.",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiUtbetaltePerioderMedGrad"
+                },
+                "examples" : {
+                  "toPerioder" : {
+                    "value" : {
+                      "utbetaltePerioder" : [ {
+                        "grad" : 100,
+                        "fom" : "2024-01-01",
+                        "tom" : "2024-01-10"
+                      }, {
+                        "grad" : 50,
+                        "fom" : "2024-01-11",
+                        "tom" : "2024-01-20"
+                      } ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Tokenet mangler eller er ugyldig.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Tokenet har ikke rollen `aap-les`.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Ugyldig request eller uventet feil. Spøkelse svarer `500`, ikke `400`, også når requesten er ugyldig: body er ikke JSON, et påkrevd felt mangler, `personidentifikatorer` er tom eller har en verdi som ikke er 11 siffer, eller `tom` er før `fom`.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "azureAd" : [ ]
+        } ]
+      }
+    },
+    "/utbetalte-perioder-dagpenger" : {
+      "post" : {
+        "tags" : [ "Utbetalte perioder" ],
+        "summary" : "Hent utbetalte perioder med grad",
+        "description" : "Gir de utbetalte sykepengeperiodene til en person mellom `fom` og `tom`, fra Spleis og Infotrygd.\n\nKonsumenter: Dagpenger (`dp-oppslag-ytelser`).\n\nPeriodene er gruppert på grad: sammenhengende og overlappende perioder med samme grad slås sammen til én periode.\nHver periode har bare `grad`, `fom` og `tom`. Et eventuelt `oppløsning` i requesten ignoreres.\n\nKrever et Azure AD-token med rollen `dagpenger-les`.",
+        "operationId" : "hentUtbetaltePerioderDagpenger",
+        "parameters" : [ ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ApiUtbetaltePerioderRequest"
+              },
+              "examples" : {
+                "enPerson" : {
+                  "value" : {
+                    "personidentifikatorer" : [ "12345678911" ],
+                    "fom" : "2024-01-01",
+                    "tom" : "2024-01-31"
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Oppslaget gikk bra. Listen er tom når personen ikke har utbetalte perioder mellom `fom` og `tom`.",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiUtbetaltePerioderMedGrad"
+                },
+                "examples" : {
+                  "toPerioder" : {
+                    "value" : {
+                      "utbetaltePerioder" : [ {
+                        "grad" : 100,
+                        "fom" : "2024-01-01",
+                        "tom" : "2024-01-10"
+                      }, {
+                        "grad" : 50,
+                        "fom" : "2024-01-11",
+                        "tom" : "2024-01-20"
+                      } ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Tokenet mangler eller er ugyldig.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Tokenet har ikke rollen `dagpenger-les`.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Ugyldig request eller uventet feil. Spøkelse svarer `500`, ikke `400`, også når requesten er ugyldig: body er ikke JSON, et påkrevd felt mangler, `personidentifikatorer` er tom eller har en verdi som ikke er 11 siffer, eller `tom` er før `fom`.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "azureAd" : [ ]
+        } ]
+      }
+    },
+    "/utbetalte-perioder-personoversikt" : {
+      "post" : {
+        "tags" : [ "Utbetalte perioder" ],
+        "summary" : "Hent utbetalte perioder for Personoversikt",
+        "description" : "Gir de utbetalte sykepengeperiodene til en person mellom `fom` og `tom`, fra Spleis og Infotrygd.\n\nKonsument: Personoversikt (`modiapersonoversikt-api`).\n\nPeriodene er gruppert på grad, organisasjonsnummer og kilde: sammenhengende og overlappende perioder med samme grad\nhos samme arbeidsgiver slås sammen til én periode. Perioder fra Infotrygd og Spleis grupperes hver for seg.\nPerioder uten arbeidsgiver grupperes ikke, og har `organisasjonsnummer: null`.\nEt eventuelt `oppløsning` i requesten ignoreres.\n\nKrever et Azure AD-token med rollen `personoversikt-les`.",
+        "operationId" : "hentUtbetaltePerioderPersonoversikt",
+        "parameters" : [ ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ApiUtbetaltePerioderRequest"
+              },
+              "examples" : {
+                "enPerson" : {
+                  "value" : {
+                    "personidentifikatorer" : [ "12345678911" ],
+                    "fom" : "2024-01-01",
+                    "tom" : "2024-01-31"
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Oppslaget gikk bra. Listen er tom når personen ikke har utbetalte perioder mellom `fom` og `tom`.",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiUtbetaltePerioderPersonoversikt"
+                },
+                "examples" : {
+                  "medOgUtenArbeidsgiver" : {
+                    "value" : {
+                      "utbetaltePerioder" : [ {
+                        "organisasjonsnummer" : "999999999",
+                        "grad" : 100,
+                        "fom" : "2024-01-01",
+                        "tom" : "2024-01-10",
+                        "tags" : [ "Spleis", "TbdUtbetaling" ]
+                      }, {
+                        "organisasjonsnummer" : null,
+                        "grad" : 100,
+                        "fom" : "2024-01-11",
+                        "tom" : "2024-01-20",
+                        "tags" : [ "Infotrygd" ]
+                      } ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Tokenet mangler eller er ugyldig.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Tokenet har ikke rollen `personoversikt-les`.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Ugyldig request eller uventet feil. Spøkelse svarer `500`, ikke `400`, også når requesten er ugyldig: body er ikke JSON, et påkrevd felt mangler, `personidentifikatorer` er tom eller har en verdi som ikke er 11 siffer, eller `tom` er før `fom`.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "azureAd" : [ ]
+        } ]
+      }
+    },
     "/gjenstaende-sykedager" : {
       "post" : {
         "tags" : [ "Gjenstående sykedager" ],
@@ -28,7 +423,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/GjenstaendeSykedagerRequest"
+                "$ref" : "#/components/schemas/ApiGjenståendeSykedagerRequest"
               },
               "examples" : {
                 "fødselsnummer" : {
@@ -48,7 +443,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/GjenstaendeSykedager"
+                  "$ref" : "#/components/schemas/ApiGjenståendeSykedager"
                 },
                 "examples" : {
                   "vedtakINyLøsning" : {
@@ -97,7 +492,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/GjenstaendeSykedagerFeil"
+                  "$ref" : "#/components/schemas/ApiGjenståendeSykedagerFeil"
                 },
                 "examples" : {
                   "ugyldigForespørsel" : {
@@ -116,7 +511,7 @@
             "content" : {
               "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
+                  "$ref" : "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -127,7 +522,7 @@
             "content" : {
               "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
+                  "$ref" : "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -138,7 +533,7 @@
             "content" : {
               "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
+                  "$ref" : "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -153,19 +548,41 @@
   },
   "components" : {
     "schemas" : {
-      "GjenstaendeSykedagerRequest" : {
+      "ApiOppløsning" : {
+        "type" : "string",
+        "enum" : [ "organisasjonsnummer", "personidentifikator", "grad", "kilde" ]
+      },
+      "ApiUtbetaltePerioderMedOppløsningRequest" : {
         "type" : "object",
         "properties" : {
-          "fødselsnummer" : {
+          "fom" : {
             "type" : "string",
-            "description" : "Fødselsnummeret eller D-nummeret til personen.",
-            "example" : "12345678911",
-            "pattern" : "^\\d{11}$"
+            "format" : "date",
+            "description" : "Første dag i perioden det skal hentes utbetalinger for."
+          },
+          "oppløsning" : {
+            "type" : "array",
+            "description" : "Hva periodene skal grupperes på, og dermed hvilke felter hver periode har. Kan være tom. `personidentifikator`, `organisasjonsnummer` og `grad` gir feltet med samme navn. `kilde` legger ikke til noe felt, men gjør at perioder fra Infotrygd og Spleis grupperes hver for seg.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiOppløsning"
+            }
+          },
+          "personidentifikatorer" : {
+            "type" : "array",
+            "description" : "Fødselsnummerne eller D-nummerne til personen, hvert på 11 siffer. Minst én.",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i perioden det skal hentes utbetalinger for. Kan ikke være før `fom`."
           }
         },
-        "required" : [ "fødselsnummer" ]
+        "required" : [ "fom", "oppløsning", "personidentifikatorer", "tom" ]
       },
-      "Problem" : {
+      "ApiProblem" : {
         "type" : "object",
         "description" : "Problem Details (RFC 9457). Spøkelse svarer med dette når tilgangen mangler eller noe uventet går galt.",
         "properties" : {
@@ -206,11 +623,180 @@
         },
         "required" : [ "callId", "detail", "instance", "stacktrace", "status", "title", "type" ]
       },
-      "GjenstaendeSykedagerGrunnlag" : {
+      "ApiUtbetaltPeriode" : {
+        "type" : "object",
+        "properties" : {
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i den utbetalte perioden."
+          },
+          "grad" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Sykmeldingsgraden i prosent. Bare med når `oppløsning` har `grad`."
+          },
+          "organisasjonsnummer" : {
+            "type" : [ "null", "string" ],
+            "description" : "Organisasjonsnummeret til arbeidsgiveren. Bare med når `oppløsning` har `organisasjonsnummer`. `null` når perioden ikke har arbeidsgiver.",
+            "example" : "999999999"
+          },
+          "personidentifikator" : {
+            "type" : "string",
+            "description" : "Fødselsnummeret eller D-nummeret til personen. Bare med når `oppløsning` har `personidentifikator`.",
+            "example" : "12345678911",
+            "pattern" : "^\\d{11}$"
+          },
+          "tags" : {
+            "type" : "array",
+            "description" : "Hvor perioden kommer fra. Kjente verdier er `Infotrygd`, `Spleis`, `TbdUtbetaling`, `VedtakOppdragOgUtbetaling`, `OldVedtakOgOldUtbetaling` og `GamleUtbetalinger`. Tags fra Infotrygd sendes videre, så nye verdier kan komme. Konsumenten må tåle dem.",
+            "items" : {
+              "type" : "string"
+            },
+            "uniqueItems" : true
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i den utbetalte perioden."
+          }
+        },
+        "required" : [ "fom", "tags", "tom" ]
+      },
+      "ApiUtbetaltePerioder" : {
+        "type" : "object",
+        "properties" : {
+          "utbetaltePerioder" : {
+            "type" : "array",
+            "description" : "De utbetalte periodene, gruppert etter `oppløsning` i requesten. Tom når ingen perioder finnes.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiUtbetaltPeriode"
+            }
+          }
+        },
+        "required" : [ "utbetaltePerioder" ]
+      },
+      "ApiUtbetaltePerioderRequest" : {
+        "type" : "object",
+        "properties" : {
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i perioden det skal hentes utbetalinger for."
+          },
+          "personidentifikatorer" : {
+            "type" : "array",
+            "description" : "Fødselsnummerne eller D-nummerne til personen, hvert på 11 siffer. Minst én.",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i perioden det skal hentes utbetalinger for. Kan ikke være før `fom`."
+          }
+        },
+        "required" : [ "fom", "personidentifikatorer", "tom" ]
+      },
+      "ApiUtbetaltPeriodeMedGrad" : {
+        "type" : "object",
+        "properties" : {
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i den utbetalte perioden."
+          },
+          "grad" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Sykmeldingsgraden i prosent."
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i den utbetalte perioden."
+          }
+        },
+        "required" : [ "fom", "grad", "tom" ]
+      },
+      "ApiUtbetaltePerioderMedGrad" : {
+        "type" : "object",
+        "properties" : {
+          "utbetaltePerioder" : {
+            "type" : "array",
+            "description" : "De utbetalte periodene, gruppert på grad. Tom når ingen perioder finnes.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiUtbetaltPeriodeMedGrad"
+            }
+          }
+        },
+        "required" : [ "utbetaltePerioder" ]
+      },
+      "ApiUtbetaltPeriodePersonoversikt" : {
+        "type" : "object",
+        "properties" : {
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i den utbetalte perioden."
+          },
+          "grad" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Sykmeldingsgraden i prosent."
+          },
+          "organisasjonsnummer" : {
+            "type" : [ "null", "string" ],
+            "description" : "Organisasjonsnummeret til arbeidsgiveren. Alltid med. `null` når perioden ikke har arbeidsgiver.",
+            "example" : "999999999"
+          },
+          "tags" : {
+            "type" : "array",
+            "description" : "Hvor perioden kommer fra. Kjente verdier er `Infotrygd`, `Spleis`, `TbdUtbetaling`, `VedtakOppdragOgUtbetaling`, `OldVedtakOgOldUtbetaling` og `GamleUtbetalinger`. Tags fra Infotrygd sendes videre, så nye verdier kan komme. Konsumenten må tåle dem.",
+            "items" : {
+              "type" : "string"
+            },
+            "uniqueItems" : true
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i den utbetalte perioden."
+          }
+        },
+        "required" : [ "fom", "grad", "organisasjonsnummer", "tags", "tom" ]
+      },
+      "ApiUtbetaltePerioderPersonoversikt" : {
+        "type" : "object",
+        "properties" : {
+          "utbetaltePerioder" : {
+            "type" : "array",
+            "description" : "De utbetalte periodene, gruppert på grad, organisasjonsnummer og kilde. Perioder fra Infotrygd og Spleis grupperes hver for seg. Tom når ingen perioder finnes.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiUtbetaltPeriodePersonoversikt"
+            }
+          }
+        },
+        "required" : [ "utbetaltePerioder" ]
+      },
+      "ApiGjenståendeSykedagerRequest" : {
+        "type" : "object",
+        "properties" : {
+          "fødselsnummer" : {
+            "type" : "string",
+            "description" : "Fødselsnummeret eller D-nummeret til personen.",
+            "example" : "12345678911",
+            "pattern" : "^\\d{11}$"
+          }
+        },
+        "required" : [ "fødselsnummer" ]
+      },
+      "ApiGjenståendeSykedagerGrunnlag" : {
         "type" : "string",
         "enum" : [ "VEDTAK_I_NY_LØSNING", "SISTE_UTBETALING_I_INFOTRYGD", "MAKSDATO_I_INFOTRYGD", "MANGLER_MAKSDATO_I_INFOTRYGD", "INGEN_SYKEPENGER_SISTE_26_UKER" ]
       },
-      "GjenstaendeSykedager" : {
+      "ApiGjenståendeSykedager" : {
         "type" : "object",
         "properties" : {
           "gjenståendeDager" : {
@@ -220,7 +806,7 @@
             "minimum" : 0
           },
           "grunnlag" : {
-            "$ref" : "#/components/schemas/GjenstaendeSykedagerGrunnlag",
+            "$ref" : "#/components/schemas/ApiGjenståendeSykedagerGrunnlag",
             "description" : "Hva svaret bygger på. Se beskrivelsen av endepunktet. Nye verdier kan komme. Konsumenten må tåle dem."
           },
           "vurdertTilOgMed" : {
@@ -231,15 +817,15 @@
         },
         "required" : [ "grunnlag" ]
       },
-      "GjenstaendeSykedagerFeilkode" : {
+      "ApiGjenståendeSykedagerFeilkode" : {
         "type" : "string",
         "enum" : [ "UGYLDIG_FORESPØRSEL" ]
       },
-      "GjenstaendeSykedagerFeil" : {
+      "ApiGjenståendeSykedagerFeil" : {
         "type" : "object",
         "properties" : {
           "feilkode" : {
-            "$ref" : "#/components/schemas/GjenstaendeSykedagerFeilkode"
+            "$ref" : "#/components/schemas/ApiGjenståendeSykedagerFeilkode"
           },
           "melding" : {
             "type" : "string",

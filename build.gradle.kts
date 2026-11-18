@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.sykepenger.deployable)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 sykepengerDeployable {
@@ -18,6 +19,7 @@ dependencies {
     }
 
     implementation(libs.bundles.smiley4.ktor.openapi.tools)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
     implementation(libs.postgresql)

@@ -1,4 +1,7 @@
 [versions]
+# Må følge Kotlin-versjonen som no.nav.sykepenger.kotlin-pluginen bruker
+kotlin = "2.4.21"
+kotlinxSerializationJson = "1.12.0"
 tbdLibs = "20261029.1843"
 # Nyere versjon bruker wiremock-jetty12, som kreves av Jetty 12-BOM-en i sykepenger-pluginen
 tbdLibsSignedJwtIssuerTest = "20261029.1843"
@@ -12,6 +15,7 @@ flyway-database-postgresql = "org.flywaydb:flyway-database-postgresql:13.12.1"
 hikaricp = "com.zaxxer:HikariCP:7.1.0"
 jsonassert = "org.skyscreamer:jsonassert:1.5.3"
 kotliquery = "com.github.seratch:kotliquery:1.9.1"
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio" }
 ktor-client-core = { module = "io.ktor:ktor-client-core" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock" }
@@ -23,6 +27,7 @@ smiley4-ktor-openapi = { module = "io.github.smiley4:ktor-openapi", version.ref 
 smiley4-ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version.ref = "smiley4KtorOpenapiTools" }
 smiley4-schema-kenerator-core = { module = "io.github.smiley4:schema-kenerator-core", version.ref = "smiley4SchemaKenerator" }
 smiley4-schema-kenerator-reflection = { module = "io.github.smiley4:schema-kenerator-reflection", version.ref = "smiley4SchemaKenerator" }
+smiley4-schema-kenerator-serialization = { module = "io.github.smiley4:schema-kenerator-serialization", version.ref = "smiley4SchemaKenerator" }
 smiley4-schema-kenerator-swagger = { module = "io.github.smiley4:schema-kenerator-swagger", version.ref = "smiley4SchemaKenerator" }
 sykepengerLibs-logging = "no.nav.sykepenger.libs:logging:20261116.0849"
 sykepengerLibs-postgres = "no.nav.sykepenger.libs:postgres:20261116.0849"
@@ -38,8 +43,10 @@ smiley4-ktor-openapi-tools = [
     "smiley4-ktor-swagger-ui",
     "smiley4-schema-kenerator-core",
     "smiley4-schema-kenerator-reflection",
+    "smiley4-schema-kenerator-serialization",
     "smiley4-schema-kenerator-swagger",
 ]
 
 [plugins]
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 sykepenger-deployable = { id = "no.nav.sykepenger.deployable", version.ref = "sykepengerGradlePlugins" }

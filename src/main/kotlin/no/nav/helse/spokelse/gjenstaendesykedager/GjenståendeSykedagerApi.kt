@@ -1,3 +1,5 @@
+@file:UseContextualSerialization(LocalDate::class)
+
 package no.nav.helse.spokelse.gjenstaendesykedager
 
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -5,7 +7,6 @@ import io.github.smiley4.ktoropenapi.config.RouteConfig
 import io.github.smiley4.schemakenerator.core.annotations.Description
 import io.github.smiley4.schemakenerator.core.annotations.Example
 import io.github.smiley4.schemakenerator.core.annotations.Min
-import io.github.smiley4.schemakenerator.core.annotations.Name
 import io.github.smiley4.schemakenerator.core.annotations.Optional
 import io.github.smiley4.schemakenerator.core.annotations.Pattern
 import io.ktor.http.ContentType
@@ -15,6 +16,8 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
 import io.micrometer.core.instrument.MeterRegistry
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseContextualSerialization
 import no.nav.helse.spokelse.Tags
 import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.postMedRolle
@@ -38,19 +41,19 @@ private val objectMapper =
                 .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail)
         }.build()
 
-@Name("GjenstaendeSykedagerRequest")
-internal data class GjenståendeSykedagerRequestDto(
+@Serializable
+internal data class ApiGjenståendeSykedagerRequest(
     @Description("Fødselsnummeret eller D-nummeret til personen.")
     @Pattern("^\\d{11}$")
     @Example("12345678911")
     val fødselsnummer: String,
 )
 
-@Name("GjenstaendeSykedager")
+@Serializable
 @JsonInclude(JsonInclude.Include.NON_NULL)
-internal data class GjenståendeSykedagerResponseDto(
+internal data class ApiGjenståendeSykedager(
     @Description("Hva svaret bygger på. Se beskrivelsen av endepunktet. Nye verdier kan komme. Konsumenten må tåle dem.")
-    val grunnlag: GrunnlagDto,
+    val grunnlag: ApiGjenståendeSykedagerGrunnlag,
     @Description(
         "Antall sykedager personen hadde igjen per `vurdertTilOgMed`. Bare med når `grunnlag` er `VEDTAK_I_NY_LØSNING`, " +
             "`SISTE_UTBETALING_I_INFOTRYGD` eller `MAKSDATO_I_INFOTRYGD`. Mangler ellers. Er aldri `null`.",
@@ -63,8 +66,8 @@ internal data class GjenståendeSykedagerResponseDto(
     val vurdertTilOgMed: LocalDate? = null,
 )
 
-@Name("GjenstaendeSykedagerGrunnlag")
-internal enum class GrunnlagDto {
+@Serializable
+internal enum class ApiGjenståendeSykedagerGrunnlag {
     VEDTAK_I_NY_LØSNING,
     SISTE_UTBETALING_I_INFOTRYGD,
     MAKSDATO_I_INFOTRYGD,
@@ -72,15 +75,15 @@ internal enum class GrunnlagDto {
     INGEN_SYKEPENGER_SISTE_26_UKER,
 }
 
-@Name("GjenstaendeSykedagerFeil")
-internal data class FeilDto(
-    val feilkode: FeilkodeDto,
+@Serializable
+internal data class ApiGjenståendeSykedagerFeil(
+    val feilkode: ApiGjenståendeSykedagerFeilkode,
     @Description("Forklaring for mennesker. Ikke bruk den til å styre logikk.")
     val melding: String,
 )
 
-@Name("GjenstaendeSykedagerFeilkode")
-internal enum class FeilkodeDto {
+@Serializable
+internal enum class ApiGjenståendeSykedagerFeilkode {
     UGYLDIG_FORESPØRSEL,
 }
 
@@ -102,7 +105,7 @@ internal fun Route.gjenståendeSykedagerApi(
                 tellUtfall(null)
                 throw exception
             }
-        val response = resultat.tilDto()
+        val response = resultat.tilApi()
 
         logger.info(
             "Svarer på /gjenstaende-sykedager",
@@ -116,24 +119,24 @@ internal fun Route.gjenståendeSykedagerApi(
     }
 }
 
-private val ugyldigForespørsel = FeilDto(FeilkodeDto.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
+private val ugyldigForespørsel = ApiGjenståendeSykedagerFeil(ApiGjenståendeSykedagerFeilkode.UGYLDIG_FORESPØRSEL, "Forventer en body med fødselsnummer på 11 siffer")
 
-private fun GjenståendeSykedager.Resultat.tilDto() =
-    GjenståendeSykedagerResponseDto(
+private fun GjenståendeSykedager.Resultat.tilApi() =
+    ApiGjenståendeSykedager(
         grunnlag =
             when (grunnlag) {
-                Grunnlag.VEDTAK_I_NY_LØSNING -> GrunnlagDto.VEDTAK_I_NY_LØSNING
-                Grunnlag.SISTE_UTBETALING_I_INFOTRYGD -> GrunnlagDto.SISTE_UTBETALING_I_INFOTRYGD
-                Grunnlag.MAKSDATO_I_INFOTRYGD -> GrunnlagDto.MAKSDATO_I_INFOTRYGD
-                Grunnlag.MANGLER_MAKSDATO_I_INFOTRYGD -> GrunnlagDto.MANGLER_MAKSDATO_I_INFOTRYGD
-                Grunnlag.INGEN_SYKEPENGER_SISTE_26_UKER -> GrunnlagDto.INGEN_SYKEPENGER_SISTE_26_UKER
+                Grunnlag.VEDTAK_I_NY_LØSNING -> ApiGjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING
+                Grunnlag.SISTE_UTBETALING_I_INFOTRYGD -> ApiGjenståendeSykedagerGrunnlag.SISTE_UTBETALING_I_INFOTRYGD
+                Grunnlag.MAKSDATO_I_INFOTRYGD -> ApiGjenståendeSykedagerGrunnlag.MAKSDATO_I_INFOTRYGD
+                Grunnlag.MANGLER_MAKSDATO_I_INFOTRYGD -> ApiGjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD
+                Grunnlag.INGEN_SYKEPENGER_SISTE_26_UKER -> ApiGjenståendeSykedagerGrunnlag.INGEN_SYKEPENGER_SISTE_26_UKER
             },
         gjenståendeDager = gjenståendeDager,
         vurdertTilOgMed = vurdertTilOgMed,
     )
 
 private suspend fun RoutingContext.personidentifikatorFraRequest(): Personidentifikator? {
-    val request = runCatching { objectMapper.readValue<GjenståendeSykedagerRequestDto>(call.receiveText()) }.getOrNull() ?: return null
+    val request = runCatching { objectMapper.readValue<ApiGjenståendeSykedagerRequest>(call.receiveText()) }.getOrNull() ?: return null
     return runCatching { Personidentifikator(request.fødselsnummer) }.getOrNull()
 }
 
@@ -143,40 +146,40 @@ private fun RouteConfig.gjenståendeSykedagerDokumentasjon() {
     summary = "Hent gjenstående sykedager"
     description = BESKRIVELSE
     request {
-        body<GjenståendeSykedagerRequestDto> {
+        body<ApiGjenståendeSykedagerRequest> {
             required = true
-            example("fødselsnummer") { value = GjenståendeSykedagerRequestDto("12345678911") }
+            example("fødselsnummer") { value = ApiGjenståendeSykedagerRequest("12345678911") }
         }
     }
     response {
         code(HttpStatusCode.OK) {
             description = "Oppslaget gikk bra. `grunnlag` sier hva svaret bygger på."
-            body<GjenståendeSykedagerResponseDto> {
+            body<ApiGjenståendeSykedager> {
                 example("vedtakINyLøsning") {
                     summary = "Siste vedtak er i ny løsning"
-                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.VEDTAK_I_NY_LØSNING, 112, LocalDate.parse("2026-09-30"))
+                    value = ApiGjenståendeSykedager(ApiGjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING, 112, LocalDate.parse("2026-09-30"))
                 }
                 example("sisteUtbetalingIInfotrygd") {
                     summary = "Infotrygd har utbetalt etter siste vedtak"
-                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.SISTE_UTBETALING_I_INFOTRYGD, 87, LocalDate.parse("2026-10-30"))
+                    value = ApiGjenståendeSykedager(ApiGjenståendeSykedagerGrunnlag.SISTE_UTBETALING_I_INFOTRYGD, 87, LocalDate.parse("2026-10-30"))
                 }
                 example("maksdatoIInfotrygd") {
                     summary = "Siste sykefravær er bare i Infotrygd, og Infotrygd har maksdato"
-                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.MAKSDATO_I_INFOTRYGD, 10, LocalDate.parse("2026-10-30"))
+                    value = ApiGjenståendeSykedager(ApiGjenståendeSykedagerGrunnlag.MAKSDATO_I_INFOTRYGD, 10, LocalDate.parse("2026-10-30"))
                 }
                 example("manglerMaksdatoIInfotrygd") {
                     summary = "Siste sykefravær er bare i Infotrygd, men Infotrygd har ingen maksdato"
-                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.MANGLER_MAKSDATO_I_INFOTRYGD)
+                    value = ApiGjenståendeSykedager(ApiGjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD)
                 }
                 example("ingenSykepengerSiste26Uker") {
                     summary = "Ingen vedtak eller utbetalinger de siste 26 ukene"
-                    value = GjenståendeSykedagerResponseDto(GrunnlagDto.INGEN_SYKEPENGER_SISTE_26_UKER)
+                    value = ApiGjenståendeSykedager(ApiGjenståendeSykedagerGrunnlag.INGEN_SYKEPENGER_SISTE_26_UKER)
                 }
             }
         }
         code(HttpStatusCode.BadRequest) {
             description = "Ugyldig request. Body mangler, er ikke JSON, eller `fødselsnummer` er ikke en streng på 11 siffer."
-            body<FeilDto> {
+            body<ApiGjenståendeSykedagerFeil> {
                 example("ugyldigForespørsel") { value = ugyldigForespørsel }
             }
         }
