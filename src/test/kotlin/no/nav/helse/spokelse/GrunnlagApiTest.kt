@@ -1,5 +1,7 @@
 package no.nav.helse.spokelse
 
+import io.ktor.http.ContentType
+import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao.Companion.harData
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
@@ -212,6 +214,79 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
     }
 
     @Test
+    fun `kall til grunnlag uten fnr gir 400 i ren tekst`() {
+        assertFeilITekst(
+            requestBody = """{"fom": "2020-04-01"}""",
+            forventetHttpStatus = 400,
+            forventetTekst = "Mangler fodselsnummer request body",
+        )
+        assertFeilITekst(
+            requestBody = """{"fodselsnummer": null}""",
+            forventetHttpStatus = 400,
+            forventetTekst = "Mangler fodselsnummer request body",
+        )
+    }
+
+    @Test
+    fun `json som ikke er et objekt gir 400 i ren tekst`() {
+        listOf("""["01010145679"]""", "null", "\"01010145679\"", "123").forEach { requestBody ->
+            assertFeilITekst(
+                requestBody = requestBody,
+                forventetHttpStatus = 400,
+                forventetTekst = "Mangler fodselsnummer request body",
+            )
+        }
+    }
+
+    @Test
+    fun `kall til grunnlag med ugyldig fom gir 400 i ren tekst`() {
+        assertFeilITekst(
+            requestBody = """{"fodselsnummer": "01010145679", "fom": "29.08.1990"}""",
+            forventetHttpStatus = 400,
+            forventetTekst = "Ugyldig fom request body",
+        )
+        assertFeilITekst(
+            requestBody = """{"fodselsnummer": "01010145679", "fom": ""}""",
+            forventetHttpStatus = 400,
+            forventetTekst = "Ugyldig fom request body",
+        )
+    }
+
+    @Test
+    fun `kall til grunnlag med fom lik null gir vedtak uten å filtrere på fom`() {
+        assertApiRequest(
+            path = "grunnlag",
+            requestBody = """{"fodselsnummer": "01010145679", "fom": null}""",
+            forventetResponseBody = "[]",
+            forventetContentType = ContentType.Application.Json,
+            rolle = "foreldrepenger-les",
+            app = "fpsak",
+        )
+    }
+
+    @Test
+    fun `feil ved oppslaget gir 500 i ren tekst`() {
+        gamleUtbetalingerDao = GamleUtbetalingerDao { error("Databasen er nede") }
+        assertFeilITekst(
+            requestBody = """{"fodselsnummer": "01010145679"}""",
+            forventetHttpStatus = 500,
+            forventetTekst = "Feil ved henting av vedtak",
+        )
+    }
+
+    @Test
+    fun `body som ikke er json gir 500 med problem+json`() {
+        assertApiRequest(
+            path = "grunnlag",
+            requestBody = "ikke json",
+            forventetHttpStatus = 500,
+            forventetContentType = ContentType.Application.ProblemJson,
+            rolle = "foreldrepenger-les",
+            app = "fpsak",
+        )
+    }
+
+    @Test
     fun `dropper oppslag mot gamle tabeller om man spør om nyere data enn tabellene inneholder`() {
         assertTrue(harData(null))
         assertTrue(harData(LocalDate.parse("2022-03-15")))
@@ -260,6 +335,24 @@ internal class GrunnlagApiTest : AbstractE2ETest() {
             requestBody = postBody,
             forventetResponseBody = forventetResponseBody,
             forventetHttpStatus = forventetHttpStatus,
+            forventetContentType = forventetResponseBody?.let { ContentType.Application.Json },
         )
+    }
+
+    private fun assertFeilITekst(
+        requestBody: String,
+        forventetHttpStatus: Int,
+        forventetTekst: String,
+    ) {
+        val body =
+            assertApiRequest(
+                path = "grunnlag",
+                requestBody = requestBody,
+                forventetHttpStatus = forventetHttpStatus,
+                forventetContentType = ContentType.Text.Plain,
+                rolle = "k9-les",
+                app = "k9-abakus",
+            )
+        assertEquals(forventetTekst, body)
     }
 }
