@@ -555,18 +555,6 @@
       "ApiUtbetaltePerioderMedOppløsningRequest" : {
         "type" : "object",
         "properties" : {
-          "fom" : {
-            "type" : "string",
-            "format" : "date",
-            "description" : "Første dag i perioden det skal hentes utbetalinger for."
-          },
-          "oppløsning" : {
-            "type" : "array",
-            "description" : "Hva periodene skal grupperes på, og dermed hvilke felter hver periode har. Kan være tom. `personidentifikator`, `organisasjonsnummer` og `grad` gir feltet med samme navn. `kilde` legger ikke til noe felt, men gjør at perioder fra Infotrygd og Spleis grupperes hver for seg.",
-            "items" : {
-              "$ref" : "#/components/schemas/ApiOppløsning"
-            }
-          },
           "personidentifikatorer" : {
             "type" : "array",
             "description" : "Fødselsnummerne eller D-nummerne til personen, hvert på 11 siffer. Minst én.",
@@ -574,10 +562,22 @@
               "type" : "string"
             }
           },
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i perioden det skal hentes utbetalinger for."
+          },
           "tom" : {
             "type" : "string",
             "format" : "date",
             "description" : "Siste dag i perioden det skal hentes utbetalinger for. Kan ikke være før `fom`."
+          },
+          "oppløsning" : {
+            "type" : "array",
+            "description" : "Hva periodene skal grupperes på, og dermed hvilke felter hver periode har. Kan være tom. `personidentifikator`, `organisasjonsnummer` og `grad` gir feltet med samme navn. `kilde` legger ikke til noe felt, men gjør at perioder fra Infotrygd og Spleis grupperes hver for seg.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiOppløsning"
+            }
           }
         },
         "required" : [ "fom", "oppløsning", "personidentifikatorer", "tom" ]
@@ -586,9 +586,21 @@
         "type" : "object",
         "description" : "Problem Details (RFC 9457). Spøkelse svarer med dette når tilgangen mangler eller noe uventet går galt.",
         "properties" : {
-          "callId" : {
-            "type" : [ "null", "string" ],
-            "description" : "Id-en til kallet. Oppgi den hvis du spør oss om feilen."
+          "type" : {
+            "type" : "string",
+            "format" : "uri",
+            "description" : "Hva slags feil det er.",
+            "example" : "urn:error:internal_error"
+          },
+          "title" : {
+            "type" : "string",
+            "description" : "Kort beskrivelse av statuskoden.",
+            "example" : "Internal Server Error"
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "HTTP-statuskoden."
           },
           "detail" : {
             "type" : [ "null", "string" ],
@@ -600,25 +612,13 @@
             "description" : "Stien i requesten som feilet.",
             "example" : "/gjenstaende-sykedager"
           },
+          "callId" : {
+            "type" : [ "null", "string" ],
+            "description" : "Id-en til kallet. Oppgi den hvis du spør oss om feilen."
+          },
           "stacktrace" : {
             "type" : [ "null", "string" ],
             "description" : "Stacktracen ved uventede feil. Bare til feilsøking. Ikke bruk den til å styre logikk."
-          },
-          "status" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "HTTP-statuskoden."
-          },
-          "title" : {
-            "type" : "string",
-            "description" : "Kort beskrivelse av statuskoden.",
-            "example" : "Internal Server Error"
-          },
-          "type" : {
-            "type" : "string",
-            "format" : "uri",
-            "description" : "Hva slags feil det er.",
-            "example" : "urn:error:internal_error"
           }
         },
         "required" : [ "callId", "detail", "instance", "stacktrace", "status", "title", "type" ]
@@ -626,26 +626,31 @@
       "ApiUtbetaltPeriode" : {
         "type" : "object",
         "properties" : {
-          "fom" : {
+          "personidentifikator" : {
             "type" : "string",
-            "format" : "date",
-            "description" : "Første dag i den utbetalte perioden."
-          },
-          "grad" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "Sykmeldingsgraden i prosent. Bare med når `oppløsning` har `grad`."
+            "description" : "Fødselsnummeret eller D-nummeret til personen. Bare med når `oppløsning` har `personidentifikator`.",
+            "example" : "12345678911",
+            "pattern" : "^\\d{11}$"
           },
           "organisasjonsnummer" : {
             "type" : [ "null", "string" ],
             "description" : "Organisasjonsnummeret til arbeidsgiveren. Bare med når `oppløsning` har `organisasjonsnummer`. `null` når perioden ikke har arbeidsgiver.",
             "example" : "999999999"
           },
-          "personidentifikator" : {
+          "grad" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Sykmeldingsgraden i prosent. Bare med når `oppløsning` har `grad`."
+          },
+          "fom" : {
             "type" : "string",
-            "description" : "Fødselsnummeret eller D-nummeret til personen. Bare med når `oppløsning` har `personidentifikator`.",
-            "example" : "12345678911",
-            "pattern" : "^\\d{11}$"
+            "format" : "date",
+            "description" : "Første dag i den utbetalte perioden."
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i den utbetalte perioden."
           },
           "tags" : {
             "type" : "array",
@@ -654,11 +659,6 @@
               "type" : "string"
             },
             "uniqueItems" : true
-          },
-          "tom" : {
-            "type" : "string",
-            "format" : "date",
-            "description" : "Siste dag i den utbetalte perioden."
           }
         },
         "required" : [ "fom", "tags", "tom" ]
@@ -679,17 +679,17 @@
       "ApiUtbetaltePerioderRequest" : {
         "type" : "object",
         "properties" : {
-          "fom" : {
-            "type" : "string",
-            "format" : "date",
-            "description" : "Første dag i perioden det skal hentes utbetalinger for."
-          },
           "personidentifikatorer" : {
             "type" : "array",
             "description" : "Fødselsnummerne eller D-nummerne til personen, hvert på 11 siffer. Minst én.",
             "items" : {
               "type" : "string"
             }
+          },
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i perioden det skal hentes utbetalinger for."
           },
           "tom" : {
             "type" : "string",
@@ -702,15 +702,15 @@
       "ApiUtbetaltPeriodeMedGrad" : {
         "type" : "object",
         "properties" : {
-          "fom" : {
-            "type" : "string",
-            "format" : "date",
-            "description" : "Første dag i den utbetalte perioden."
-          },
           "grad" : {
             "type" : "integer",
             "format" : "int32",
             "description" : "Sykmeldingsgraden i prosent."
+          },
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i den utbetalte perioden."
           },
           "tom" : {
             "type" : "string",
@@ -736,20 +736,25 @@
       "ApiUtbetaltPeriodePersonoversikt" : {
         "type" : "object",
         "properties" : {
-          "fom" : {
-            "type" : "string",
-            "format" : "date",
-            "description" : "Første dag i den utbetalte perioden."
+          "organisasjonsnummer" : {
+            "type" : [ "null", "string" ],
+            "description" : "Organisasjonsnummeret til arbeidsgiveren. Alltid med. `null` når perioden ikke har arbeidsgiver.",
+            "example" : "999999999"
           },
           "grad" : {
             "type" : "integer",
             "format" : "int32",
             "description" : "Sykmeldingsgraden i prosent."
           },
-          "organisasjonsnummer" : {
-            "type" : [ "null", "string" ],
-            "description" : "Organisasjonsnummeret til arbeidsgiveren. Alltid med. `null` når perioden ikke har arbeidsgiver.",
-            "example" : "999999999"
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i den utbetalte perioden."
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i den utbetalte perioden."
           },
           "tags" : {
             "type" : "array",
@@ -758,11 +763,6 @@
               "type" : "string"
             },
             "uniqueItems" : true
-          },
-          "tom" : {
-            "type" : "string",
-            "format" : "date",
-            "description" : "Siste dag i den utbetalte perioden."
           }
         },
         "required" : [ "fom", "grad", "organisasjonsnummer", "tags", "tom" ]
@@ -799,15 +799,15 @@
       "ApiGjenståendeSykedager" : {
         "type" : "object",
         "properties" : {
+          "grunnlag" : {
+            "$ref" : "#/components/schemas/ApiGjenståendeSykedagerGrunnlag",
+            "description" : "Hva svaret bygger på. Se beskrivelsen av endepunktet. Nye verdier kan komme. Konsumenten må tåle dem."
+          },
           "gjenståendeDager" : {
             "type" : "integer",
             "format" : "int32",
             "description" : "Antall sykedager personen hadde igjen per `vurdertTilOgMed`. Bare med når `grunnlag` er `VEDTAK_I_NY_LØSNING`, `SISTE_UTBETALING_I_INFOTRYGD` eller `MAKSDATO_I_INFOTRYGD`. Mangler ellers. Er aldri `null`.",
             "minimum" : 0
-          },
-          "grunnlag" : {
-            "$ref" : "#/components/schemas/ApiGjenståendeSykedagerGrunnlag",
-            "description" : "Hva svaret bygger på. Se beskrivelsen av endepunktet. Nye verdier kan komme. Konsumenten må tåle dem."
           },
           "vurdertTilOgMed" : {
             "type" : "string",
