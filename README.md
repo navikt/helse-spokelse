@@ -8,7 +8,7 @@ Spøkelse deler informasjon om utbetalte sykepengeperioder og gjenstående syked
 
 ## Teste i dev
 
-Medlemmer av tbd-dev kan kalle endepunktene i dev fra Swagger:
+Medlemmer av 0000-CA-Speil-Saksbehandler kan kalle endepunktene i dev fra Swagger:
 
 1. Hent et token fra [azure-token-generator](https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:tbd:spokelse). Logg inn med dev-brukeren din.
 2. Åpn [Swagger i dev](https://spokelse.intern.dev.nav.no/swagger), trykk **Authorize** og lim inn `access_token`.

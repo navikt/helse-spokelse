@@ -14,7 +14,7 @@ spec:
       tenant: trygdeetaten.no
       claims:
         groups:
-          - id: 9046ac9d-bb00-47dc-bcfb-e5221bf8d7f9 # tbd-dev
+          - id: cda797bb-ac3b-4440-b661-2cd5eb3edba0 # 0000-CA-Speil-Saksbehandler
   accessPolicy:
     inbound:
       rules:
@@ -92,4 +92,4 @@ spec:
     - name: SPLEIS_API_SCOPE
       value: api://dev-gcp.tbd.spleis-api/.default
     - name: UTVIKLERGRUPPE
-      value: 9046ac9d-bb00-47dc-bcfb-e5221bf8d7f9
+      value: cda797bb-ac3b-4440-b661-2cd5eb3edba0 # 0000-CA-Speil-Saksbehandler
