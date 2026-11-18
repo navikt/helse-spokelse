@@ -2,6 +2,7 @@ package no.nav.helse.spokelse.utbetalteperioder
 
 import io.ktor.http.ContentType
 import no.nav.helse.spokelse.AbstractE2ETest
+import no.nav.helse.spokelse.AbstractE2ETest.Companion.UTVIKLERGRUPPE
 import no.nav.helse.spokelse.tbdutbetaling.Oppdrag
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje
 import no.nav.helse.spokelse.tbdutbetaling.utbetalingUtbetalt
@@ -65,6 +66,23 @@ internal class UtbetaltePerioderApiTest : AbstractE2ETest() {
     @MethodSource("endepunkter")
     fun `uten token gir 401`(endepunkt: String) {
         assertUtbetaltePerioder(endepunkt, rolle = null, app = null, forventetHttpStatus = 401)
+    }
+
+    @ParameterizedTest
+    @MethodSource("endepunkter")
+    fun `utviklergruppen gir 200 uten rolle`(endepunkt: String) {
+        assertUtbetaltePerioder(endepunkt, rolle = null, grupper = listOf(UTVIKLERGRUPPE), forventetHttpStatus = 200)
+    }
+
+    @Test
+    fun `en annen gruppe gir 403`() {
+        assertUtbetaltePerioder("utbetalte-perioder", rolle = null, grupper = listOf("en-annen-gruppe"), forventetHttpStatus = 403)
+    }
+
+    @Test
+    fun `utviklergruppen gir 403 når utviklertilgang ikke er slått på`() {
+        utviklergruppe = null
+        assertUtbetaltePerioder("utbetalte-perioder", rolle = null, grupper = listOf(UTVIKLERGRUPPE), forventetHttpStatus = 403)
     }
 
     @Test
@@ -221,6 +239,7 @@ internal class UtbetaltePerioderApiTest : AbstractE2ETest() {
         rolle: String?,
         forventetHttpStatus: Int,
         app: String? = "konsument",
+        grupper: List<String> = emptyList(),
         fom: String = "2024-01-01",
         tom: String = "2024-01-31",
         oppløsning: String = "[]",
@@ -233,5 +252,6 @@ internal class UtbetaltePerioderApiTest : AbstractE2ETest() {
         forventetContentType = forventetResponseBody?.let { ContentType.Application.Json },
         rolle = rolle,
         app = app,
+        grupper = grupper,
     )
 }

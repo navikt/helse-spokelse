@@ -12,9 +12,15 @@ spec:
   azure:
     application:
       tenant: trygdeetaten.no
+      claims:
+        groups:
+          - id: 9046ac9d-bb00-47dc-bcfb-e5221bf8d7f9 # tbd-dev
   accessPolicy:
     inbound:
       rules:
+        - application: azure-token-generator
+          namespace: nais
+          cluster: dev-gcp
         - application: fpsak
           namespace: teamforeldrepenger
           cluster: dev-fss
@@ -85,3 +91,5 @@ spec:
       value: https://sykepengeperioder-api.dev-fss-pub.nais.io
     - name: SPLEIS_API_SCOPE
       value: api://dev-gcp.tbd.spleis-api/.default
+    - name: UTVIKLERGRUPPE
+      value: 9046ac9d-bb00-47dc-bcfb-e5221bf8d7f9

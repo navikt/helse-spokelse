@@ -10,6 +10,7 @@ import io.ktor.server.request.path
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
+import io.ktor.util.AttributeKey
 import no.nav.sykepenger.libs.logging.navngittLogger
 
 private val logger = navngittLogger("no.nav.helse.spokelse.Tilgangsstyring")
@@ -70,8 +71,23 @@ private val ApplicationCall.roles get() =
         ?.getListClaim("roles", String::class)
         ?: emptyList()
 
+private val ApplicationCall.groups get() =
+    this
+        .principal<JWTPrincipal>()
+        ?.getListClaim("groups", String::class)
+        ?: emptyList()
+
+// Settes bare i dev, slik at teamet kan kalle endepunktene med et OBO-token fra azure-token-generator.
+internal val UtviklergruppeKey = AttributeKey<String>("utviklergruppe")
+
+private fun ApplicationCall.erUtvikler() = application.attributes.getOrNull(UtviklergruppeKey)?.let { it in groups } ?: false
+
 private fun ApplicationCall.harTilgangTil(enAvRollene: Set<String>): Boolean {
     val endepunkt = request.path()
+    if (erUtvikler()) {
+        logger.info("Utvikler håndterer request til $endepunkt")
+        return true
+    }
     val rolle = enAvRollene.firstOrNull { it in roles }
     if (rolle == null) {
         logger.error(

@@ -114,6 +114,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var tbdUtbetalingHåndterer: TbdUtbetalingHåndterer
     protected lateinit var meterRegistry: PrometheusMeterRegistry
     protected lateinit var booProducer: MockProducer<String, String>
+    protected var utviklergruppe: String? = UTVIKLERGRUPPE
 
     private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
     private val auth by lazy {
@@ -149,6 +150,7 @@ internal abstract class AbstractE2ETest {
         spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28", "maksdato": "2023-06-29"}""")
         idag = LocalDate.now()
         meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+        utviklergruppe = UTVIKLERGRUPPE
     }
 
     @AfterEach
@@ -166,6 +168,7 @@ internal abstract class AbstractE2ETest {
         timeout: Duration = Duration.ofSeconds(5),
         rolle: String?,
         app: String?,
+        grupper: List<String> = emptyList(),
     ): String {
         var body = ""
         naisfulTestApp(
@@ -190,6 +193,7 @@ internal abstract class AbstractE2ETest {
                             idag = { idag },
                         ),
                     meterRegistry = meterRegistry,
+                    utviklergruppe = utviklergruppe,
                 )
             },
             objectMapper = jacksonObjectMapper(),
@@ -201,11 +205,12 @@ internal abstract class AbstractE2ETest {
                         client.request("/$path") {
                             method = HttpMethod.parse(httpMethod)
                             accept(ContentType.Application.Json)
-                            if (rolle != null || app != null) {
+                            if (rolle != null || app != null || grupper.isNotEmpty()) {
                                 bearerAuth(
                                     issuer.accessToken {
                                         app?.let { withClaim("azp", it) }
                                         rolle?.let { withArrayClaim("roles", arrayOf(it)) }
+                                        if (grupper.isNotEmpty()) withArrayClaim("groups", grupper.toTypedArray())
                                     },
                                 )
                             }
@@ -247,6 +252,7 @@ internal abstract class AbstractE2ETest {
 
     internal companion object {
         private val logg = navngittLogger(AbstractE2ETest::class.java.name)
+        internal const val UTVIKLERGRUPPE = "utviklergruppe"
 
         internal fun oppdrag(
             fødselsnummer: String,

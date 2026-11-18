@@ -128,7 +128,7 @@ fun launchApplication(env: Map<String, String>) {
                         readyCheck = rapid::isReady,
                         preStopHook = preStopHook::handlePreStopRequest,
                     ) {
-                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry)
+                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry, env["UTVIKLERGRUPPE"])
                     }
                 }
             },
@@ -163,7 +163,9 @@ internal fun Application.spokelse(
     utbetaltePerioder: UtbetaltePerioder,
     gjenståendeSykedager: GjenståendeSykedager,
     meterRegistry: MeterRegistry,
+    utviklergruppe: String? = null,
 ) {
+    utviklergruppe?.let { attributes.put(UtviklergruppeKey, it) }
     azureAdAppAuthentication(auth)
     openApiDokumentasjon()
     routing {
