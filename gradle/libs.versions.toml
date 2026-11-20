@@ -11,7 +11,7 @@ smiley4SchemaKenerator = "2.7.2"
 
 [libraries]
 awaitility = "org.awaitility:awaitility:4.3.0"
-flyway-database-postgresql = "org.flywaydb:flyway-database-postgresql:13.12.1"
+flyway-database-postgresql = "org.flywaydb:flyway-database-postgresql:13.12.2"
 hikaricp = "com.zaxxer:HikariCP:7.1.0"
 jsonassert = "org.skyscreamer:jsonassert:1.5.3"
 kotliquery = "com.github.seratch:kotliquery:1.9.1"
