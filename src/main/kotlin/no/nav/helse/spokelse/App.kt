@@ -27,6 +27,8 @@ import no.nav.helse.spokelse.gjenstaendesykedager.gjenståendeSykedagerApi
 import no.nav.helse.spokelse.grunnlag.grunnlagApi
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver
 import no.nav.helse.spokelse.infotrygd.NyInformasjonIInfotrygdPåPersonSpleisKjennerTilRiver
+import no.nav.helse.spokelse.personoversikt.Personoversikt
+import no.nav.helse.spokelse.personoversikt.personoversiktApi
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
@@ -81,6 +83,8 @@ fun launchApplication(env: Map<String, String>) {
             tbdUtbetalingApi = tbdUtbetalingApi,
             gamleUtbetalingerDao = gamleUtbetalingerDao,
         )
+    // v2 for Personoversikt er bare åpen i dev til tilgangskontrollen per person er på plass.
+    val personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao).takeIf { env["NAIS_CLUSTER_NAME"] == "dev-gcp" }
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     val gjenståendeSykedager =
         GjenståendeSykedager(
@@ -127,7 +131,7 @@ fun launchApplication(env: Map<String, String>) {
                         readyCheck = rapid::isReady,
                         preStopHook = preStopHook::handlePreStopRequest,
                     ) {
-                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry, env["UTVIKLERGRUPPE"])
+                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry, env["UTVIKLERGRUPPE"], personoversikt)
                     }
                 }
             },
@@ -161,6 +165,7 @@ internal fun Application.spokelse(
     gjenståendeSykedager: GjenståendeSykedager,
     meterRegistry: MeterRegistry,
     utviklergruppe: String? = null,
+    personoversikt: Personoversikt? = null,
 ) {
     utviklergruppe?.let { attributes.put(UtviklergruppeKey, it) }
     azureAdAppAuthentication(auth)
@@ -170,6 +175,7 @@ internal fun Application.spokelse(
             grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
             utbetaltePerioderApi(utbetaltePerioder)
             gjenståendeSykedagerApi(gjenståendeSykedager, meterRegistry)
+            personoversikt?.let { personoversiktApi(it) }
         }
     }
 }

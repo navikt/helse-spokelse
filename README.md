@@ -13,6 +13,8 @@ Medlemmer av 0000-CA-Speil-Saksbehandler kan kalle endepunktene i dev fra Swagge
 1. Hent et token fra [azure-token-generator](https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:tbd:spokelse). Logg inn med dev-brukeren din.
 2. Åpn [Swagger i dev](https://spokelse.intern.dev.nav.no/swagger), trykk **Authorize** og lim inn `access_token`.
 
+Unntaket er `/v2/utbetalte-perioder-personoversikt`. Det tar bare imot OBO-tokens fra `modiapersonoversikt-api`.
+
 ## Dataflyt
 
 Spøkelse lagrer utbetalinger, vedtak uten utbetaling og annulleringer fra Spleis i egen database. Ved forespørsler om utbetalte perioder

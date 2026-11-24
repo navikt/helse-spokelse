@@ -30,6 +30,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
 import no.nav.helse.spokelse.grunnlag.ApiGrunnlagRequest
 import no.nav.helse.spokelse.grunnlag.HENT_GRUNNLAG
+import no.nav.helse.spokelse.personoversikt.tilpassSkjemaerForPersonoversikt
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -148,6 +149,7 @@ internal fun Application.openApiDokumentasjon() {
         }
         postBuild = { openApi, _ ->
             openApi.externalDocs = null
+            openApi.components?.schemas?.let(::tilpassSkjemaerForPersonoversikt)
             openApi.components?.schemas?.forEach { (navn, skjema) ->
                 val kanVæreNull = valgfrieFelterSomKanVæreNull[navn].orEmpty()
                 skjema.properties

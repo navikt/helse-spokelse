@@ -5,6 +5,9 @@ import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
+import no.nav.helse.spokelse.personoversikt.Mottaker
+import no.nav.helse.spokelse.personoversikt.UtbetaltLinje
+import no.nav.helse.spokelse.personoversikt.Versjon
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
@@ -60,6 +63,16 @@ internal data class Utbetaling(
         }
     }
 
+    private fun somUtbetalteLinjer(): List<UtbetaltLinje> {
+        val personidentifikator = Personidentifikator(fødselsnummer)
+
+        fun Oppdrag?.linjer(mottaker: Mottaker) =
+            this?.utbetalingslinjer.orEmpty().map {
+                UtbetaltLinje(Versjon.SPEIL_V4, personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), usikkerGrad = false)
+            }
+        return arbeidsgiverOppdrag.linjer(Mottaker.ARBEIDSGIVER) + personOppdrag.linjer(Mottaker.PERSON)
+    }
+
     internal companion object {
         private fun JsonNode.oppdrag(path: String) =
             path(path).takeUnless { it.isMissingOrNull() || it.path("utbetalingslinjer").isEmpty }?.let {
@@ -90,5 +103,7 @@ internal data class Utbetaling(
         internal fun List<Utbetaling>.somFpVedtak() = flatMap(Utbetaling::somFpVedtak)
 
         internal fun List<Utbetaling>.somSpøkelsePerioder() = flatMap(Utbetaling::somSpøkelsePeriode)
+
+        internal fun List<Utbetaling>.somUtbetalteLinjer() = flatMap(Utbetaling::somUtbetalteLinjer)
     }
 }
