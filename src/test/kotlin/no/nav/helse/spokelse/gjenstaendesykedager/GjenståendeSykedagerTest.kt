@@ -122,55 +122,26 @@ internal class GjenståendeSykedagerTest {
     }
 
     @Test
-    fun `minst 182 dager opphold etter siste vedtak gir Infotrygds maksdato`() {
+    fun `minst 182 dager opphold etter siste vedtak gir tallet fra spleis-api, også uten maksdato i Infotrygd`() {
         lagreVedtak(tom = LocalDate.parse("2025-01-31"))
         idag = LocalDate.parse("2025-10-15")
-        infotrygd.perioder = listOf(utbetaling("2025-09-01", "2025-09-30", maksdato = "2025-10-31"))
-        assertResultat(maksdatoIInfotrygd(gjenståendeDager = 23, vurdertTilOgMed = "2025-09-30"))
+        spleisApi.beregning = Maksdatoberegning.Beregning(225, LocalDate.parse("2025-09-30"), LocalDate.parse("2026-08-14"))
+        val forventet = Resultat.sisteUtbetalingIInfotrygd(225, LocalDate.parse("2025-09-30"))
+        infotrygd.perioder = listOf(utbetaling("2025-09-01", "2025-09-30", maksdato = "2026-08-14"))
+        assertResultat(forventet)
         infotrygd.perioder = listOf(utbetaling("2025-09-01", "2025-09-30"))
-        assertResultat(Resultat.manglerMaksdatoIInfotrygd)
+        assertResultat(forventet)
+        infotrygd.perioder = listOf(utbetaling("2025-02-01", "2025-02-28"), utbetaling("2025-09-01", "2025-09-30"))
+        assertResultat(forventet)
     }
 
     @Test
-    fun `opphold på 182 dager etter siste vedtak gir Infotrygds maksdato, 181 dager gjør det ikke`() {
-        lagreVedtak(tom = LocalDate.parse("2025-01-31"))
-        idag = LocalDate.parse("2025-08-31")
-        infotrygd.perioder = listOf(utbetaling("2025-08-01", "2025-08-29", maksdato = "2025-09-05"))
-        assertResultat(sisteUtbetalingIInfotrygd)
-        infotrygd.perioder = listOf(utbetaling("2025-08-02", "2025-08-29", maksdato = "2025-09-05"))
-        assertResultat(maksdatoIInfotrygd(gjenståendeDager = 5, vurdertTilOgMed = "2025-08-29"))
-    }
-
-    @Test
-    fun `opphold på minst 182 dager mellom to utbetalinger i Infotrygd etter siste vedtak gir Infotrygds maksdato`() {
-        lagreVedtak(tom = LocalDate.parse("2025-01-31"))
-        idag = LocalDate.parse("2025-10-15")
-        infotrygd.perioder =
-            listOf(
-                utbetaling("2025-02-01", "2025-02-28"),
-                utbetaling("2025-09-01", "2025-09-30", maksdato = "2025-10-31"),
-            )
-        assertResultat(maksdatoIInfotrygd(gjenståendeDager = 23, vurdertTilOgMed = "2025-09-30"))
-    }
-
-    @Test
-    fun `ferie i Infotrygd bryter ikke oppholdet etter siste vedtak`() {
-        lagreVedtak(tom = LocalDate.parse("2025-01-31"))
-        idag = LocalDate.parse("2025-10-15")
-        infotrygd.perioder =
-            listOf(
-                utbetaling("2025-05-01", "2025-05-31", type = "FERIE"),
-                utbetaling("2025-09-01", "2025-09-30", maksdato = "2025-10-31"),
-            )
-        assertResultat(maksdatoIInfotrygd(gjenståendeDager = 23, vurdertTilOgMed = "2025-09-30"))
-    }
-
-    @Test
-    fun `ny rett sjekkes før oppholdet etter siste vedtak`() {
+    fun `ny rett sjekkes før spleis-api kalles`() {
         lagreVedtak(tom = LocalDate.parse("2025-01-31"))
         idag = LocalDate.parse("2026-03-31")
         infotrygd.perioder = listOf(utbetaling("2025-09-01", "2025-09-30", maksdato = "2025-10-31"))
         assertResultat(Resultat.ingenSykepengerSiste26Uker)
+        assertEquals(emptyList<Any>(), spleisApi.mottattePerioder)
     }
 
     @Test

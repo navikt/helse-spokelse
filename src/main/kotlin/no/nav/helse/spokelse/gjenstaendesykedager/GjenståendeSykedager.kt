@@ -78,7 +78,6 @@ internal class GjenståendeSykedager(
         if (sisteUtbetaling == null || sisteUtbetaling.tom <= sisteVedtak.vurdertTilOgMed) {
             return Resultat.vedtakINyLøsning(sisteVedtak.gjenståendeDager, sisteVedtak.vurdertTilOgMed)
         }
-        if (harOppholdEtter(sisteVedtak.vurdertTilOgMed, utbetalingerIInfotrygd)) return maksdatoIInfotrygd(sisteUtbetaling)
         val beregning = maksdatoberegning.beregnGjenståendeSykedager(personidentifikator, perioderIInfotrygd)
         rapporterSammenligningMedInfotrygd(personidentifikator, sammenlign(beregning.maksdato, sisteUtbetaling.maksdato))
         return Resultat.sisteUtbetalingIInfotrygd(beregning.gjenståendeDager, beregning.vurdertTilOgMed)
@@ -110,20 +109,6 @@ internal class GjenståendeSykedager(
 
     // Minst 182 dager fra dagen etter siste dag med sykepenger til og med i dag.
     private fun harNyRett(sisteDagMedSykepenger: LocalDate) = ChronoUnit.DAYS.between(sisteDagMedSykepenger, idag()) >= TILSTREKKELIG_OPPHOLD_I_DAGER
-
-    // Minst 182 dager uten utbetaling et sted mellom siste vedtak og siste utbetaling i Infotrygd.
-    private fun harOppholdEtter(
-        sisteVedtakTom: LocalDate,
-        utbetalingerIInfotrygd: List<Infotrygdperiode>,
-    ): Boolean {
-        var forrigeUtbetalteDag = sisteVedtakTom
-        utbetalingerIInfotrygd.filter { it.tom > sisteVedtakTom }.sortedBy { it.fom }.forEach { utbetaling ->
-            val dagerUtenUtbetaling = ChronoUnit.DAYS.between(forrigeUtbetalteDag, utbetaling.fom) - 1
-            if (dagerUtenUtbetaling >= TILSTREKKELIG_OPPHOLD_I_DAGER) return true
-            forrigeUtbetalteDag = maxOf(forrigeUtbetalteDag, utbetaling.tom)
-        }
-        return false
-    }
 
     private fun maksdatoIInfotrygd(sisteUtbetaling: Infotrygdperiode): Resultat {
         val maksdato = sisteUtbetaling.maksdato ?: return Resultat.manglerMaksdatoIInfotrygd

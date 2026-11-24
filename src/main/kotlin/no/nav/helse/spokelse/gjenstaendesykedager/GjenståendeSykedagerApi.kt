@@ -9,7 +9,6 @@ import io.github.smiley4.schemakenerator.core.annotations.Example
 import io.github.smiley4.schemakenerator.core.annotations.Min
 import io.github.smiley4.schemakenerator.core.annotations.Optional
 import io.github.smiley4.schemakenerator.core.annotations.Pattern
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
@@ -201,9 +200,9 @@ private val BESKRIVELSE =
     - `SISTE_UTBETALING_I_INFOTRYGD`: Infotrygd har en utbetaling etter siste vedtak. Tallet beregnes ved oppslaget, med dager
       fra begge løsninger og de samme reglene som saksbehandlingen i ny løsning. `vurdertTilOgMed` er siste dag i siste utbetaling
       i Infotrygd. Alle hverdager i en utbetalingsperiode i Infotrygd teller som utbetalt, så tallet kan bli for lavt.
-    - `MAKSDATO_I_INFOTRYGD`: Siste sykefravær er bare i Infotrygd. Personen har bare utbetalinger der, eller det er
-      minst 26 uker opphold etter siste vedtak. Tallet er ukedagene (mandag–fredag, helligdager telles med) fra dagen
-      etter `vurdertTilOgMed` til og med Infotrygds maksdato. `vurdertTilOgMed` er siste dag i siste utbetaling i Infotrygd.
+    - `MAKSDATO_I_INFOTRYGD`: Personen har ingen vedtak i ny løsning, bare utbetalinger i Infotrygd. Tallet er ukedagene
+      (mandag–fredag, helligdager telles med) fra dagen etter `vurdertTilOgMed` til og med Infotrygds maksdato.
+      `vurdertTilOgMed` er siste dag i siste utbetaling i Infotrygd.
     - `MANGLER_MAKSDATO_I_INFOTRYGD`: Som `MAKSDATO_I_INFOTRYGD`, men Infotrygd har ingen maksdato. Ingen tall.
     - `INGEN_SYKEPENGER_SISTE_26_UKER`: Vi finner ingen vedtak eller utbetalinger de siste 26 ukene. Personen får full rett
       ved ny sykdom. Ingen tall. Sykdom som ikke er behandlet ennå, er ikke med, så personen kan ha brukt dager vi ikke ser.
