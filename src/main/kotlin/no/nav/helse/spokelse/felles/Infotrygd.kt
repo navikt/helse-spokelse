@@ -9,9 +9,8 @@ import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import no.nav.helse.spokelse.gjenstaendesykedager.Infotrygdperioder
+import no.nav.helse.spokelse.personoversikt.InfotrygdV1Linje
 import no.nav.helse.spokelse.personoversikt.Mottaker
-import no.nav.helse.spokelse.personoversikt.UtbetaltLinje
-import no.nav.helse.spokelse.personoversikt.Versjon
 import org.intellij.lang.annotations.Language
 import org.slf4j.MDC
 import tools.jackson.databind.JsonNode
@@ -34,7 +33,7 @@ internal class Infotrygd(
         personidentifikatorer: Set<Personidentifikator>,
         fom: LocalDate,
         tom: LocalDate,
-    ): List<UtbetaltLinje> = hentPerioder(personidentifikatorer, fom, tom, inkluderAllePeriodetyper = false).map { it.somUtbetaltLinje() }
+    ): List<InfotrygdV1Linje> = hentPerioder(personidentifikatorer, fom, tom, inkluderAllePeriodetyper = false).map { it.somUtbetaltLinje() }
 
     override suspend fun hentAllePeriodetyper(
         personidentifikator: Personidentifikator,
@@ -87,9 +86,8 @@ internal class Infotrygd(
             organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asString(),
         )
 
-    private fun JsonNode.somUtbetaltLinje(): UtbetaltLinje =
-        UtbetaltLinje(
-            versjon = Versjon.INFOTRYGD_V1,
+    private fun JsonNode.somUtbetaltLinje(): InfotrygdV1Linje =
+        InfotrygdV1Linje(
             personidentifikator = Personidentifikator(path("personidentifikator").asString()),
             organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asString(),
             mottaker =

@@ -8,10 +8,9 @@ import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somSp�
 import no.nav.helse.spokelse.gamleutbetalinger.GammelUtbetaling.Companion.somUtbetalteLinjer
 import no.nav.helse.spokelse.personoversikt.Mottaker.ARBEIDSGIVER
 import no.nav.helse.spokelse.personoversikt.Mottaker.PERSON
-import no.nav.helse.spokelse.personoversikt.UtbetaltLinje
-import no.nav.helse.spokelse.personoversikt.Versjon.SPEIL_V1
-import no.nav.helse.spokelse.personoversikt.Versjon.SPEIL_V2
-import no.nav.helse.spokelse.personoversikt.Versjon.SPEIL_V3
+import no.nav.helse.spokelse.personoversikt.SpeilV1Linje
+import no.nav.helse.spokelse.personoversikt.SpeilV2Linje
+import no.nav.helse.spokelse.personoversikt.SpeilV3Linje
 import no.nav.helse.spokelse.tbdutbetaling.utbetalingAnnullert
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -74,9 +73,9 @@ internal class SpøkelsePerioderFraGamleUtbetalingerTest : AbstractE2ETest() {
         val personidentifikator = Personidentifikator(fødselsnummer)
         assertEquals(
             setOf(
-                UtbetaltLinje(SPEIL_V2, personidentifikator, organisasjonsnummer, null, 1.januar, 31.januar, 100, usikkerGrad = false),
-                UtbetaltLinje(SPEIL_V3, personidentifikator, organisasjonsnummer, PERSON, 1.februar, 28.februar, 100, usikkerGrad = false),
-                UtbetaltLinje(SPEIL_V1, personidentifikator, organisasjonsnummer, ARBEIDSGIVER, 1.mars, 31.mars, 100, usikkerGrad = false),
+                SpeilV2Linje(personidentifikator, organisasjonsnummer, 1.januar, 31.januar, 100),
+                SpeilV3Linje(personidentifikator, organisasjonsnummer, PERSON, 1.februar, 28.februar, 100),
+                SpeilV1Linje(personidentifikator, organisasjonsnummer, ARBEIDSGIVER, 1.mars, 31.mars, 100),
             ),
             gamleUtbetalingerDao.hentUtbetalinger(fødselsnummer, 1.januar, 31.mars).somUtbetalteLinjer().toSet(),
         )
