@@ -76,7 +76,11 @@ internal fun Route.postMedOboTokenFra(
             }
         }
         dokumentasjon()
-        description = listOfNotNull(description, "Krever et OBO-token for en saksbehandler, utstedt til `$app`.").joinToString("\n\n")
+        description =
+            listOfNotNull(
+                description,
+                "Krever et OBO-token for en saksbehandler, utstedt til `$app`. I dev godtas også OBO-tokens for medlemmer av utviklergruppen.",
+            ).joinToString("\n\n")
     }) {
         if (!call.erOboTokenFra(app)) return@post call.respond(HttpStatusCode.Forbidden)
         body()
@@ -91,7 +95,9 @@ private val ApplicationCall.navIdent get() =
 private fun ApplicationCall.erOboTokenFra(app: String): Boolean {
     val endepunkt = request.path()
     val erFraApp = applicationName.endsWith(":$app")
-    if (navIdent == null || !erFraApp) {
+    // Utviklere får aldri tilgang utenfor dev, selv om UTVIKLERGRUPPE skulle bli satt der.
+    val erUtviklerIDev = application.attributes.getOrNull(ErDevKey) == true && erUtvikler()
+    if (navIdent == null || !(erFraApp || erUtviklerIDev)) {
         logger.error(
             "Tokenet er ikke et OBO-token fra appen endepunktet krever",
             "endepunkt" to endepunkt,
@@ -134,6 +140,8 @@ private val ApplicationCall.groups get() =
 
 // Settes bare i dev, slik at teamet kan kalle endepunktene med et OBO-token fra azure-token-generator.
 internal val UtviklergruppeKey = AttributeKey<String>("utviklergruppe")
+
+internal val ErDevKey = AttributeKey<Boolean>("erDev")
 
 private fun ApplicationCall.erUtvikler() = application.attributes.getOrNull(UtviklergruppeKey)?.let { it in groups } ?: false
 

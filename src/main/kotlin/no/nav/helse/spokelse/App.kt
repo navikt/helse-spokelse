@@ -83,8 +83,10 @@ fun launchApplication(env: Map<String, String>) {
             tbdUtbetalingApi = tbdUtbetalingApi,
             gamleUtbetalingerDao = gamleUtbetalingerDao,
         )
+    val erDev = env["NAIS_CLUSTER_NAME"] == "dev-gcp"
+
     // v2 for Personoversikt er bare åpen i dev til tilgangskontrollen per person er på plass.
-    val personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao).takeIf { env["NAIS_CLUSTER_NAME"] == "dev-gcp" }
+    val personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao).takeIf { erDev }
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     val gjenståendeSykedager =
         GjenståendeSykedager(
@@ -131,7 +133,7 @@ fun launchApplication(env: Map<String, String>) {
                         readyCheck = rapid::isReady,
                         preStopHook = preStopHook::handlePreStopRequest,
                     ) {
-                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry, env["UTVIKLERGRUPPE"], personoversikt)
+                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry, env["UTVIKLERGRUPPE"], personoversikt, erDev)
                     }
                 }
             },
@@ -166,8 +168,10 @@ internal fun Application.spokelse(
     meterRegistry: MeterRegistry,
     utviklergruppe: String? = null,
     personoversikt: Personoversikt? = null,
+    erDev: Boolean = false,
 ) {
     utviklergruppe?.let { attributes.put(UtviklergruppeKey, it) }
+    attributes.put(ErDevKey, erDev)
     azureAdAppAuthentication(auth)
     openApiDokumentasjon()
     routing {

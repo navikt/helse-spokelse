@@ -2,6 +2,7 @@ package no.nav.helse.spokelse.personoversikt
 
 import io.ktor.http.ContentType
 import no.nav.helse.spokelse.AbstractE2ETest
+import no.nav.helse.spokelse.AbstractE2ETest.Companion.UTVIKLERGRUPPE
 import no.nav.helse.spokelse.tbdutbetaling.Oppdrag
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje
 import no.nav.helse.spokelse.tbdutbetaling.utbetalingUtbetalt
@@ -105,7 +106,18 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
 
     @Test
     fun `OBO-token fra en annen app gir 403`() {
-        assertPersonoversikt(forventetHttpStatus = 403, claims = mapOf("NAVident" to "A123456", "azp_name" to "dev-gcp:nais:azure-token-generator"))
+        assertPersonoversikt(forventetHttpStatus = 403, claims = OBO_FRA_TOKENGENERATOR)
+    }
+
+    @Test
+    fun `OBO-token for en utvikler fra azure-token-generator gir 200 i dev`() {
+        assertPersonoversikt(forventetHttpStatus = 200, claims = OBO_FRA_TOKENGENERATOR, grupper = listOf(UTVIKLERGRUPPE))
+    }
+
+    @Test
+    fun `OBO-token for en utvikler fra azure-token-generator gir 403 utenfor dev, også når utviklergruppen er satt`() {
+        erDev = false
+        assertPersonoversikt(forventetHttpStatus = 403, claims = OBO_FRA_TOKENGENERATOR, grupper = listOf(UTVIKLERGRUPPE))
     }
 
     @Test
@@ -152,6 +164,7 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
         forventetHttpStatus: Int = 200,
         requestBody: String = """{"personidentifikatorer": ["$FØDSELSNUMMER"], "fom": "2024-01-01", "tom": "2024-12-31"}""",
         claims: Map<String, String> = OBO_FRA_MODIA,
+        grupper: List<String> = emptyList(),
         forventetResponseBody: String? = null,
     ) = assertApiRequest(
         path = "v2/utbetalte-perioder-personoversikt",
@@ -162,12 +175,14 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
         rolle = null,
         app = null,
         claims = claims,
+        grupper = grupper,
     )
 
     private companion object {
         private val FØDSELSNUMMER = lagIdentitetsnummer()
         private const val ORGNR = "999999999"
         private val OBO_FRA_MODIA = mapOf("NAVident" to "A123456", "azp_name" to "dev-gcp:personoversikt:modiapersonoversikt-api")
+        private val OBO_FRA_TOKENGENERATOR = mapOf("NAVident" to "A123456", "azp_name" to "dev-gcp:nais:azure-token-generator")
 
         private fun dato(tekst: String) = LocalDate.parse(tekst)
 
