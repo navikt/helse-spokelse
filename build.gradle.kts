@@ -33,6 +33,7 @@ dependencies {
     testImplementation(libs.awaitility)
 
     testImplementation(testFixtures(libs.sykepengerLibs.postgres))
+    testImplementation(libs.sykepengerLibs.testing)
     testImplementation(libs.tbdLibs.naisfulTestApp)
     testImplementation(libs.tbdLibs.signedJwtIssuerTest)
     testImplementation(libs.jsonassert)

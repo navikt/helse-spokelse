@@ -31,6 +31,7 @@ smiley4-schema-kenerator-serialization = { module = "io.github.smiley4:schema-ke
 smiley4-schema-kenerator-swagger = { module = "io.github.smiley4:schema-kenerator-swagger", version.ref = "smiley4SchemaKenerator" }
 sykepengerLibs-logging = "no.nav.sykepenger.libs:logging:20261120.1340"
 sykepengerLibs-postgres = "no.nav.sykepenger.libs:postgres:20261120.1340"
+sykepengerLibs-testing = "no.nav.sykepenger.libs:testing:20261120.1340"
 tbdLibs-accessTokenProviderApi = { module = "com.github.navikt.tbd-libs:access-token-provider-api", version.ref = "tbdLibs" }
 tbdLibs-accessTokenProviderTexas = { module = "com.github.navikt.tbd-libs:access-token-provider-texas", version.ref = "tbdLibs" }
 tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", version.ref = "tbdLibs" }

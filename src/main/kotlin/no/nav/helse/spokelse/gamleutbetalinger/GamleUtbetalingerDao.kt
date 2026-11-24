@@ -4,6 +4,7 @@ import kotliquery.TransactionalSession
 import no.nav.helse.spokelse.felles.asSQL
 import no.nav.helse.spokelse.felles.list
 import no.nav.helse.spokelse.felles.update
+import no.nav.helse.spokelse.personoversikt.Mottaker
 import no.nav.helse.spokelse.tbdutbetaling.Annullering
 import no.nav.sykepenger.libs.logging.loggInfo
 import java.time.LocalDate
@@ -53,7 +54,8 @@ internal class GamleUtbetalingerDao(
                             u.grad        grad,
                             v.opprettet   utbetalt_tidspunkt,
                             v.orgnummer   organisasjonsnummer,
-                            'VedtakOppdragOgUtbetaling' kilde
+                            o.fagområde   fagomrade,
+                            '${GammelKilde.VEDTAK_OPPDRAG_OG_UTBETALING.tag}' kilde
                         FROM vedtak v
                         INNER JOIN oppdrag o on v.id = o.vedtak_id
                         INNER JOIN utbetaling u on o.id = u.oppdrag_id
@@ -67,7 +69,8 @@ internal class GamleUtbetalingerDao(
                             ou.grad grad,
                             ov.opprettet utbetalt_tidspunkt,
                             ov.orgnummer organisasjonsnummer,
-                            'OldVedtakOgOldUtbetaling' kilde
+                            NULL fagomrade,
+                            '${GammelKilde.OLD_VEDTAK_OG_OLD_UTBETALING.tag}' kilde
                         FROM old_vedtak ov
                         INNER JOIN old_utbetaling ou on ov.id = ou.vedtak_id
                         WHERE ov.fodselsnummer = :fodselsnummer
@@ -80,7 +83,8 @@ internal class GamleUtbetalingerDao(
                             grad,
                             opprettet utbetalt_tidspunkt,
                             orgnummer organisasjonsnummer,
-                            'GamleUtbetalinger' kilde
+                            fagomrade,
+                            '${GammelKilde.GAMLE_UTBETALINGER.tag}' kilde
                         FROM gamle_utbetalinger
                         WHERE fodselsnummer = :fodselsnummer
                         AND tom >= :fom AND NOT fom > :tom
@@ -100,7 +104,8 @@ internal class GamleUtbetalingerDao(
                         fom = row.localDate("fom"),
                         tom = row.localDate("tom"),
                         grad = row.int("grad"),
-                        kilde = row.string("kilde"),
+                        kilde = row.string("kilde").let { kilde -> GammelKilde.entries.single { it.tag == kilde } },
+                        mottaker = row.stringOrNull("fagomrade")?.let(::mottakerForFagområde),
                         utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
                     )
                 }
@@ -108,6 +113,13 @@ internal class GamleUtbetalingerDao(
         loggInfo("Oppslag mot gamle utbetalinger tok ${duration.inWholeMilliseconds}ms")
         return perioder
     }
+
+    private fun mottakerForFagområde(fagområde: String) =
+        when (fagområde) {
+            "SPREF" -> Mottaker.ARBEIDSGIVER
+            "SP" -> Mottaker.PERSON
+            else -> error("Ukjent fagområde for gammel utbetaling: $fagområde")
+        }
 
     internal fun lagreAnnullering(
         transaksjon: TransactionalSession,

@@ -13,12 +13,16 @@ import io.ktor.http.content.TextContent
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
+import kotliquery.sessionOf
 import no.nav.helse.spokelse.felles.FakeAccessTokenProvider
 import no.nav.helse.spokelse.felles.Infotrygd
+import no.nav.helse.spokelse.felles.asSQL
+import no.nav.helse.spokelse.felles.update
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.SpleisApiClient
+import no.nav.helse.spokelse.personoversikt.Personoversikt
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
@@ -39,6 +43,7 @@ import org.skyscreamer.jsonassert.JSONAssert
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 import javax.sql.DataSource
 
@@ -50,6 +55,7 @@ internal abstract class AbstractE2ETest {
         val type: String = "UTBETALING",
         val maksdato: LocalDate? = null,
         val organisasjonsnummer: String? = null,
+        val tags: Set<String> = emptySet(),
     )
 
     protected data class SpleisApiSvar(
@@ -93,7 +99,7 @@ internal abstract class AbstractE2ETest {
                                 .joinToString {
                                     val maksdato = it.maksdato?.let { dato -> "\"$dato\"" } ?: "null"
                                     val organisasjonsnummer = it.organisasjonsnummer?.let { orgnr -> "\"$orgnr\"" } ?: "null"
-                                    """{"personidentifikator": "$personidentifikator", "organisasjonsnummer": $organisasjonsnummer, "fom": "${it.fom}", "tom": "${it.tom}", "grad": 100, "type": "${it.type}", "maksdato": $maksdato}"""
+                                    """{"personidentifikator": "$personidentifikator", "organisasjonsnummer": $organisasjonsnummer, "fom": "${it.fom}", "tom": "${it.tom}", "grad": 100, "type": "${it.type}", "maksdato": $maksdato, "tags": ${it.tags.map { tag -> "\"$tag\"" }}}"""
                                 }
                         respond("""{"utbetaltePerioder": [$utbetaltePerioder]}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
                     },
@@ -115,6 +121,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var meterRegistry: PrometheusMeterRegistry
     protected lateinit var booProducer: MockProducer<String, String>
     protected var utviklergruppe: String? = UTVIKLERGRUPPE
+    protected var personoversiktV2ErÅpen = true
 
     private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
     private val auth by lazy {
@@ -151,6 +158,7 @@ internal abstract class AbstractE2ETest {
         idag = LocalDate.now()
         meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
         utviklergruppe = UTVIKLERGRUPPE
+        personoversiktV2ErÅpen = true
     }
 
     @AfterEach
@@ -169,6 +177,7 @@ internal abstract class AbstractE2ETest {
         rolle: String?,
         app: String?,
         grupper: List<String> = emptyList(),
+        claims: Map<String, String> = emptyMap(),
     ): String {
         var body = ""
         naisfulTestApp(
@@ -194,6 +203,7 @@ internal abstract class AbstractE2ETest {
                         ),
                     meterRegistry = meterRegistry,
                     utviklergruppe = utviklergruppe,
+                    personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao).takeIf { personoversiktV2ErÅpen },
                 )
             },
             objectMapper = jacksonObjectMapper(),
@@ -205,12 +215,13 @@ internal abstract class AbstractE2ETest {
                         client.request("/$path") {
                             method = HttpMethod.parse(httpMethod)
                             accept(ContentType.Application.Json)
-                            if (rolle != null || app != null || grupper.isNotEmpty()) {
+                            if (rolle != null || app != null || grupper.isNotEmpty() || claims.isNotEmpty()) {
                                 bearerAuth(
                                     issuer.accessToken {
                                         app?.let { withClaim("azp", it) }
                                         rolle?.let { withArrayClaim("roles", arrayOf(it)) }
                                         if (grupper.isNotEmpty()) withArrayClaim("groups", grupper.toTypedArray())
+                                        claims.forEach { (navn, verdi) -> withClaim(navn, verdi) }
                                     },
                                 )
                             }
@@ -237,6 +248,89 @@ internal abstract class AbstractE2ETest {
             }
         }
         return body
+    }
+
+    protected fun lagreOldVedtakOgOldUtbetaling(
+        fom: LocalDate,
+        tom: LocalDate,
+        fagsystemId: String,
+        fødselsnummer: String,
+        organisasjonsnummer: String = "999999999",
+    ) {
+        val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
+        val vedtaksperiodeId = UUID.randomUUID()
+        dokumentDao.lagre(vedtaksperiodeId, fagsystemId)
+        lagreVedtakDao.save(
+            OldVedtak(
+                vedtaksperiodeId = vedtaksperiodeId,
+                fødselsnummer = fødselsnummer,
+                orgnummer = organisasjonsnummer,
+                utbetalinger =
+                    listOf(
+                        OldUtbetaling(
+                            fom = fom,
+                            tom = tom,
+                            grad = 100.0,
+                            dagsats = 1,
+                            totalbeløp = 1,
+                            beløp = 1,
+                        ),
+                    ),
+                opprettet = LocalDateTime.now(),
+                forbrukteSykedager = 1,
+                gjenståendeSykedager = 1,
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+            ),
+        )
+    }
+
+    protected fun lagreVedtakOppdragOgUtbetaling(
+        fom: LocalDate,
+        tom: LocalDate,
+        fagsystemId: String,
+        fødselsnummer: String,
+        fagområde: String = "SPREF",
+        organisasjonsnummer: String = "999999999",
+    ) {
+        val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
+        utbetaltDao.opprett(
+            Vedtak(
+                hendelseId = UUID.randomUUID(),
+                fødselsnummer = fødselsnummer,
+                orgnummer = organisasjonsnummer,
+                dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
+                oppdrag = listOf(Vedtak.Oppdrag("mottaker", fagområde, fagsystemId, 1, listOf(Vedtak.Oppdrag.Utbetalingslinje(fom, tom, 1, 1, 100.0, 1)))),
+                fom = fom,
+                tom = tom,
+                forbrukteSykedager = 1,
+                gjenståendeSykedager = 1,
+                opprettet = LocalDateTime.now(),
+            ),
+        )
+    }
+
+    protected fun lagreGammelUtbetaling(
+        fom: LocalDate,
+        tom: LocalDate,
+        fagsystemId: String,
+        fødselsnummer: String,
+        fagområde: String = "SPREF",
+        organisasjonsnummer: String = "999999999",
+    ) {
+        sessionOf(dataSource).use { session ->
+            asSQL(
+                """
+                INSERT INTO gamle_utbetalinger (fodselsnummer, orgnummer, opprettet, fom, tom, grad, fagsystem_id, fagomrade, gjenstaende_sykedager)
+                VALUES (:fodselsnummer, :orgnummer, now(), :fom, :tom, 100.0, :fagsystemId, :fagomrade, 1)
+                """.trimIndent(),
+                "fodselsnummer" to fødselsnummer,
+                "orgnummer" to organisasjonsnummer,
+                "fom" to fom,
+                "tom" to tom,
+                "fagsystemId" to fagsystemId,
+                "fagomrade" to fagområde,
+            ).update(session)
+        }
     }
 
     protected fun nyeDokumenter(): Triple<Hendelse, Hendelse, Hendelse> {

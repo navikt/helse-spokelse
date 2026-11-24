@@ -51,6 +51,61 @@ internal fun Route.postMedRolle(
     }
 }
 
+// Tar bare imot OBO-tokens, altså tokens for en saksbehandler, som appen har vekslet til.
+// app er "<namespace>:<app>", slik den står i azp_name ("<cluster>:<namespace>:<app>").
+internal fun Route.postMedOboTokenFra(
+    path: String,
+    app: String,
+    dokumentasjon: RouteConfig.() -> Unit,
+    body: suspend RoutingContext.() -> Unit,
+): Route =
+    post(path, {
+        securitySchemeNames(AZURE_AD)
+        response {
+            code(HttpStatusCode.Unauthorized) {
+                description = "Tokenet mangler eller er ugyldig."
+                problemJson()
+            }
+            code(HttpStatusCode.Forbidden) {
+                description = "Tokenet er ikke et OBO-token for en saksbehandler, eller er ikke utstedt til `$app`."
+                problemJson()
+            }
+            code(HttpStatusCode.InternalServerError) {
+                description = "Uventet feil. Prøv igjen senere."
+                problemJson()
+            }
+        }
+        dokumentasjon()
+        description = listOfNotNull(description, "Krever et OBO-token for en saksbehandler, utstedt til `$app`.").joinToString("\n\n")
+    }) {
+        if (!call.erOboTokenFra(app)) return@post call.respond(HttpStatusCode.Forbidden)
+        body()
+    }
+
+private val ApplicationCall.navIdent get() =
+    this
+        .principal<JWTPrincipal>()
+        ?.getClaim("NAVident", String::class)
+        .takeUnless { it.isNullOrBlank() }
+
+private fun ApplicationCall.erOboTokenFra(app: String): Boolean {
+    val endepunkt = request.path()
+    val erFraApp = applicationName.endsWith(":$app")
+    if (navIdent == null || !erFraApp) {
+        logger.error(
+            "Tokenet er ikke et OBO-token fra appen endepunktet krever",
+            "endepunkt" to endepunkt,
+            "applicationName" to applicationName,
+            "applicationId" to applicationId,
+            "påkrevdApp" to app,
+            "erOboToken" to (navIdent != null).toString(),
+        )
+        return false
+    }
+    logger.info("Håndterer request med OBO-token", "endepunkt" to endepunkt, "applicationName" to applicationName, "applicationId" to applicationId)
+    return true
+}
+
 private val ApplicationCall.applicationId get() =
     this
         .principal<JWTPrincipal>()
