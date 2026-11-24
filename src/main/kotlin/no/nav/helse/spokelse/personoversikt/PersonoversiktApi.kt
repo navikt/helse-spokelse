@@ -69,8 +69,8 @@ private const val UGYLDIG_FORESPØRSEL =
         "`fom` eller `tom` mangler, eller `tom` er før `fom`."
 
 private fun Sykepengeperiode.tilApi(): ApiPeriode =
-    when (versjon) {
-        Versjon.SPEIL_V1 ->
+    when (this) {
+        is SpeilV1Periode ->
             ApiSpeilV1Periode(
                 fom,
                 tom,
@@ -78,12 +78,12 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                     ApiSpeilV1Yrkesaktivitet(
                         yrkesaktivitet.organisasjonsnummer,
                         yrkesaktivitet.mottakere.map { mottaker ->
-                            ApiSpeilV1Mottaker(mottaker.tilApi(versjon), mottaker.utbetalingsperioder.map { ApiSpeilV1Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                            ApiSpeilV1Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV1Utbetalingsperiode(it.fom, it.tom, it.grad) })
                         },
                     )
                 },
             )
-        Versjon.SPEIL_V2 ->
+        is SpeilV2Periode ->
             ApiSpeilV2Periode(
                 fom,
                 tom,
@@ -96,7 +96,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                     )
                 },
             )
-        Versjon.SPEIL_V3 ->
+        is SpeilV3Periode ->
             ApiSpeilV3Periode(
                 fom,
                 tom,
@@ -104,12 +104,12 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                     ApiSpeilV3Yrkesaktivitet(
                         yrkesaktivitet.organisasjonsnummer,
                         yrkesaktivitet.mottakere.map { mottaker ->
-                            ApiSpeilV3Mottaker(mottaker.tilApi(versjon), mottaker.utbetalingsperioder.map { ApiSpeilV3Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                            ApiSpeilV3Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV3Utbetalingsperiode(it.fom, it.tom, it.grad) })
                         },
                     )
                 },
             )
-        Versjon.SPEIL_V4 ->
+        is SpeilV4Periode ->
             ApiSpeilV4Periode(
                 fom,
                 tom,
@@ -117,12 +117,12 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                     ApiSpeilV4Yrkesaktivitet(
                         yrkesaktivitet.organisasjonsnummer,
                         yrkesaktivitet.mottakere.map { mottaker ->
-                            ApiSpeilV4Mottaker(mottaker.tilApi(versjon), mottaker.utbetalingsperioder.map { ApiSpeilV4Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                            ApiSpeilV4Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV4Utbetalingsperiode(it.fom, it.tom, it.grad) })
                         },
                     )
                 },
             )
-        Versjon.INFOTRYGD_V1 ->
+        is InfotrygdV1Periode ->
             ApiInfotrygdV1Periode(
                 fom,
                 tom,
@@ -131,7 +131,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                         yrkesaktivitet.organisasjonsnummer,
                         yrkesaktivitet.mottakere.map { mottaker ->
                             ApiInfotrygdV1Mottaker(
-                                mottaker.tilApi(versjon),
+                                mottaker.mottaker.tilApi(),
                                 mottaker.utbetalingsperioder.map { ApiInfotrygdV1Utbetalingsperiode(it.fom, it.tom, it.grad, it.usikkerGrad) },
                             )
                         },
@@ -140,8 +140,8 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
             )
     }
 
-private fun Mottakerutbetalinger.tilApi(versjon: Versjon) =
-    when (checkNotNull(mottaker) { "Mangler mottaker i $versjon, som garanterer mottaker" }) {
+private fun Mottaker.tilApi() =
+    when (this) {
         Mottaker.ARBEIDSGIVER -> ApiMottaker.ARBEIDSGIVER
         Mottaker.PERSON -> ApiMottaker.PERSON
     }

@@ -6,8 +6,7 @@ import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
 import no.nav.helse.spokelse.personoversikt.Mottaker
-import no.nav.helse.spokelse.personoversikt.UtbetaltLinje
-import no.nav.helse.spokelse.personoversikt.Versjon
+import no.nav.helse.spokelse.personoversikt.SpeilV4Linje
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
@@ -63,12 +62,12 @@ internal data class Utbetaling(
         }
     }
 
-    private fun somUtbetalteLinjer(): List<UtbetaltLinje> {
+    private fun somUtbetalteLinjer(): List<SpeilV4Linje> {
         val personidentifikator = Personidentifikator(fødselsnummer)
 
         fun Oppdrag?.linjer(mottaker: Mottaker) =
             this?.utbetalingslinjer.orEmpty().map {
-                UtbetaltLinje(Versjon.SPEIL_V4, personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), usikkerGrad = false)
+                SpeilV4Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt())
             }
         return arbeidsgiverOppdrag.linjer(Mottaker.ARBEIDSGIVER) + personOppdrag.linjer(Mottaker.PERSON)
     }

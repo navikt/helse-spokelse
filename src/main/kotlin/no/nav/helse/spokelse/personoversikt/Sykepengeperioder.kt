@@ -23,53 +23,163 @@ internal enum class Versjon(
 
 internal enum class Mottaker { ARBEIDSGIVER, PERSON }
 
-internal data class UtbetaltLinje(
-    val versjon: Versjon,
-    val personidentifikator: Personidentifikator,
-    val organisasjonsnummer: String?,
-    val mottaker: Mottaker?,
-    val fom: LocalDate,
-    val tom: LocalDate,
-    val grad: Int,
+// Én utbetalt linje fra en kilde. Hver versjon har sin egen type, med bare feltene kilden garanterer.
+internal sealed interface UtbetaltLinje {
+    val versjon: Versjon
+    val personidentifikator: Personidentifikator
+    val organisasjonsnummer: String?
+    val fom: LocalDate
+    val tom: LocalDate
+    val grad: Int
+}
+
+internal sealed interface UtbetaltLinjeMedMottaker : UtbetaltLinje {
+    val mottaker: Mottaker
+}
+
+internal data class SpeilV1Linje(
+    override val personidentifikator: Personidentifikator,
+    override val organisasjonsnummer: String?,
+    override val mottaker: Mottaker,
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val grad: Int,
+) : UtbetaltLinjeMedMottaker {
+    override val versjon get() = Versjon.SPEIL_V1
+}
+
+internal data class SpeilV2Linje(
+    override val personidentifikator: Personidentifikator,
+    override val organisasjonsnummer: String?,
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val grad: Int,
+) : UtbetaltLinje {
+    override val versjon get() = Versjon.SPEIL_V2
+}
+
+internal data class SpeilV3Linje(
+    override val personidentifikator: Personidentifikator,
+    override val organisasjonsnummer: String?,
+    override val mottaker: Mottaker,
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val grad: Int,
+) : UtbetaltLinjeMedMottaker {
+    override val versjon get() = Versjon.SPEIL_V3
+}
+
+internal data class SpeilV4Linje(
+    override val personidentifikator: Personidentifikator,
+    override val organisasjonsnummer: String?,
+    override val mottaker: Mottaker,
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val grad: Int,
+) : UtbetaltLinjeMedMottaker {
+    override val versjon get() = Versjon.SPEIL_V4
+}
+
+internal data class InfotrygdV1Linje(
+    override val personidentifikator: Personidentifikator,
+    override val organisasjonsnummer: String?,
+    override val mottaker: Mottaker,
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val grad: Int,
     val usikkerGrad: Boolean,
-)
+) : UtbetaltLinjeMedMottaker {
+    override val versjon get() = Versjon.INFOTRYGD_V1
+}
 
-internal data class Sykepengeperiode(
-    val versjon: Versjon,
-    val fom: LocalDate,
-    val tom: LocalDate,
-    val yrkesaktiviteter: List<Yrkesaktivitet>,
-)
+// En periode per versjon. Hver periode har bare feltene versjonen garanterer.
+internal sealed interface Sykepengeperiode {
+    val versjon: Versjon
+    val fom: LocalDate
+    val tom: LocalDate
+    val yrkesaktiviteter: List<Yrkesaktivitet<*>>
+}
 
-internal data class Yrkesaktivitet(
+internal data class Yrkesaktivitet<out M>(
     val organisasjonsnummer: String?,
-    val mottakere: List<Mottakerutbetalinger>,
+    val mottakere: List<M>,
 )
 
-internal data class Mottakerutbetalinger(
-    val mottaker: Mottaker?,
-    val utbetalingsperioder: List<Utbetalingsperiode>,
+internal data class Mottakerutbetalinger<out U>(
+    val mottaker: Mottaker,
+    val utbetalingsperioder: List<U>,
+)
+
+internal data class UtbetalingerUtenKjentMottaker<out U>(
+    val utbetalingsperioder: List<U>,
 )
 
 internal data class Utbetalingsperiode(
     val fom: LocalDate,
     val tom: LocalDate,
     val grad: Int,
+)
+
+internal data class InfotrygdUtbetalingsperiode(
+    val fom: LocalDate,
+    val tom: LocalDate,
+    val grad: Int,
     val usikkerGrad: Boolean,
 )
 
-internal fun List<UtbetaltLinje>.somSykepengeperioder(): List<Sykepengeperiode> =
-    utenDuplikater()
-        .groupBy { it.versjon }
-        .flatMap { (versjon, linjer) -> linjer.sammenhengende().map { versjon to it } }
-        .map { (versjon, linjer) ->
-            Sykepengeperiode(
-                versjon = versjon,
-                fom = linjer.minOf { it.fom },
-                tom = linjer.maxOf { it.tom },
-                yrkesaktiviteter = linjer.somYrkesaktiviteter(),
-            )
+internal data class SpeilV1Periode(
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<Utbetalingsperiode>>>,
+) : Sykepengeperiode {
+    override val versjon get() = Versjon.SPEIL_V1
+}
+
+internal data class SpeilV2Periode(
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<UtbetalingerUtenKjentMottaker<Utbetalingsperiode>>>,
+) : Sykepengeperiode {
+    override val versjon get() = Versjon.SPEIL_V2
+}
+
+internal data class SpeilV3Periode(
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<Utbetalingsperiode>>>,
+) : Sykepengeperiode {
+    override val versjon get() = Versjon.SPEIL_V3
+}
+
+internal data class SpeilV4Periode(
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<Utbetalingsperiode>>>,
+) : Sykepengeperiode {
+    override val versjon get() = Versjon.SPEIL_V4
+}
+
+internal data class InfotrygdV1Periode(
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<InfotrygdUtbetalingsperiode>>>,
+) : Sykepengeperiode {
+    override val versjon get() = Versjon.INFOTRYGD_V1
+}
+
+internal fun List<UtbetaltLinje>.somSykepengeperioder(): List<Sykepengeperiode> {
+    val linjer = utenDuplikater()
+    return Versjon.entries
+        .flatMap { versjon ->
+            when (versjon) {
+                Versjon.SPEIL_V1 -> linjer.filterIsInstance<SpeilV1Linje>().somPerioder(::SpeilV1Periode) { it.perMottaker(::somUtbetalingsperioder) }
+                Versjon.SPEIL_V2 -> linjer.filterIsInstance<SpeilV2Linje>().somPerioder(::SpeilV2Periode) { listOf(UtbetalingerUtenKjentMottaker(somUtbetalingsperioder(it))) }
+                Versjon.SPEIL_V3 -> linjer.filterIsInstance<SpeilV3Linje>().somPerioder(::SpeilV3Periode) { it.perMottaker(::somUtbetalingsperioder) }
+                Versjon.SPEIL_V4 -> linjer.filterIsInstance<SpeilV4Linje>().somPerioder(::SpeilV4Periode) { it.perMottaker(::somUtbetalingsperioder) }
+                Versjon.INFOTRYGD_V1 -> linjer.filterIsInstance<InfotrygdV1Linje>().somPerioder(::InfotrygdV1Periode) { it.perMottaker(::somInfotrygdUtbetalingsperioder) }
+            }
         }.sortedWith(compareBy({ it.fom }, { it.versjon }))
+}
 
 private data class Duplikatnøkkel(
     val personidentifikator: Personidentifikator,
@@ -91,30 +201,46 @@ private fun List<UtbetaltLinje>.utenDuplikater(): List<UtbetaltLinje> {
         } + infotrygd
 }
 
-private fun List<UtbetaltLinje>.somYrkesaktiviteter() =
-    groupBy { it.organisasjonsnummer }
-        .toSortedMap(nullsLast())
-        .map { (organisasjonsnummer, linjer) -> Yrkesaktivitet(organisasjonsnummer, linjer.somMottakerutbetalinger()) }
-
-private fun List<UtbetaltLinje>.somMottakerutbetalinger() =
-    groupBy { it.mottaker }
-        .toSortedMap(nullsLast())
-        .map { (mottaker, linjer) ->
-            Mottakerutbetalinger(mottaker, linjer.somUtbetalingsperioder())
-        }
-
-private fun List<UtbetaltLinje>.somUtbetalingsperioder() =
-    groupBy { it.grad to it.usikkerGrad }
-        .flatMap { (gradOgUsikkerGrad, linjer) ->
-            val (grad, usikkerGrad) = gradOgUsikkerGrad
+// Én periode per tidsrom med sammenhengende utbetaling, med én yrkesaktivitet per organisasjonsnummer.
+private fun <L : UtbetaltLinje, M, P> List<L>.somPerioder(
+    periode: (LocalDate, LocalDate, List<Yrkesaktivitet<M>>) -> P,
+    mottakere: (List<L>) -> List<M>,
+): List<P> =
+    sammenhengende().map { linjer ->
+        periode(
+            linjer.minOf { it.fom },
+            linjer.maxOf { it.tom },
             linjer
-                .map { Periode(it.fom, it.tom) }
-                .grupperSammenhengendePerioder()
-                .map { Utbetalingsperiode(it.start, it.endInclusive, grad, usikkerGrad) }
-        }.sortedBy { it.fom }
+                .groupBy { it.organisasjonsnummer }
+                .toSortedMap(nullsLast())
+                .map { (organisasjonsnummer, linjerHosArbeidsgiver) -> Yrkesaktivitet(organisasjonsnummer, mottakere(linjerHosArbeidsgiver)) },
+        )
+    }
 
-private fun List<UtbetaltLinje>.sammenhengende(): List<List<UtbetaltLinje>> {
-    val tidsrom = mutableListOf<MutableList<UtbetaltLinje>>()
+private fun <L : UtbetaltLinjeMedMottaker, U> List<L>.perMottaker(utbetalingsperioder: (List<L>) -> List<U>) =
+    groupBy { it.mottaker }
+        .toSortedMap()
+        .map { (mottaker, linjer) -> Mottakerutbetalinger(mottaker, utbetalingsperioder(linjer)) }
+
+private fun somUtbetalingsperioder(linjer: List<UtbetaltLinje>) = linjer.sammenslått({ it.grad }) { periode, grad -> Utbetalingsperiode(periode.start, periode.endInclusive, grad) }
+
+private fun somInfotrygdUtbetalingsperioder(linjer: List<InfotrygdV1Linje>) =
+    linjer.sammenslått({ it.grad to it.usikkerGrad }) { periode, (grad, usikkerGrad) ->
+        InfotrygdUtbetalingsperiode(periode.start, periode.endInclusive, grad, usikkerGrad)
+    }
+
+// Linjer som henger sammen og er like etter nøkkelen, slås sammen.
+private fun <L : UtbetaltLinje, K, U> List<L>.sammenslått(
+    nøkkel: (L) -> K,
+    utbetalingsperiode: (Periode, K) -> U,
+): List<U> =
+    groupBy(nøkkel)
+        .flatMap { (likeNår, linjer) -> linjer.map { Periode(it.fom, it.tom) }.grupperSammenhengendePerioder().map { it to likeNår } }
+        .sortedBy { (periode, _) -> periode.start }
+        .map { (periode, likeNår) -> utbetalingsperiode(periode, likeNår) }
+
+private fun <L : UtbetaltLinje> List<L>.sammenhengende(): List<List<L>> {
+    val tidsrom = mutableListOf<MutableList<L>>()
     var tomForTidsrommet: LocalDate? = null
     sortedBy { it.fom }.forEach { linje ->
         val forrigeTom = tomForTidsrommet

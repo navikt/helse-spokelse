@@ -21,16 +21,12 @@ internal class SykepengeperioderTest {
 
         assertEquals(
             listOf(
-                Sykepengeperiode(
-                    versjon = SPEIL_V4,
+                SpeilV4Periode(
                     fom = 1.januar,
                     tom = 31.januar,
                     yrkesaktiviteter =
                         listOf(
-                            Yrkesaktivitet(
-                                organisasjonsnummer = ORGNR_A,
-                                mottakere = listOf(Mottakerutbetalinger(ARBEIDSGIVER, listOf(Utbetalingsperiode(1.januar, 31.januar, 100, usikkerGrad = false)))),
-                            ),
+                            Yrkesaktivitet(ORGNR_A, listOf(Mottakerutbetalinger(ARBEIDSGIVER, listOf(Utbetalingsperiode(1.januar, 31.januar, 100))))),
                         ),
                 ),
             ),
@@ -66,8 +62,7 @@ internal class SykepengeperioderTest {
 
         assertEquals(
             listOf(
-                Sykepengeperiode(
-                    versjon = SPEIL_V4,
+                SpeilV4Periode(
                     fom = 1.januar,
                     tom = 31.januar,
                     yrkesaktiviteter =
@@ -75,12 +70,12 @@ internal class SykepengeperioderTest {
                             Yrkesaktivitet(
                                 ORGNR_A,
                                 listOf(
-                                    Mottakerutbetalinger(ARBEIDSGIVER, listOf(Utbetalingsperiode(1.januar, 31.januar, 100, false))),
-                                    Mottakerutbetalinger(PERSON, listOf(Utbetalingsperiode(15.januar, 31.januar, 100, false))),
+                                    Mottakerutbetalinger(ARBEIDSGIVER, listOf(Utbetalingsperiode(1.januar, 31.januar, 100))),
+                                    Mottakerutbetalinger(PERSON, listOf(Utbetalingsperiode(15.januar, 31.januar, 100))),
                                 ),
                             ),
-                            Yrkesaktivitet(ORGNR_B, listOf(Mottakerutbetalinger(PERSON, listOf(Utbetalingsperiode(1.januar, 31.januar, 100, false))))),
-                            Yrkesaktivitet(null, listOf(Mottakerutbetalinger(PERSON, listOf(Utbetalingsperiode(1.januar, 31.januar, 100, false))))),
+                            Yrkesaktivitet(ORGNR_B, listOf(Mottakerutbetalinger(PERSON, listOf(Utbetalingsperiode(1.januar, 31.januar, 100))))),
+                            Yrkesaktivitet(null, listOf(Mottakerutbetalinger(PERSON, listOf(Utbetalingsperiode(1.januar, 31.januar, 100))))),
                         ),
                 ),
             ),
@@ -100,28 +95,52 @@ internal class SykepengeperioderTest {
     }
 
     @Test
-    fun `utbetalingsperioder hos samme mottaker slås sammen når de henger sammen og har samme grad og usikkerGrad`() {
+    fun `utbetalingsperioder hos samme mottaker slås sammen når de henger sammen og har samme grad`() {
         val perioder =
             listOf(
                 lagLinje(1.januar, 10.januar, grad = 100),
                 lagLinje(11.januar, 20.januar, grad = 100),
                 lagLinje(21.januar, 25.januar, grad = 50),
-                lagLinje(26.januar, 28.januar, grad = 50, usikkerGrad = true),
             ).somSykepengeperioder()
 
         assertEquals(
-            listOf(
-                Utbetalingsperiode(1.januar, 20.januar, 100, false),
-                Utbetalingsperiode(21.januar, 25.januar, 50, false),
-                Utbetalingsperiode(26.januar, 28.januar, 50, true),
-            ),
-            perioder
-                .single()
+            listOf(Utbetalingsperiode(1.januar, 20.januar, 100), Utbetalingsperiode(21.januar, 25.januar, 50)),
+            (perioder.single() as SpeilV4Periode)
                 .yrkesaktiviteter
                 .single()
                 .mottakere
                 .single()
                 .utbetalingsperioder,
+        )
+    }
+
+    @Test
+    fun `utbetalingsperioder i Infotrygd slås bare sammen når også usikkerGrad er lik`() {
+        val perioder =
+            listOf(
+                lagLinje(1.januar, 10.januar, versjon = INFOTRYGD_V1),
+                lagLinje(11.januar, 20.januar, versjon = INFOTRYGD_V1),
+                lagLinje(21.januar, 25.januar, versjon = INFOTRYGD_V1, usikkerGrad = true),
+            ).somSykepengeperioder()
+
+        assertEquals(
+            listOf(InfotrygdUtbetalingsperiode(1.januar, 20.januar, 100, false), InfotrygdUtbetalingsperiode(21.januar, 25.januar, 100, true)),
+            (perioder.single() as InfotrygdV1Periode)
+                .yrkesaktiviteter
+                .single()
+                .mottakere
+                .single()
+                .utbetalingsperioder,
+        )
+    }
+
+    @Test
+    fun `SPEIL_V2 har én oppføring for utbetalingene, uten mottaker`() {
+        val perioder = listOf(lagLinje(1.januar, 31.januar, versjon = SPEIL_V2)).somSykepengeperioder()
+
+        assertEquals(
+            listOf(SpeilV2Periode(1.januar, 31.januar, listOf(Yrkesaktivitet(ORGNR_A, listOf(UtbetalingerUtenKjentMottaker(listOf(Utbetalingsperiode(1.januar, 31.januar, 100)))))))),
+            perioder,
         )
     }
 
@@ -146,8 +165,7 @@ internal class SykepengeperioderTest {
         assertEquals(listOf(SPEIL_V4), perioder.map { it.versjon })
         assertEquals(
             listOf(ARBEIDSGIVER, PERSON),
-            perioder
-                .single()
+            (perioder.single() as SpeilV4Periode)
                 .yrkesaktiviteter
                 .single()
                 .mottakere
@@ -176,11 +194,17 @@ internal class SykepengeperioderTest {
             fom: LocalDate,
             tom: LocalDate,
             versjon: Versjon = SPEIL_V4,
-            personidentifikator: Personidentifikator = PERSONIDENTIFIKATOR,
             organisasjonsnummer: String? = ORGNR_A,
-            mottaker: Mottaker? = ARBEIDSGIVER,
+            mottaker: Mottaker = ARBEIDSGIVER,
             grad: Int = 100,
             usikkerGrad: Boolean = false,
-        ) = UtbetaltLinje(versjon, personidentifikator, organisasjonsnummer, mottaker, fom, tom, grad, usikkerGrad)
+        ): UtbetaltLinje =
+            when (versjon) {
+                SPEIL_V1 -> SpeilV1Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad)
+                SPEIL_V2 -> SpeilV2Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, fom, tom, grad)
+                SPEIL_V3 -> SpeilV3Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad)
+                SPEIL_V4 -> SpeilV4Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad)
+                INFOTRYGD_V1 -> InfotrygdV1Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, usikkerGrad)
+            }
     }
 }

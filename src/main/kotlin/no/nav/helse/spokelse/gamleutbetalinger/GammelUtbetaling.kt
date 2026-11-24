@@ -5,19 +5,20 @@ import no.nav.helse.spokelse.felles.SpøkelsePeriode
 import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
 import no.nav.helse.spokelse.personoversikt.Mottaker
+import no.nav.helse.spokelse.personoversikt.SpeilV1Linje
+import no.nav.helse.spokelse.personoversikt.SpeilV2Linje
+import no.nav.helse.spokelse.personoversikt.SpeilV3Linje
 import no.nav.helse.spokelse.personoversikt.UtbetaltLinje
-import no.nav.helse.spokelse.personoversikt.Versjon
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 // tag er navnet v1 bruker i tags, og verdien i kilde-kolonnen i spørringen i GamleUtbetalingerDao.
 internal enum class GammelKilde(
     internal val tag: String,
-    internal val versjon: Versjon,
 ) {
-    GAMLE_UTBETALINGER("GamleUtbetalinger", Versjon.SPEIL_V1),
-    OLD_VEDTAK_OG_OLD_UTBETALING("OldVedtakOgOldUtbetaling", Versjon.SPEIL_V2),
-    VEDTAK_OPPDRAG_OG_UTBETALING("VedtakOppdragOgUtbetaling", Versjon.SPEIL_V3),
+    GAMLE_UTBETALINGER("GamleUtbetalinger"),
+    OLD_VEDTAK_OG_OLD_UTBETALING("OldVedtakOgOldUtbetaling"),
+    VEDTAK_OPPDRAG_OG_UTBETALING("VedtakOppdragOgUtbetaling"),
 }
 
 internal data class GammelUtbetaling(
@@ -48,17 +49,16 @@ internal data class GammelUtbetaling(
             tags = setOf("Spleis", kilde.tag),
         )
 
-    private fun somUtbetaltLinje() =
-        UtbetaltLinje(
-            versjon = kilde.versjon,
-            personidentifikator = Personidentifikator(fødselsnummer),
-            organisasjonsnummer = organisasjonsnummer,
-            mottaker = mottaker,
-            fom = fom,
-            tom = tom,
-            grad = grad,
-            usikkerGrad = false,
-        )
+    private fun somUtbetaltLinje(): UtbetaltLinje {
+        val personidentifikator = Personidentifikator(fødselsnummer)
+
+        fun mottaker() = checkNotNull(mottaker) { "Mangler mottaker for gammel utbetaling fra ${kilde.tag}" }
+        return when (kilde) {
+            GammelKilde.GAMLE_UTBETALINGER -> SpeilV1Linje(personidentifikator, organisasjonsnummer, mottaker(), fom, tom, grad)
+            GammelKilde.OLD_VEDTAK_OG_OLD_UTBETALING -> SpeilV2Linje(personidentifikator, organisasjonsnummer, fom, tom, grad)
+            GammelKilde.VEDTAK_OPPDRAG_OG_UTBETALING -> SpeilV3Linje(personidentifikator, organisasjonsnummer, mottaker(), fom, tom, grad)
+        }
+    }
 
     internal companion object {
         internal fun Collection<GammelUtbetaling>.somFpVedtak() =
