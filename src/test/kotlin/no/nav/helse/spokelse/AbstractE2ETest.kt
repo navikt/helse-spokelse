@@ -122,6 +122,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var booProducer: MockProducer<String, String>
     protected var utviklergruppe: String? = UTVIKLERGRUPPE
     protected var personoversiktV2ErÅpen = true
+    protected var erDev = true
 
     private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
     private val auth by lazy {
@@ -159,6 +160,7 @@ internal abstract class AbstractE2ETest {
         meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
         utviklergruppe = UTVIKLERGRUPPE
         personoversiktV2ErÅpen = true
+        erDev = true
     }
 
     @AfterEach
@@ -204,6 +206,7 @@ internal abstract class AbstractE2ETest {
                     meterRegistry = meterRegistry,
                     utviklergruppe = utviklergruppe,
                     personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao).takeIf { personoversiktV2ErÅpen },
+                    erDev = erDev,
                 )
             },
             objectMapper = jacksonObjectMapper(),
