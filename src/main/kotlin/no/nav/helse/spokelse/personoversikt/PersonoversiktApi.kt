@@ -72,71 +72,76 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
     when (this) {
         is SpeilV1Periode ->
             ApiSpeilV1Periode(
-                fom,
-                tom,
-                yrkesaktiviteter.map { yrkesaktivitet ->
-                    ApiSpeilV1Yrkesaktivitet(
-                        yrkesaktivitet.organisasjonsnummer,
-                        yrkesaktivitet.mottakere.map { mottaker ->
-                            ApiSpeilV1Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV1Utbetalingsperiode(it.fom, it.tom, it.grad) })
-                        },
-                    )
-                },
+                fom = fom,
+                tom = tom,
+                yrkesaktiviteter =
+                    yrkesaktiviteter.map { yrkesaktivitet ->
+                        ApiSpeilV1Yrkesaktivitet(
+                            yrkesaktivitet.organisasjonsnummer,
+                            yrkesaktivitet.mottakere.map { mottaker ->
+                                ApiSpeilV1Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV1Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                            },
+                        )
+                    },
             )
         is SpeilV2Periode ->
             ApiSpeilV2Periode(
-                fom,
-                tom,
-                yrkesaktiviteter.map { yrkesaktivitet ->
-                    ApiSpeilV2Yrkesaktivitet(
-                        yrkesaktivitet.organisasjonsnummer,
-                        yrkesaktivitet.mottakere.map { mottaker ->
-                            ApiSpeilV2Mottaker(mottaker.utbetalingsperioder.map { ApiSpeilV2Utbetalingsperiode(it.fom, it.tom, it.grad) })
-                        },
-                    )
-                },
+                fom = fom,
+                tom = tom,
+                yrkesaktiviteter =
+                    yrkesaktiviteter.map { yrkesaktivitet ->
+                        ApiSpeilV2Yrkesaktivitet(
+                            yrkesaktivitet.organisasjonsnummer,
+                            yrkesaktivitet.mottakere.map { mottaker ->
+                                ApiSpeilV2Mottaker(mottaker.utbetalingsperioder.map { ApiSpeilV2Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                            },
+                        )
+                    },
             )
         is SpeilV3Periode ->
             ApiSpeilV3Periode(
-                fom,
-                tom,
-                yrkesaktiviteter.map { yrkesaktivitet ->
-                    ApiSpeilV3Yrkesaktivitet(
-                        yrkesaktivitet.organisasjonsnummer,
-                        yrkesaktivitet.mottakere.map { mottaker ->
-                            ApiSpeilV3Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV3Utbetalingsperiode(it.fom, it.tom, it.grad) })
-                        },
-                    )
-                },
+                fom = fom,
+                tom = tom,
+                yrkesaktiviteter =
+                    yrkesaktiviteter.map { yrkesaktivitet ->
+                        ApiSpeilV3Yrkesaktivitet(
+                            yrkesaktivitet.organisasjonsnummer,
+                            yrkesaktivitet.mottakere.map { mottaker ->
+                                ApiSpeilV3Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV3Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                            },
+                        )
+                    },
             )
         is SpeilV4Periode ->
             ApiSpeilV4Periode(
-                fom,
-                tom,
-                yrkesaktiviteter.map { yrkesaktivitet ->
-                    ApiSpeilV4Yrkesaktivitet(
-                        yrkesaktivitet.organisasjonsnummer,
-                        yrkesaktivitet.mottakere.map { mottaker ->
-                            ApiSpeilV4Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV4Utbetalingsperiode(it.fom, it.tom, it.grad) })
-                        },
-                    )
-                },
+                fom = fom,
+                tom = tom,
+                yrkesaktiviteter =
+                    yrkesaktiviteter.map { yrkesaktivitet ->
+                        ApiSpeilV4Yrkesaktivitet(
+                            yrkesaktivitet.organisasjonsnummer,
+                            yrkesaktivitet.mottakere.map { mottaker ->
+                                ApiSpeilV4Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV4Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                            },
+                        )
+                    },
             )
         is InfotrygdV1Periode ->
             ApiInfotrygdV1Periode(
-                fom,
-                tom,
-                yrkesaktiviteter.map { yrkesaktivitet ->
-                    ApiInfotrygdV1Yrkesaktivitet(
-                        yrkesaktivitet.organisasjonsnummer,
-                        yrkesaktivitet.mottakere.map { mottaker ->
-                            ApiInfotrygdV1Mottaker(
-                                mottaker.mottaker.tilApi(),
-                                mottaker.utbetalingsperioder.map { ApiInfotrygdV1Utbetalingsperiode(it.fom, it.tom, it.grad, it.usikkerGrad) },
-                            )
-                        },
-                    )
-                },
+                fom = fom,
+                tom = tom,
+                yrkesaktiviteter =
+                    yrkesaktiviteter.map { yrkesaktivitet ->
+                        ApiInfotrygdV1Yrkesaktivitet(
+                            yrkesaktivitet.organisasjonsnummer,
+                            yrkesaktivitet.mottakere.map { mottaker ->
+                                ApiInfotrygdV1Mottaker(
+                                    mottaker.mottaker.tilApi(),
+                                    mottaker.utbetalingsperioder.map { ApiInfotrygdV1Utbetalingsperiode(it.fom, it.tom, it.grad, it.usikkerGrad) },
+                                )
+                            },
+                        )
+                    },
             )
     }
 
@@ -220,11 +225,11 @@ internal sealed interface ApiPeriode
 @Serializable
 @Description("Periode fra `gamle_utbetalinger` i Speil, utbetalt før 16.03.2022.")
 internal data class ApiSpeilV1Periode(
+    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.SPEIL,
+    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V1,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiSpeilV1Yrkesaktivitet>,
-    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.SPEIL,
-    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V1,
 ) : ApiPeriode
 
 @Serializable
@@ -249,11 +254,11 @@ internal data class ApiSpeilV1Utbetalingsperiode(
 @Serializable
 @Description("Periode fra `old_vedtak` og `old_utbetaling` i Speil, utbetalt før 16.03.2022. Har ikke mottaker.")
 internal data class ApiSpeilV2Periode(
+    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.SPEIL,
+    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V2,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiSpeilV2Yrkesaktivitet>,
-    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.SPEIL,
-    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V2,
 ) : ApiPeriode
 
 @Serializable
@@ -277,11 +282,11 @@ internal data class ApiSpeilV2Utbetalingsperiode(
 @Serializable
 @Description("Periode fra `vedtak`, `oppdrag` og `utbetaling` i Speil, utbetalt før 16.03.2022.")
 internal data class ApiSpeilV3Periode(
+    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.SPEIL,
+    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V3,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiSpeilV3Yrkesaktivitet>,
-    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.SPEIL,
-    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V3,
 ) : ApiPeriode
 
 @Serializable
@@ -306,11 +311,11 @@ internal data class ApiSpeilV3Utbetalingsperiode(
 @Serializable
 @Description("Periode fra `tbd.utbetaling` i Speil, utbetalt etter 16.03.2022.")
 internal data class ApiSpeilV4Periode(
+    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.SPEIL,
+    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V4,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiSpeilV4Yrkesaktivitet>,
-    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.SPEIL,
-    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V4,
 ) : ApiPeriode
 
 @Serializable
@@ -335,11 +340,11 @@ internal data class ApiSpeilV4Utbetalingsperiode(
 @Serializable
 @Description("Periode fra Infotrygd.")
 internal data class ApiInfotrygdV1Periode(
+    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.INFOTRYGD,
+    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.INFOTRYGD_V1,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiInfotrygdV1Yrkesaktivitet>,
-    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.INFOTRYGD,
-    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.INFOTRYGD_V1,
 ) : ApiPeriode
 
 @Serializable
@@ -390,37 +395,9 @@ private fun RouteConfig.personoversiktDokumentasjon() {
         code(HttpStatusCode.OK) {
             description = "Oppslaget gikk bra. Listen er tom når personen ikke har utbetalinger mellom `fom` og `tom`."
             body<ApiPersonoversikt> {
-                example("toArbeidsgivereIInfotrygd") {
-                    value =
-                        ApiPersonoversikt(
-                            listOf(
-                                ApiInfotrygdV1Periode(
-                                    fom = LocalDate.parse("2024-01-01"),
-                                    tom = LocalDate.parse("2024-01-31"),
-                                    yrkesaktiviteter =
-                                        listOf(
-                                            ApiInfotrygdV1Yrkesaktivitet(
-                                                "111111111",
-                                                listOf(
-                                                    ApiInfotrygdV1Mottaker(
-                                                        ApiMottaker.ARBEIDSGIVER,
-                                                        listOf(ApiInfotrygdV1Utbetalingsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-01-31"), 100, true)),
-                                                    ),
-                                                ),
-                                            ),
-                                            ApiInfotrygdV1Yrkesaktivitet(
-                                                "222222222",
-                                                listOf(
-                                                    ApiInfotrygdV1Mottaker(
-                                                        ApiMottaker.PERSON,
-                                                        listOf(ApiInfotrygdV1Utbetalingsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-01-31"), 100, true)),
-                                                    ),
-                                                ),
-                                            ),
-                                        ),
-                                ),
-                            ),
-                        )
+                example("speilOgInfotrygd") {
+                    summary = "En eldre periode uten mottaker, delvis refusjon i Speil og usikker grad i Infotrygd"
+                    value = EKSEMPEL
                 }
             }
         }
@@ -430,6 +407,64 @@ private fun RouteConfig.personoversiktDokumentasjon() {
         }
     }
 }
+
+private fun dato(tekst: String) = LocalDate.parse(tekst)
+
+private val EKSEMPEL =
+    ApiPersonoversikt(
+        listOf(
+            ApiSpeilV2Periode(
+                fom = dato("2021-03-01"),
+                tom = dato("2021-03-31"),
+                yrkesaktiviteter =
+                    listOf(
+                        ApiSpeilV2Yrkesaktivitet(
+                            "111111111",
+                            listOf(ApiSpeilV2Mottaker(listOf(ApiSpeilV2Utbetalingsperiode(dato("2021-03-01"), dato("2021-03-31"), 100)))),
+                        ),
+                    ),
+            ),
+            ApiSpeilV4Periode(
+                fom = dato("2024-01-01"),
+                tom = dato("2024-01-31"),
+                yrkesaktiviteter =
+                    listOf(
+                        ApiSpeilV4Yrkesaktivitet(
+                            "111111111",
+                            listOf(
+                                ApiSpeilV4Mottaker(ApiMottaker.ARBEIDSGIVER, listOf(ApiSpeilV4Utbetalingsperiode(dato("2024-01-01"), dato("2024-01-31"), 100))),
+                                ApiSpeilV4Mottaker(ApiMottaker.PERSON, listOf(ApiSpeilV4Utbetalingsperiode(dato("2024-01-16"), dato("2024-01-31"), 100))),
+                            ),
+                        ),
+                    ),
+            ),
+            ApiInfotrygdV1Periode(
+                fom = dato("2024-06-03"),
+                tom = dato("2024-06-28"),
+                yrkesaktiviteter =
+                    listOf(
+                        ApiInfotrygdV1Yrkesaktivitet(
+                            "111111111",
+                            listOf(
+                                ApiInfotrygdV1Mottaker(
+                                    ApiMottaker.ARBEIDSGIVER,
+                                    listOf(ApiInfotrygdV1Utbetalingsperiode(dato("2024-06-03"), dato("2024-06-28"), 100, usikkerGrad = true)),
+                                ),
+                            ),
+                        ),
+                        ApiInfotrygdV1Yrkesaktivitet(
+                            "222222222",
+                            listOf(
+                                ApiInfotrygdV1Mottaker(
+                                    ApiMottaker.PERSON,
+                                    listOf(ApiInfotrygdV1Utbetalingsperiode(dato("2024-06-03"), dato("2024-06-28"), 100, usikkerGrad = true)),
+                                ),
+                            ),
+                        ),
+                    ),
+            ),
+        ),
+    )
 
 private val BESKRIVELSE =
     """

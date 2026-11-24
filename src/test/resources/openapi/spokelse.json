@@ -717,9 +717,27 @@
                   "$ref" : "#/components/schemas/ApiPersonoversikt"
                 },
                 "examples" : {
-                  "toArbeidsgivereIInfotrygd" : {
+                  "speilOgInfotrygd" : {
+                    "summary" : "En eldre periode uten mottaker, delvis refusjon i Speil og usikker grad i Infotrygd",
                     "value" : {
                       "perioder" : [ {
+                        "kilde" : "SPEIL",
+                        "versjon" : "SPEIL_V2",
+                        "fom" : "2021-03-01",
+                        "tom" : "2021-03-31",
+                        "yrkesaktiviteter" : [ {
+                          "organisasjonsnummer" : "111111111",
+                          "mottakere" : [ {
+                            "utbetalingsperioder" : [ {
+                              "fom" : "2021-03-01",
+                              "tom" : "2021-03-31",
+                              "grad" : 100
+                            } ]
+                          } ]
+                        } ]
+                      }, {
+                        "kilde" : "SPEIL",
+                        "versjon" : "SPEIL_V4",
                         "fom" : "2024-01-01",
                         "tom" : "2024-01-31",
                         "yrkesaktiviteter" : [ {
@@ -729,6 +747,29 @@
                             "utbetalingsperioder" : [ {
                               "fom" : "2024-01-01",
                               "tom" : "2024-01-31",
+                              "grad" : 100
+                            } ]
+                          }, {
+                            "mottaker" : "PERSON",
+                            "utbetalingsperioder" : [ {
+                              "fom" : "2024-01-16",
+                              "tom" : "2024-01-31",
+                              "grad" : 100
+                            } ]
+                          } ]
+                        } ]
+                      }, {
+                        "kilde" : "INFOTRYGD",
+                        "versjon" : "INFOTRYGD_V1",
+                        "fom" : "2024-06-03",
+                        "tom" : "2024-06-28",
+                        "yrkesaktiviteter" : [ {
+                          "organisasjonsnummer" : "111111111",
+                          "mottakere" : [ {
+                            "mottaker" : "ARBEIDSGIVER",
+                            "utbetalingsperioder" : [ {
+                              "fom" : "2024-06-03",
+                              "tom" : "2024-06-28",
                               "grad" : 100,
                               "usikkerGrad" : true
                             } ]
@@ -738,15 +779,13 @@
                           "mottakere" : [ {
                             "mottaker" : "PERSON",
                             "utbetalingsperioder" : [ {
-                              "fom" : "2024-01-01",
-                              "tom" : "2024-01-31",
+                              "fom" : "2024-06-03",
+                              "tom" : "2024-06-28",
                               "grad" : 100,
                               "usikkerGrad" : true
                             } ]
                           } ]
-                        } ],
-                        "kilde" : "INFOTRYGD",
-                        "versjon" : "INFOTRYGD_V1"
+                        } ]
                       } ]
                     }
                   }
@@ -1209,6 +1248,16 @@
         "type" : "object",
         "description" : "Periode fra Infotrygd.",
         "properties" : {
+          "kilde" : {
+            "type" : "string",
+            "description" : "Hvor perioden kommer fra.",
+            "enum" : [ "INFOTRYGD" ]
+          },
+          "versjon" : {
+            "type" : "string",
+            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
+            "enum" : [ "INFOTRYGD_V1" ]
+          },
           "fom" : {
             "type" : "string",
             "format" : "date",
@@ -1225,16 +1274,6 @@
             "items" : {
               "$ref" : "#/components/schemas/ApiInfotrygdV1Yrkesaktivitet"
             }
-          },
-          "kilde" : {
-            "type" : "string",
-            "description" : "Hvor perioden kommer fra.",
-            "enum" : [ "INFOTRYGD" ]
-          },
-          "versjon" : {
-            "type" : "string",
-            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
-            "enum" : [ "INFOTRYGD_V1" ]
           }
         },
         "required" : [ "fom", "kilde", "tom", "versjon", "yrkesaktiviteter" ]
@@ -1307,6 +1346,16 @@
         "type" : "object",
         "description" : "Periode fra `gamle_utbetalinger` i Speil, utbetalt før 16.03.2022.",
         "properties" : {
+          "kilde" : {
+            "type" : "string",
+            "description" : "Hvor perioden kommer fra.",
+            "enum" : [ "SPEIL" ]
+          },
+          "versjon" : {
+            "type" : "string",
+            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
+            "enum" : [ "SPEIL_V1" ]
+          },
           "fom" : {
             "type" : "string",
             "format" : "date",
@@ -1323,16 +1372,6 @@
             "items" : {
               "$ref" : "#/components/schemas/ApiSpeilV1Yrkesaktivitet"
             }
-          },
-          "kilde" : {
-            "type" : "string",
-            "description" : "Hvor perioden kommer fra.",
-            "enum" : [ "SPEIL" ]
-          },
-          "versjon" : {
-            "type" : "string",
-            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
-            "enum" : [ "SPEIL_V1" ]
           }
         },
         "required" : [ "fom", "kilde", "tom", "versjon", "yrkesaktiviteter" ]
@@ -1397,6 +1436,16 @@
         "type" : "object",
         "description" : "Periode fra `old_vedtak` og `old_utbetaling` i Speil, utbetalt før 16.03.2022. Har ikke mottaker.",
         "properties" : {
+          "kilde" : {
+            "type" : "string",
+            "description" : "Hvor perioden kommer fra.",
+            "enum" : [ "SPEIL" ]
+          },
+          "versjon" : {
+            "type" : "string",
+            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
+            "enum" : [ "SPEIL_V2" ]
+          },
           "fom" : {
             "type" : "string",
             "format" : "date",
@@ -1413,16 +1462,6 @@
             "items" : {
               "$ref" : "#/components/schemas/ApiSpeilV2Yrkesaktivitet"
             }
-          },
-          "kilde" : {
-            "type" : "string",
-            "description" : "Hvor perioden kommer fra.",
-            "enum" : [ "SPEIL" ]
-          },
-          "versjon" : {
-            "type" : "string",
-            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
-            "enum" : [ "SPEIL_V2" ]
           }
         },
         "required" : [ "fom", "kilde", "tom", "versjon", "yrkesaktiviteter" ]
@@ -1483,6 +1522,16 @@
         "type" : "object",
         "description" : "Periode fra `vedtak`, `oppdrag` og `utbetaling` i Speil, utbetalt før 16.03.2022.",
         "properties" : {
+          "kilde" : {
+            "type" : "string",
+            "description" : "Hvor perioden kommer fra.",
+            "enum" : [ "SPEIL" ]
+          },
+          "versjon" : {
+            "type" : "string",
+            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
+            "enum" : [ "SPEIL_V3" ]
+          },
           "fom" : {
             "type" : "string",
             "format" : "date",
@@ -1499,16 +1548,6 @@
             "items" : {
               "$ref" : "#/components/schemas/ApiSpeilV3Yrkesaktivitet"
             }
-          },
-          "kilde" : {
-            "type" : "string",
-            "description" : "Hvor perioden kommer fra.",
-            "enum" : [ "SPEIL" ]
-          },
-          "versjon" : {
-            "type" : "string",
-            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
-            "enum" : [ "SPEIL_V3" ]
           }
         },
         "required" : [ "fom", "kilde", "tom", "versjon", "yrkesaktiviteter" ]
@@ -1573,6 +1612,16 @@
         "type" : "object",
         "description" : "Periode fra `tbd.utbetaling` i Speil, utbetalt etter 16.03.2022.",
         "properties" : {
+          "kilde" : {
+            "type" : "string",
+            "description" : "Hvor perioden kommer fra.",
+            "enum" : [ "SPEIL" ]
+          },
+          "versjon" : {
+            "type" : "string",
+            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
+            "enum" : [ "SPEIL_V4" ]
+          },
           "fom" : {
             "type" : "string",
             "format" : "date",
@@ -1589,16 +1638,6 @@
             "items" : {
               "$ref" : "#/components/schemas/ApiSpeilV4Yrkesaktivitet"
             }
-          },
-          "kilde" : {
-            "type" : "string",
-            "description" : "Hvor perioden kommer fra.",
-            "enum" : [ "SPEIL" ]
-          },
-          "versjon" : {
-            "type" : "string",
-            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
-            "enum" : [ "SPEIL_V4" ]
           }
         },
         "required" : [ "fom", "kilde", "tom", "versjon", "yrkesaktiviteter" ]
