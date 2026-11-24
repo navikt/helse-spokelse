@@ -3,6 +3,7 @@ package no.nav.helse.spokelse.personoversikt
 import io.ktor.http.ContentType
 import no.nav.helse.spokelse.AbstractE2ETest
 import no.nav.helse.spokelse.AbstractE2ETest.Companion.UTVIKLERGRUPPE
+import no.nav.helse.spokelse.Miljø
 import no.nav.helse.spokelse.tbdutbetaling.Oppdrag
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje
 import no.nav.helse.spokelse.tbdutbetaling.utbetalingUtbetalt
@@ -115,19 +116,13 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     }
 
     @Test
-    fun `OBO-token for en utvikler fra azure-token-generator gir 403 utenfor dev, også når utviklergruppen er satt`() {
-        erDev = false
-        assertPersonoversikt(forventetHttpStatus = 403, claims = OBO_FRA_TOKENGENERATOR, grupper = listOf(UTVIKLERGRUPPE))
-    }
-
-    @Test
     fun `uten token gir 401`() {
         assertPersonoversikt(forventetHttpStatus = 401, claims = emptyMap())
     }
 
     @Test
-    fun `endepunktet finnes ikke når v2 ikke er åpnet`() {
-        personoversiktV2ErÅpen = false
+    fun `endepunktet finnes ikke i prod`() {
+        miljø = Miljø.PROD
         assertPersonoversikt(forventetHttpStatus = 404)
     }
 

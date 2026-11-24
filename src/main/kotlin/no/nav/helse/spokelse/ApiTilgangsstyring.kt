@@ -96,7 +96,7 @@ private fun ApplicationCall.erOboTokenFra(app: String): Boolean {
     val endepunkt = request.path()
     val erFraApp = applicationName.endsWith(":$app")
     // Utviklere får aldri tilgang utenfor dev, selv om UTVIKLERGRUPPE skulle bli satt der.
-    val erUtviklerIDev = application.attributes.getOrNull(ErDevKey) == true && erUtvikler()
+    val erUtviklerIDev = application.attributes[MiljøKey] == Miljø.DEV && erUtvikler()
     if (navIdent == null || !(erFraApp || erUtviklerIDev)) {
         logger.error(
             "Tokenet er ikke et OBO-token fra appen endepunktet krever",
@@ -141,7 +141,7 @@ private val ApplicationCall.groups get() =
 // Settes bare i dev, slik at teamet kan kalle endepunktene med et OBO-token fra azure-token-generator.
 internal val UtviklergruppeKey = AttributeKey<String>("utviklergruppe")
 
-internal val ErDevKey = AttributeKey<Boolean>("erDev")
+internal val MiljøKey = AttributeKey<Miljø>("miljø")
 
 private fun ApplicationCall.erUtvikler() = application.attributes.getOrNull(UtviklergruppeKey)?.let { it in groups } ?: false
 

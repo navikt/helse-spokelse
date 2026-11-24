@@ -83,10 +83,8 @@ fun launchApplication(env: Map<String, String>) {
             tbdUtbetalingApi = tbdUtbetalingApi,
             gamleUtbetalingerDao = gamleUtbetalingerDao,
         )
-    val erDev = env["NAIS_CLUSTER_NAME"] == "dev-gcp"
-
-    // v2 for Personoversikt er bare åpen i dev til tilgangskontrollen per person er på plass.
-    val personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao).takeIf { erDev }
+    val miljø = Miljø.fra(env)
+    val personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao)
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     val gjenståendeSykedager =
         GjenståendeSykedager(
@@ -133,7 +131,7 @@ fun launchApplication(env: Map<String, String>) {
                         readyCheck = rapid::isReady,
                         preStopHook = preStopHook::handlePreStopRequest,
                     ) {
-                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry, env["UTVIKLERGRUPPE"], personoversikt, erDev)
+                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry, miljø, personoversikt, env["UTVIKLERGRUPPE"])
                     }
                 }
             },
@@ -166,12 +164,12 @@ internal fun Application.spokelse(
     utbetaltePerioder: UtbetaltePerioder,
     gjenståendeSykedager: GjenståendeSykedager,
     meterRegistry: MeterRegistry,
+    miljø: Miljø,
+    personoversikt: Personoversikt,
     utviklergruppe: String? = null,
-    personoversikt: Personoversikt? = null,
-    erDev: Boolean = false,
 ) {
     utviklergruppe?.let { attributes.put(UtviklergruppeKey, it) }
-    attributes.put(ErDevKey, erDev)
+    attributes.put(MiljøKey, miljø)
     azureAdAppAuthentication(auth)
     openApiDokumentasjon()
     routing {
@@ -179,7 +177,8 @@ internal fun Application.spokelse(
             grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
             utbetaltePerioderApi(utbetaltePerioder)
             gjenståendeSykedagerApi(gjenståendeSykedager, meterRegistry)
-            personoversikt?.let { personoversiktApi(it) }
+            // Stengt i prod til tilgangskontrollen per person er på plass (navikt/sas-issues#424).
+            if (miljø == Miljø.DEV) personoversiktApi(personoversikt)
         }
     }
 }
