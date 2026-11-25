@@ -685,7 +685,7 @@
       "post" : {
         "tags" : [ "Utbetalte perioder" ],
         "summary" : "Hent sykepengeperioder for Personoversikt",
-        "description" : "Gir sykepengeperiodene til en person fra Speil og Infotrygd, for perioder som overlapper `fom`–`tom`.\n\nKonsument: Personoversikt (`modiapersonoversikt-api`).\n\nHver periode har yrkesaktiviteter, hver yrkesaktivitet har mottakere, og hver mottaker har utbetalingsperioder.\nEn periode samler utbetalinger som henger sammen i tid, på tvers av arbeidsgivere. Helg teller ikke som opphold.\nUtbetalingsperioder hos samme mottaker som henger sammen og har samme grad, er slått sammen.\n\nHver periode har en `versjon`. Den sier hvor perioden kommer fra og hvilke felter som er garantert, og hver versjon har sitt eget skjema.\nEt felt som en versjon ikke garanterer, finnes ikke i skjemaet for den versjonen. Et felt som finnes, er aldri `null`, unntatt `organisasjonsnummer`.\n\n| `versjon` | `kilde` | Datakilde | `mottaker` | `usikkerGrad` | Gjelder |\n|---|---|---|---|---|---|\n| `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ❌ | utbetalt etter 16.03.2022 |\n| `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | alle perioder fra Infotrygd |\n\nAlle versjonene har `fom`, `tom`, `grad` og `organisasjonsnummer`. En periode har bare én versjon, så utbetalinger med ulike\nversjoner havner i ulike perioder, også når de henger sammen i tid. Når samme utbetaling finnes i flere kilder i Speil,\ner den bare med fra kilden som rangeres høyest: `SPEIL_V4` > `SPEIL_V3` > `SPEIL_V2` > `SPEIL_V1`.\n\nNye felter og versjoner kommer. Konsumenten må tåle dem.\n\nKrever et OBO-token for en saksbehandler, utstedt til `personoversikt:modiapersonoversikt-api`. I dev godtas også OBO-tokens for medlemmer av utviklergruppen.",
+        "description" : "Gir sykepengeperiodene til en person fra Speil og Infotrygd, for perioder som overlapper `fom`–`tom`.\n\nKonsument: Personoversikt (`modiapersonoversikt-api`).\n\nSpøkelse sjekker kjerneregelsettet i Tilgangsmaskinen for hver person, med OBO-tokenet til saksbehandleren, og audit-logger oppslaget.\nAvslag for én av personene gir 403 for hele kallet. Spøkelse gir aldri et halvt svar: feiler Tilgangsmaskinen, Infotrygd eller Speil-dataene, feiler hele kallet.\n\nHver periode har yrkesaktiviteter, hver yrkesaktivitet har mottakere, og hver mottaker har utbetalingsperioder.\nEn periode samler utbetalinger som henger sammen i tid, på tvers av arbeidsgivere. Helg teller ikke som opphold.\nUtbetalingsperioder hos samme mottaker som henger sammen og har samme grad, er slått sammen.\n\nHver periode har en `versjon`. Den sier hvor perioden kommer fra og hvilke felter som er garantert, og hver versjon har sitt eget skjema.\nEt felt som en versjon ikke garanterer, finnes ikke i skjemaet for den versjonen. Et felt som finnes, er aldri `null`, unntatt `organisasjonsnummer`.\n\n| `versjon` | `kilde` | Datakilde | `mottaker` | `usikkerGrad` | Gjelder |\n|---|---|---|---|---|---|\n| `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ❌ | utbetalt etter 16.03.2022 |\n| `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | alle perioder fra Infotrygd |\n\nAlle versjonene har `fom`, `tom`, `grad` og `organisasjonsnummer`. En periode har bare én versjon, så utbetalinger med ulike\nversjoner havner i ulike perioder, også når de henger sammen i tid. Når samme utbetaling finnes i flere kilder i Speil,\ner den bare med fra kilden som rangeres høyest: `SPEIL_V4` > `SPEIL_V3` > `SPEIL_V2` > `SPEIL_V1`.\n\nNye felter og versjoner kommer. Konsumenten må tåle dem.\n\nKrever et OBO-token for en saksbehandler med scopet `personoversikt-les`. I dev godtas også OBO-tokens for medlemmer av utviklergruppen.",
         "operationId" : "hentUtbetaltePerioderPersonoversiktV2",
         "parameters" : [ ],
         "requestBody" : {
@@ -816,7 +816,18 @@
             }
           },
           "403" : {
-            "description" : "Tokenet er ikke et OBO-token for en saksbehandler, eller er ikke utstedt til `personoversikt:modiapersonoversikt-api`.",
+            "description" : "Tokenet er ikke et OBO-token for en saksbehandler eller mangler scopet `personoversikt-les`, eller saksbehandleren mangler tilgang til en av personene etter kjerneregelsettet i Tilgangsmaskinen.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Tilgangsmaskinen fant ikke en av personene.",
             "headers" : { },
             "content" : {
               "application/problem+json" : {
@@ -828,6 +839,17 @@
           },
           "500" : {
             "description" : "Uventet feil. Prøv igjen senere.",
+            "headers" : { },
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Tilgangsmaskinen svarte ikke, eller svarte uventet. Prøv igjen senere.",
             "headers" : { },
             "content" : {
               "application/problem+json" : {

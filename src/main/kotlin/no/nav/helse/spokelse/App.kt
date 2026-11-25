@@ -4,6 +4,9 @@ import com.github.navikt.tbd_libs.access_token.TexasClient
 import com.github.navikt.tbd_libs.kafka.AivenConfig
 import com.github.navikt.tbd_libs.kafka.ConsumerProducerFactory
 import com.github.navikt.tbd_libs.naisful.naisApp
+import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
+import com.github.navikt.tbd_libs.populasjonstilgang.client.PopulasjonstilgangConfig
+import com.github.navikt.tbd_libs.populasjonstilgang.client.tilgangsmaskinenClient
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.ktor.client.*
 import io.ktor.client.engine.cio.CIO
@@ -85,6 +88,7 @@ fun launchApplication(env: Map<String, String>) {
         )
     val miljø = Miljø.fra(env)
     val personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao)
+    val tilgangskontroll = PopulasjonstilgangConfig.fraEnv(env).tilgangsmaskinenClient(accessTokenProvider)
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     val gjenståendeSykedager =
         GjenståendeSykedager(
@@ -131,7 +135,7 @@ fun launchApplication(env: Map<String, String>) {
                         readyCheck = rapid::isReady,
                         preStopHook = preStopHook::handlePreStopRequest,
                     ) {
-                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry, miljø, personoversikt, env["UTVIKLERGRUPPE"])
+                        spokelse(auth, gamleUtbetalingerDao, tbdUtbetalingApi, utbetaltePerioder, gjenståendeSykedager, meterRegistry, miljø, personoversikt, tilgangskontroll, Auditlogger, env["UTVIKLERGRUPPE"])
                     }
                 }
             },
@@ -166,6 +170,8 @@ internal fun Application.spokelse(
     meterRegistry: MeterRegistry,
     miljø: Miljø,
     personoversikt: Personoversikt,
+    tilgangskontroll: PopulasjonstilgangskontrollProvider,
+    auditlogg: Auditlogg,
     utviklergruppe: String? = null,
 ) {
     utviklergruppe?.let { attributes.put(UtviklergruppeKey, it) }
@@ -177,8 +183,7 @@ internal fun Application.spokelse(
             grunnlagApi(gamleUtbetalingerDao, tbdUtbetalingApi)
             utbetaltePerioderApi(utbetaltePerioder)
             gjenståendeSykedagerApi(gjenståendeSykedager, meterRegistry)
-            // Stengt i prod til tilgangskontrollen per person er på plass (navikt/sas-issues#424).
-            if (miljø == Miljø.DEV) personoversiktApi(personoversikt)
+            personoversiktApi(personoversikt, tilgangskontroll, auditlogg)
         }
     }
 }

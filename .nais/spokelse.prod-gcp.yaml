@@ -67,6 +67,8 @@ spec:
           permissions:
             roles:
               - "personoversikt-les"
+            scopes:
+              - "personoversikt-les"
     outbound:
       external:
         - host: sykepengeperioder-api.prod-fss-pub.nais.io
@@ -98,3 +100,5 @@ spec:
       value: https://sykepengeperioder-api.prod-fss-pub.nais.io
     - name: SPLEIS_API_SCOPE
       value: api://prod-gcp.tbd.spleis-api/.default
+    - name: TILGANGSMASKINEN_SCOPE
+      value: api://prod-gcp.tilgangsmaskin.populasjonstilgangskontroll/.default

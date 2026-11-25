@@ -1,9 +1,14 @@
 package no.nav.helse.spokelse.personoversikt
 
+import com.auth0.jwt.JWT
+import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangSomMangler
+import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import io.ktor.http.ContentType
 import no.nav.helse.spokelse.AbstractE2ETest
 import no.nav.helse.spokelse.AbstractE2ETest.Companion.UTVIKLERGRUPPE
 import no.nav.helse.spokelse.Miljø
+import no.nav.helse.spokelse.felles.FakeAuditlogg
+import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.helse.spokelse.tbdutbetaling.Oppdrag
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje
 import no.nav.helse.spokelse.tbdutbetaling.utbetalingUtbetalt
@@ -13,6 +18,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -96,6 +102,82 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     }
 
     @Test
+    fun `audit-logger hver person i oppslaget`() {
+        val annenPerson = lagIdentitetsnummer()
+
+        assertPersonoversikt(requestBody = """{"personidentifikatorer": ["$FØDSELSNUMMER", "$annenPerson"], "fom": "2024-01-01", "tom": "2024-12-31"}""")
+
+        assertEquals(
+            listOf(
+                FakeAuditlogg.Innslag(NAV_IDENT, Personidentifikator(FØDSELSNUMMER), FakeAuditlogg.Utfall.LEST),
+                FakeAuditlogg.Innslag(NAV_IDENT, Personidentifikator(annenPerson), FakeAuditlogg.Utfall.LEST),
+            ),
+            auditlogg.innslag,
+        )
+    }
+
+    @Test
+    fun `avslag for én av personene gir 403 og audit-logges som Deny`() {
+        val skjermetPerson = lagIdentitetsnummer()
+        tilgangsmaskinen.svar(skjermetPerson, TilgangskontrollResultat.ManglerTilgang(TilgangSomMangler.EgenAnsatt))
+
+        assertPersonoversikt(
+            forventetHttpStatus = 403,
+            requestBody = """{"personidentifikatorer": ["$FØDSELSNUMMER", "$skjermetPerson"], "fom": "2024-01-01", "tom": "2024-12-31"}""",
+        )
+
+        assertEquals(
+            listOf(FakeAuditlogg.Innslag(NAV_IDENT, Personidentifikator(skjermetPerson), FakeAuditlogg.Utfall.AVSLÅTT)),
+            auditlogg.innslag,
+        )
+    }
+
+    @Test
+    fun `person som Tilgangsmaskinen ikke finner gir 404 uten audit-logging`() {
+        tilgangsmaskinen.svar(FØDSELSNUMMER, TilgangskontrollResultat.IdentIkkeFunnet)
+
+        assertPersonoversikt(forventetHttpStatus = 404)
+
+        assertEquals(emptyList<FakeAuditlogg.Innslag>(), auditlogg.innslag)
+    }
+
+    @Test
+    fun `uventet svar fra Tilgangsmaskinen gir 503 uten audit-logging`() {
+        tilgangsmaskinen.svar(FØDSELSNUMMER, TilgangskontrollResultat.UventetFeil("Uventet status fra tilgangsmaskinen: 500"))
+
+        assertPersonoversikt(forventetHttpStatus = 503)
+
+        assertEquals(emptyList<FakeAuditlogg.Innslag>(), auditlogg.innslag)
+    }
+
+    @Test
+    fun `Tilgangsmaskinen som ikke svarer gir 503 uten audit-logging`() {
+        tilgangsmaskinen.feiler(FØDSELSNUMMER, IOException("Connection refused"))
+
+        assertPersonoversikt(forventetHttpStatus = 503)
+
+        assertEquals(emptyList<FakeAuditlogg.Innslag>(), auditlogg.innslag)
+    }
+
+    @Test
+    fun `Infotrygd nede gir 500 uten audit-logging`() {
+        infotrygdperioder = null
+
+        assertPersonoversikt(forventetHttpStatus = 500)
+
+        assertEquals(emptyList<FakeAuditlogg.Innslag>(), auditlogg.innslag)
+    }
+
+    @Test
+    fun `sjekker tilgangen med OBO-tokenet til saksbehandleren`() {
+        assertPersonoversikt()
+
+        val token = JWT.decode(tilgangsmaskinen.accessTokens.single())
+        assertEquals(NAV_IDENT, token.getClaim("NAVident").asString())
+        assertEquals("defaultaccess personoversikt-les", token.getClaim("scp").asString())
+    }
+
+    @Test
     fun `ingen utbetalinger gir tom liste`() {
         assertPersonoversikt(forventetResponseBody = """{ "perioder": [] }""")
     }
@@ -103,6 +185,11 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     @Test
     fun `maskin-til-maskin-token fra Personoversikt gir 403`() {
         assertPersonoversikt(forventetHttpStatus = 403, claims = mapOf("azp_name" to "dev-gcp:personoversikt:modiapersonoversikt-api"))
+    }
+
+    @Test
+    fun `OBO-token fra Personoversikt uten scopet gir 403`() {
+        assertPersonoversikt(forventetHttpStatus = 403, claims = OBO_FRA_MODIA - "scp")
     }
 
     @Test
@@ -121,9 +208,16 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     }
 
     @Test
-    fun `endepunktet finnes ikke i prod`() {
+    fun `OBO-token fra Personoversikt gir 200 i prod`() {
         miljø = Miljø.PROD
-        assertPersonoversikt(forventetHttpStatus = 404)
+        assertPersonoversikt(forventetHttpStatus = 200)
+    }
+
+    @Test
+    fun `OBO-token for en utvikler gir 403 i prod, også når utviklergruppen er satt`() {
+        miljø = Miljø.PROD
+        utviklergruppe = UTVIKLERGRUPPE
+        assertPersonoversikt(forventetHttpStatus = 403, claims = OBO_FRA_TOKENGENERATOR, grupper = listOf(UTVIKLERGRUPPE))
     }
 
     @ParameterizedTest
@@ -176,7 +270,13 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     private companion object {
         private val FØDSELSNUMMER = lagIdentitetsnummer()
         private const val ORGNR = "999999999"
-        private val OBO_FRA_MODIA = mapOf("NAVident" to "A123456", "azp_name" to "dev-gcp:personoversikt:modiapersonoversikt-api")
+        private const val NAV_IDENT = "A123456"
+        private val OBO_FRA_MODIA =
+            mapOf(
+                "NAVident" to NAV_IDENT,
+                "azp_name" to "dev-gcp:personoversikt:modiapersonoversikt-api",
+                "scp" to "defaultaccess personoversikt-les",
+            )
         private val OBO_FRA_TOKENGENERATOR = mapOf("NAVident" to "A123456", "azp_name" to "dev-gcp:nais:azure-token-generator")
 
         private fun dato(tekst: String) = LocalDate.parse(tekst)

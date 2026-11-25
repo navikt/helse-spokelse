@@ -2,6 +2,7 @@
 
 package no.nav.helse.spokelse.personoversikt
 
+import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import io.github.smiley4.ktoropenapi.config.RouteConfig
 import io.github.smiley4.schemakenerator.core.annotations.Description
 import io.github.smiley4.schemakenerator.core.annotations.Example
@@ -15,9 +16,11 @@ import io.swagger.v3.oas.models.media.Schema
 import kotlinx.serialization.Required
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseContextualSerialization
+import no.nav.helse.spokelse.Auditlogg
 import no.nav.helse.spokelse.Tags
 import no.nav.helse.spokelse.felles.Personidentifikator
-import no.nav.helse.spokelse.postMedOboTokenFra
+import no.nav.helse.spokelse.medKjernetilgangTil
+import no.nav.helse.spokelse.postMedOboToken
 import no.nav.helse.spokelse.problemJson
 import no.nav.sykepenger.libs.logging.navngittLogger
 import tools.jackson.databind.JsonNode
@@ -27,18 +30,25 @@ import java.time.LocalDate
 private val logger = navngittLogger("no.nav.helse.spokelse.personoversikt.PersonoversiktApi")
 private val objectMapper = jacksonObjectMapper()
 
-internal const val MODIAPERSONOVERSIKT = "personoversikt:modiapersonoversikt-api"
+internal const val PERSONOVERSIKT_SCOPE = "personoversikt-les"
 
-internal fun Route.personoversiktApi(personoversikt: Personoversikt) {
-    postMedOboTokenFra("/v2/utbetalte-perioder-personoversikt", MODIAPERSONOVERSIKT, dokumentasjon = { personoversiktDokumentasjon() }) {
+internal fun Route.personoversiktApi(
+    personoversikt: Personoversikt,
+    tilgangskontroll: PopulasjonstilgangskontrollProvider,
+    auditlogg: Auditlogg,
+) {
+    postMedOboToken("/v2/utbetalte-perioder-personoversikt", PERSONOVERSIKT_SCOPE, dokumentasjon = { personoversiktDokumentasjon() }) { saksbehandler ->
         val request = call.receiveText().somGyldigForespørsel() ?: throw BadRequestException(UGYLDIG_FORESPØRSEL)
-        val perioder = personoversikt.hent(request.personidentifikatorer, request.fom, request.tom)
-        logger.info(
-            "Svarer på /v2/utbetalte-perioder-personoversikt",
-            "personidentifikatorer" to request.personidentifikatorer.joinToString(),
-            "antallPerioder" to perioder.size.toString(),
-        )
-        call.respond(HttpStatusCode.OK, ApiPersonoversikt(perioder.map { it.tilApi() }))
+        medKjernetilgangTil(request.personidentifikatorer, saksbehandler, tilgangskontroll, auditlogg) {
+            val perioder = personoversikt.hent(request.personidentifikatorer, request.fom, request.tom)
+            request.personidentifikatorer.forEach { auditlogg.lest(saksbehandler, it) }
+            logger.info(
+                "Svarer på /v2/utbetalte-perioder-personoversikt",
+                "personidentifikatorer" to request.personidentifikatorer.joinToString(),
+                "antallPerioder" to perioder.size.toString(),
+            )
+            call.respond(HttpStatusCode.OK, ApiPersonoversikt(perioder.map { it.tilApi() }))
+        }
     }
 }
 
@@ -405,6 +415,20 @@ private fun RouteConfig.personoversiktDokumentasjon() {
             description = UGYLDIG_FORESPØRSEL
             problemJson()
         }
+        code(HttpStatusCode.Forbidden) {
+            description =
+                "Tokenet er ikke et OBO-token for en saksbehandler eller mangler scopet `$PERSONOVERSIKT_SCOPE`, " +
+                    "eller saksbehandleren mangler tilgang til en av personene etter kjerneregelsettet i Tilgangsmaskinen."
+            problemJson()
+        }
+        code(HttpStatusCode.NotFound) {
+            description = "Tilgangsmaskinen fant ikke en av personene."
+            problemJson()
+        }
+        code(HttpStatusCode.ServiceUnavailable) {
+            description = "Tilgangsmaskinen svarte ikke, eller svarte uventet. Prøv igjen senere."
+            problemJson()
+        }
     }
 }
 
@@ -471,6 +495,9 @@ private val BESKRIVELSE =
     Gir sykepengeperiodene til en person fra Speil og Infotrygd, for perioder som overlapper `fom`–`tom`.
 
     Konsument: Personoversikt (`modiapersonoversikt-api`).
+
+    Spøkelse sjekker kjerneregelsettet i Tilgangsmaskinen for hver person, med OBO-tokenet til saksbehandleren, og audit-logger oppslaget.
+    Avslag for én av personene gir 403 for hele kallet. Spøkelse gir aldri et halvt svar: feiler Tilgangsmaskinen, Infotrygd eller Speil-dataene, feiler hele kallet.
 
     Hver periode har yrkesaktiviteter, hver yrkesaktivitet har mottakere, og hver mottaker har utbetalingsperioder.
     En periode samler utbetalinger som henger sammen i tid, på tvers av arbeidsgivere. Helg teller ikke som opphold.

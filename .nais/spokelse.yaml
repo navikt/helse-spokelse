@@ -23,6 +23,9 @@ spec:
   azure:
     application:
       enabled: true
+      # Saksbehandlerne i Modia må kunne få et OBO-token for Spøkelse. v2 krever scopet personoversikt-les og
+      # kjerneregelsettet i Tilgangsmaskinen, og de andre endepunktene krever en rolle, som OBO-tokens aldri har.
+      allowAllUsers: true
   accessPolicy:
     inbound:
       rules:
@@ -35,6 +38,8 @@ spec:
         - application: logging
           namespace: nais-system
         - application: spleis-api
+        - application: populasjonstilgangskontroll
+          namespace: tilgangsmaskin
   env:
     - name: KAFKA_RAPID_TOPIC
       value: tbd.rapid.v1
@@ -42,6 +47,8 @@ spec:
       value: tbd-spokelse-v1
     - name: SPLEIS_API_URL
       value: http://spleis-api
+    - name: TILGANGSMASKINEN_BASE_URL
+      value: http://populasjonstilgangskontroll.tilgangsmaskin
   observability:
     logging:
       destinations:

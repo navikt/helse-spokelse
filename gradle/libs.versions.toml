@@ -15,6 +15,7 @@ flyway-database-postgresql = "org.flywaydb:flyway-database-postgresql:13.12.2"
 hikaricp = "com.zaxxer:HikariCP:7.1.0"
 jsonassert = "org.skyscreamer:jsonassert:1.5.3"
 kotliquery = "com.github.seratch:kotliquery:1.9.1"
+logback-syslog4j = "com.papertrailapp:logback-syslog4j:1.0.0"
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio" }
 ktor-client-core = { module = "io.ktor:ktor-client-core" }
@@ -35,6 +36,8 @@ sykepengerLibs-testing = "no.nav.sykepenger.libs:testing:20261120.1340"
 tbdLibs-accessTokenProviderApi = { module = "com.github.navikt.tbd-libs:access-token-provider-api", version.ref = "tbdLibs" }
 tbdLibs-accessTokenProviderTexas = { module = "com.github.navikt.tbd-libs:access-token-provider-texas", version.ref = "tbdLibs" }
 tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", version.ref = "tbdLibs" }
+tbdLibs-populasjonstilgangskontrollApi = { module = "com.github.navikt.tbd-libs:populasjonstilgangskontroll-provider-api", version.ref = "tbdLibs" }
+tbdLibs-populasjonstilgangskontrollTilgangsmaskinen = { module = "com.github.navikt.tbd-libs:populasjonstilgangskontroll-provider-tilgangsmaskinen", version.ref = "tbdLibs" }
 tbdLibs-naisfulTestApp = { module = "com.github.navikt.tbd-libs:naisful-test-app", version.ref = "tbdLibs" }
 tbdLibs-signedJwtIssuerTest = { module = "com.github.navikt.tbd-libs:signed-jwt-issuer-test", version.ref = "tbdLibsSignedJwtIssuerTest" }
 

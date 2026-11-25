@@ -1,16 +1,23 @@
 package no.nav.helse.spokelse
 
+import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
+import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import io.github.smiley4.ktoropenapi.config.RouteConfig
 import io.github.smiley4.ktoropenapi.post
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.request.authorization
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
 import io.ktor.util.AttributeKey
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import no.nav.helse.spokelse.felles.Personidentifikator
 import no.nav.sykepenger.libs.logging.navngittLogger
 
 private val logger = navngittLogger("no.nav.helse.spokelse.Tilgangsstyring")
@@ -51,13 +58,13 @@ internal fun Route.postMedRolle(
     }
 }
 
-// Tar bare imot OBO-tokens, altså tokens for en saksbehandler, som appen har vekslet til.
-// app er "<namespace>:<app>", slik den står i azp_name ("<cluster>:<namespace>:<app>").
-internal fun Route.postMedOboTokenFra(
+// Tar bare imot OBO-tokens, altså tokens for en saksbehandler, med scopet appen har fått på inbound-regelen sin.
+// Nais fraråder å bruke azp_name til tilgangsstyring, fordi navnet ikke er garantert unikt.
+internal fun Route.postMedOboToken(
     path: String,
-    app: String,
+    scope: String,
     dokumentasjon: RouteConfig.() -> Unit,
-    body: suspend RoutingContext.() -> Unit,
+    body: suspend RoutingContext.(Saksbehandler) -> Unit,
 ): Route =
     post(path, {
         securitySchemeNames(AZURE_AD)
@@ -67,7 +74,7 @@ internal fun Route.postMedOboTokenFra(
                 problemJson()
             }
             code(HttpStatusCode.Forbidden) {
-                description = "Tokenet er ikke et OBO-token for en saksbehandler, eller er ikke utstedt til `$app`."
+                description = "Tokenet er ikke et OBO-token for en saksbehandler, eller mangler scopet `$scope`."
                 problemJson()
             }
             code(HttpStatusCode.InternalServerError) {
@@ -79,12 +86,65 @@ internal fun Route.postMedOboTokenFra(
         description =
             listOfNotNull(
                 description,
-                "Krever et OBO-token for en saksbehandler, utstedt til `$app`. I dev godtas også OBO-tokens for medlemmer av utviklergruppen.",
+                "Krever et OBO-token for en saksbehandler med scopet `$scope`. I dev godtas også OBO-tokens for medlemmer av utviklergruppen.",
             ).joinToString("\n\n")
     }) {
-        if (!call.erOboTokenFra(app)) return@post call.respond(HttpStatusCode.Forbidden)
-        body()
+        val saksbehandler = call.oboSaksbehandlerMedScope(scope) ?: return@post call.respond(HttpStatusCode.Forbidden)
+        body(saksbehandler)
     }
+
+// Sjekker kjerneregelsettet for hver person før noe hentes. Avslag for én av personene stopper hele kallet.
+internal suspend fun RoutingContext.medKjernetilgangTil(
+    personidentifikatorer: Set<Personidentifikator>,
+    saksbehandler: Saksbehandler,
+    tilgangskontroll: PopulasjonstilgangskontrollProvider,
+    auditlogg: Auditlogg,
+    block: suspend () -> Unit,
+) {
+    personidentifikatorer.forEach { personidentifikator ->
+        val resultat =
+            try {
+                withContext(Dispatchers.IO) {
+                    tilgangskontroll.kontrollerKjerneTilgang(saksbehandler.accessToken, personidentifikator.toString())
+                }
+            } catch (feil: CancellationException) {
+                throw feil
+            } catch (feil: Exception) {
+                logger.error("Kunne ikke sjekke tilgangen hos Tilgangsmaskinen", feil, "personidentifikator" to personidentifikator.toString())
+                return call.respond(HttpStatusCode.ServiceUnavailable)
+            }
+        when (resultat) {
+            TilgangskontrollResultat.Ok -> {}
+            is TilgangskontrollResultat.ManglerTilgang -> {
+                auditlogg.avslått(saksbehandler, personidentifikator)
+                logger.info(
+                    "Saksbehandleren mangler tilgang til personen",
+                    "personidentifikator" to personidentifikator.toString(),
+                    "tilgangSomMangler" to resultat.tilgangSomMangler.name,
+                )
+                return call.respond(HttpStatusCode.Forbidden)
+            }
+            TilgangskontrollResultat.IdentIkkeFunnet -> {
+                logger.info("Tilgangsmaskinen fant ikke personen", "personidentifikator" to personidentifikator.toString())
+                return call.respond(HttpStatusCode.NotFound)
+            }
+            is TilgangskontrollResultat.UventetFeil -> {
+                logger.error(
+                    "Uventet svar fra Tilgangsmaskinen",
+                    "personidentifikator" to personidentifikator.toString(),
+                    "forklaring" to resultat.menneskeligLesbarForklaring,
+                )
+                return call.respond(HttpStatusCode.ServiceUnavailable)
+            }
+        }
+    }
+    block()
+}
+
+internal class Saksbehandler(
+    val navIdent: String,
+    val accessToken: String,
+)
 
 private val ApplicationCall.navIdent get() =
     this
@@ -92,24 +152,35 @@ private val ApplicationCall.navIdent get() =
         ?.getClaim("NAVident", String::class)
         .takeUnless { it.isNullOrBlank() }
 
-private fun ApplicationCall.erOboTokenFra(app: String): Boolean {
+private val ApplicationCall.scopes get() =
+    this
+        .principal<JWTPrincipal>()
+        ?.getClaim("scp", String::class)
+        ?.split(" ")
+        ?: emptyList()
+
+private val ApplicationCall.accessToken get() = request.authorization()?.removePrefix("Bearer ")
+
+private fun ApplicationCall.oboSaksbehandlerMedScope(scope: String): Saksbehandler? {
     val endepunkt = request.path()
-    val erFraApp = applicationName.endsWith(":$app")
+    val harScope = scope in scopes
     // Utviklere får aldri tilgang utenfor dev, selv om UTVIKLERGRUPPE skulle bli satt der.
     val erUtviklerIDev = application.attributes[MiljøKey] == Miljø.DEV && erUtvikler()
-    if (navIdent == null || !(erFraApp || erUtviklerIDev)) {
+    val navIdent = navIdent
+    val accessToken = accessToken
+    if (navIdent == null || accessToken == null || !(harScope || erUtviklerIDev)) {
         logger.error(
-            "Tokenet er ikke et OBO-token fra appen endepunktet krever",
+            "Tokenet er ikke et OBO-token med scopet endepunktet krever",
             "endepunkt" to endepunkt,
             "applicationName" to applicationName,
             "applicationId" to applicationId,
-            "påkrevdApp" to app,
+            "påkrevdScope" to scope,
             "erOboToken" to (navIdent != null).toString(),
         )
-        return false
+        return null
     }
     logger.info("Håndterer request med OBO-token", "endepunkt" to endepunkt, "applicationName" to applicationName, "applicationId" to applicationId)
-    return true
+    return Saksbehandler(navIdent, accessToken)
 }
 
 private val ApplicationCall.applicationId get() =

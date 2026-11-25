@@ -15,6 +15,8 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
 import kotliquery.sessionOf
 import no.nav.helse.spokelse.felles.FakeAccessTokenProvider
+import no.nav.helse.spokelse.felles.FakeAuditlogg
+import no.nav.helse.spokelse.felles.FakeTilgangsmaskinen
 import no.nav.helse.spokelse.felles.Infotrygd
 import no.nav.helse.spokelse.felles.asSQL
 import no.nav.helse.spokelse.felles.update
@@ -122,6 +124,8 @@ internal abstract class AbstractE2ETest {
     protected lateinit var booProducer: MockProducer<String, String>
     protected var utviklergruppe: String? = UTVIKLERGRUPPE
     protected var miljø = Miljø.DEV
+    protected lateinit var tilgangsmaskinen: FakeTilgangsmaskinen
+    protected lateinit var auditlogg: FakeAuditlogg
 
     private val issuer = Issuer("spkelse_issuer", "spokelse_azure_ad_app_id")
     private val auth by lazy {
@@ -159,6 +163,8 @@ internal abstract class AbstractE2ETest {
         meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
         utviklergruppe = UTVIKLERGRUPPE
         miljø = Miljø.DEV
+        tilgangsmaskinen = FakeTilgangsmaskinen()
+        auditlogg = FakeAuditlogg()
     }
 
     @AfterEach
@@ -204,6 +210,8 @@ internal abstract class AbstractE2ETest {
                     meterRegistry = meterRegistry,
                     miljø = miljø,
                     personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao),
+                    tilgangskontroll = tilgangsmaskinen,
+                    auditlogg = auditlogg,
                     utviklergruppe = utviklergruppe,
                 )
             },
