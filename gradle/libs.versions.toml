@@ -2,9 +2,9 @@
 # Må følge Kotlin-versjonen som no.nav.sykepenger.kotlin-pluginen bruker
 kotlin = "2.4.21"
 kotlinxSerializationJson = "1.13.0"
-tbdLibs = "20261123.1112"
+tbdLibs = "20261125.1015"
 # Nyere versjon bruker wiremock-jetty12, som kreves av Jetty 12-BOM-en i sykepenger-pluginen
-tbdLibsSignedJwtIssuerTest = "20261123.1112"
+tbdLibsSignedJwtIssuerTest = "20261125.1015"
 sykepengerGradlePlugins = "20261029.1945"
 smiley4KtorOpenapiTools = "5.7.0"
 smiley4SchemaKenerator = "2.7.2"
