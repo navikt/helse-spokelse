@@ -23,7 +23,7 @@ ktor-client-mock = { module = "io.ktor:ktor-client-mock" }
 ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt" }
 mockk = "io.mockk:mockk:1.14.12"
 postgresql = "org.postgresql:postgresql:42.7.14"
-rapidsAndRivers = "com.github.navikt:rapids-and-rivers:2026110308421793691732"
+rapidsAndRivers = "com.github.navikt:rapids-and-rivers:2026111908531795074794"
 smiley4-ktor-openapi = { module = "io.github.smiley4:ktor-openapi", version.ref = "smiley4KtorOpenapiTools" }
 smiley4-ktor-swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version.ref = "smiley4KtorOpenapiTools" }
 smiley4-schema-kenerator-core = { module = "io.github.smiley4:schema-kenerator-core", version.ref = "smiley4SchemaKenerator" }
