@@ -62,6 +62,10 @@ internal fun utbetalingAnnullert(
 
 private fun Oppdrag?.json() =
     this?.let { oppdrag ->
-        val linjer = oppdrag.utbetalingslinjer.joinToString { """{ "fom": "${it.fom}", "tom": "${it.tom}", "grad": ${it.grad} }""" }
+        val linjer =
+            oppdrag.utbetalingslinjer.joinToString {
+                val beløp = listOfNotNull(it.dagsats?.let { dagsats -> ", \"dagsats\": $dagsats" }, it.totalbeløp?.let { total -> ", \"totalbeløp\": $total" }).joinToString("")
+                """{ "fom": "${it.fom}", "tom": "${it.tom}", "grad": ${it.grad}$beløp }"""
+            }
         """{ "fagsystemId": "${oppdrag.fagsystemId}", "utbetalingslinjer": [$linjer] }"""
     } ?: "null"

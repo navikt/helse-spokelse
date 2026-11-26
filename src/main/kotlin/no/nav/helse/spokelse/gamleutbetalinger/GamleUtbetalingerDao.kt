@@ -47,6 +47,8 @@ internal class GamleUtbetalingerDao(
             measureTimedValue {
                 asSQL(
                     """
+                    -- dagsats er det graderte beløpet per dag, som ligger i belop. Kolonnen dagsats i de gamle tabellene er ugradert
+                    -- (utbetaling) eller ukjent (old_utbetaling), og brukes ikke. sykedager er dagene fra mandag til fredag i linjen.
                     WITH alle_gamle_utbetalinger AS (
                         SELECT o.fagsystemid fagsystem_id,
                             u.fom         fom,
@@ -55,6 +57,8 @@ internal class GamleUtbetalingerDao(
                             v.opprettet   utbetalt_tidspunkt,
                             v.orgnummer   organisasjonsnummer,
                             o.fagområde   fagomrade,
+                            u.belop       dagsats,
+                            u.belop * u.sykedager belop,
                             '${GammelKilde.VEDTAK_OPPDRAG_OG_UTBETALING.tag}' kilde
                         FROM vedtak v
                         INNER JOIN oppdrag o on v.id = o.vedtak_id
@@ -70,6 +74,8 @@ internal class GamleUtbetalingerDao(
                             ov.opprettet utbetalt_tidspunkt,
                             ov.orgnummer organisasjonsnummer,
                             NULL fagomrade,
+                            ou.belop dagsats,
+                            ou.totalbelop belop,
                             '${GammelKilde.OLD_VEDTAK_OG_OLD_UTBETALING.tag}' kilde
                         FROM old_vedtak ov
                         INNER JOIN old_utbetaling ou on ov.id = ou.vedtak_id
@@ -84,6 +90,8 @@ internal class GamleUtbetalingerDao(
                             opprettet utbetalt_tidspunkt,
                             orgnummer organisasjonsnummer,
                             fagomrade,
+                            NULL dagsats,
+                            NULL belop,
                             '${GammelKilde.GAMLE_UTBETALINGER.tag}' kilde
                         FROM gamle_utbetalinger
                         WHERE fodselsnummer = :fodselsnummer
@@ -107,6 +115,8 @@ internal class GamleUtbetalingerDao(
                         kilde = row.string("kilde").let { kilde -> GammelKilde.entries.single { it.tag == kilde } },
                         mottaker = row.stringOrNull("fagomrade")?.let(::mottakerForFagområde),
                         utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
+                        dagsats = row.intOrNull("dagsats"),
+                        beløp = row.intOrNull("belop"),
                     )
                 }
             }

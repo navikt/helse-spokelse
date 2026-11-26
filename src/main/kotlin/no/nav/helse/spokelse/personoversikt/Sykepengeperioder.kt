@@ -1,7 +1,5 @@
 package no.nav.helse.spokelse.personoversikt
 
-import no.nav.helse.spokelse.Periode
-import no.nav.helse.spokelse.Periode.Companion.grupperSammenhengendePerioder
 import no.nav.helse.spokelse.felles.Personidentifikator
 import java.time.DayOfWeek.SATURDAY
 import java.time.DayOfWeek.SUNDAY
@@ -38,7 +36,15 @@ internal sealed interface UtbetaltLinjeMedMottaker : UtbetaltLinje {
     val mottaker: Mottaker
 }
 
-internal sealed interface UtbetaltLinjeMedSkjæringstidspunkt : UtbetaltLinjeMedMottaker {
+// dagsats er beløpet som ble utbetalt per dag, etter gradering. beløp er det som ble utbetalt for hele linjen.
+internal sealed interface UtbetaltLinjeMedBeløp : UtbetaltLinje {
+    val dagsats: Int
+    val beløp: Int
+}
+
+internal sealed interface UtbetaltLinjeMedSkjæringstidspunkt :
+    UtbetaltLinjeMedMottaker,
+    UtbetaltLinjeMedBeløp {
     val skjæringstidspunkt: LocalDate
 }
 
@@ -59,7 +65,9 @@ internal data class SpeilV2Linje(
     override val fom: LocalDate,
     override val tom: LocalDate,
     override val grad: Int,
-) : UtbetaltLinje {
+    override val dagsats: Int,
+    override val beløp: Int,
+) : UtbetaltLinjeMedBeløp {
     override val versjon get() = Versjon.SPEIL_V2
 }
 
@@ -70,7 +78,10 @@ internal data class SpeilV3Linje(
     override val fom: LocalDate,
     override val tom: LocalDate,
     override val grad: Int,
-) : UtbetaltLinjeMedMottaker {
+    override val dagsats: Int,
+    override val beløp: Int,
+) : UtbetaltLinjeMedMottaker,
+    UtbetaltLinjeMedBeløp {
     override val versjon get() = Versjon.SPEIL_V3
 }
 
@@ -81,7 +92,10 @@ internal data class SpeilV4Linje(
     override val fom: LocalDate,
     override val tom: LocalDate,
     override val grad: Int,
-) : UtbetaltLinjeMedMottaker {
+    override val dagsats: Int,
+    override val beløp: Int,
+) : UtbetaltLinjeMedMottaker,
+    UtbetaltLinjeMedBeløp {
     override val versjon get() = Versjon.SPEIL_V4
 }
 
@@ -92,6 +106,8 @@ internal data class SpeilV5Linje(
     override val fom: LocalDate,
     override val tom: LocalDate,
     override val grad: Int,
+    override val dagsats: Int,
+    override val beløp: Int,
     override val skjæringstidspunkt: LocalDate,
 ) : UtbetaltLinjeMedSkjæringstidspunkt {
     override val versjon get() = Versjon.SPEIL_V5
@@ -104,6 +120,8 @@ internal data class InfotrygdV1Linje(
     override val fom: LocalDate,
     override val tom: LocalDate,
     override val grad: Int,
+    override val dagsats: Int,
+    override val beløp: Int,
     val usikkerGrad: Boolean,
     override val skjæringstidspunkt: LocalDate,
 ) : UtbetaltLinjeMedSkjæringstidspunkt {
@@ -132,18 +150,36 @@ internal data class UtbetalingerUtenKjentMottaker<out U>(
     val utbetalingsperioder: List<U>,
 )
 
+internal val Mottakerutbetalinger<MedBeløp>.beløp get() = utbetalingsperioder.beløp
+internal val UtbetalingerUtenKjentMottaker<MedBeløp>.beløp get() = utbetalingsperioder.beløp
+private val List<MedBeløp>.beløp get() = sumOf { it.beløp }
+
+internal sealed interface MedBeløp {
+    val beløp: Int
+}
+
 internal data class Utbetalingsperiode(
     val fom: LocalDate,
     val tom: LocalDate,
     val grad: Int,
 )
 
+internal data class UtbetalingsperiodeMedBeløp(
+    val fom: LocalDate,
+    val tom: LocalDate,
+    val grad: Int,
+    val dagsats: Int,
+    override val beløp: Int,
+) : MedBeløp
+
 internal data class InfotrygdUtbetalingsperiode(
     val fom: LocalDate,
     val tom: LocalDate,
     val grad: Int,
+    val dagsats: Int,
+    override val beløp: Int,
     val usikkerGrad: Boolean,
-)
+) : MedBeløp
 
 internal data class SpeilV1Periode(
     override val fom: LocalDate,
@@ -156,7 +192,7 @@ internal data class SpeilV1Periode(
 internal data class SpeilV2Periode(
     override val fom: LocalDate,
     override val tom: LocalDate,
-    override val yrkesaktiviteter: List<Yrkesaktivitet<UtbetalingerUtenKjentMottaker<Utbetalingsperiode>>>,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<UtbetalingerUtenKjentMottaker<UtbetalingsperiodeMedBeløp>>>,
 ) : Sykepengeperiode {
     override val versjon get() = Versjon.SPEIL_V2
 }
@@ -164,7 +200,7 @@ internal data class SpeilV2Periode(
 internal data class SpeilV3Periode(
     override val fom: LocalDate,
     override val tom: LocalDate,
-    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<Utbetalingsperiode>>>,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<UtbetalingsperiodeMedBeløp>>>,
 ) : Sykepengeperiode {
     override val versjon get() = Versjon.SPEIL_V3
 }
@@ -172,7 +208,7 @@ internal data class SpeilV3Periode(
 internal data class SpeilV4Periode(
     override val fom: LocalDate,
     override val tom: LocalDate,
-    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<Utbetalingsperiode>>>,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<UtbetalingsperiodeMedBeløp>>>,
 ) : Sykepengeperiode {
     override val versjon get() = Versjon.SPEIL_V4
 }
@@ -181,7 +217,7 @@ internal data class SpeilV5Periode(
     val skjæringstidspunkt: LocalDate,
     override val fom: LocalDate,
     override val tom: LocalDate,
-    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<Utbetalingsperiode>>>,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<UtbetalingsperiodeMedBeløp>>>,
 ) : Sykepengeperiode {
     override val versjon get() = Versjon.SPEIL_V5
 }
@@ -201,10 +237,10 @@ internal fun List<UtbetaltLinje>.somSykepengeperioder(): List<Sykepengeperiode> 
         .flatMap { versjon ->
             when (versjon) {
                 Versjon.SPEIL_V1 -> linjer.filterIsInstance<SpeilV1Linje>().somPerioder(::SpeilV1Periode) { it.perMottaker(::somUtbetalingsperioder) }
-                Versjon.SPEIL_V2 -> linjer.filterIsInstance<SpeilV2Linje>().somPerioder(::SpeilV2Periode) { listOf(UtbetalingerUtenKjentMottaker(somUtbetalingsperioder(it))) }
-                Versjon.SPEIL_V3 -> linjer.filterIsInstance<SpeilV3Linje>().somPerioder(::SpeilV3Periode) { it.perMottaker(::somUtbetalingsperioder) }
-                Versjon.SPEIL_V4 -> linjer.filterIsInstance<SpeilV4Linje>().somPerioder(::SpeilV4Periode) { it.perMottaker(::somUtbetalingsperioder) }
-                Versjon.SPEIL_V5 -> linjer.filterIsInstance<SpeilV5Linje>().somPerioderPerTilfelle(::SpeilV5Periode) { it.perMottaker(::somUtbetalingsperioder) }
+                Versjon.SPEIL_V2 -> linjer.filterIsInstance<SpeilV2Linje>().somPerioder(::SpeilV2Periode) { listOf(UtbetalingerUtenKjentMottaker(somUtbetalingsperioderMedBeløp(it))) }
+                Versjon.SPEIL_V3 -> linjer.filterIsInstance<SpeilV3Linje>().somPerioder(::SpeilV3Periode) { it.perMottaker(::somUtbetalingsperioderMedBeløp) }
+                Versjon.SPEIL_V4 -> linjer.filterIsInstance<SpeilV4Linje>().somPerioder(::SpeilV4Periode) { it.perMottaker(::somUtbetalingsperioderMedBeløp) }
+                Versjon.SPEIL_V5 -> linjer.filterIsInstance<SpeilV5Linje>().somPerioderPerTilfelle(::SpeilV5Periode) { it.perMottaker(::somUtbetalingsperioderMedBeløp) }
                 Versjon.INFOTRYGD_V1 -> linjer.filterIsInstance<InfotrygdV1Linje>().somPerioderPerTilfelle(::InfotrygdV1Periode) { it.perMottaker(::somInfotrygdUtbetalingsperioder) }
             }
         }.sortedWith(compareBy({ it.fom }, { it.versjon }))
@@ -234,7 +270,7 @@ private fun List<UtbetaltLinje>.utenDuplikater(): List<UtbetaltLinje> {
 private fun <L : UtbetaltLinje, M, P> List<L>.somPerioder(
     periode: (LocalDate, LocalDate, List<Yrkesaktivitet<M>>) -> P,
     mottakere: (List<L>) -> List<M>,
-): List<P> = sammenhengende().map { linjer -> periode(linjer.minOf { it.fom }, linjer.maxOf { it.tom }, linjer.somYrkesaktiviteter(mottakere)) }
+): List<P> = sammenhengende(LocalDate::hengerSammenMed).map { linjer -> periode(linjer.minOf { it.fom }, linjer.maxOf { it.tom }, linjer.somYrkesaktiviteter(mottakere)) }
 
 // Én periode per sykefraværstilfelle, med én yrkesaktivitet per organisasjonsnummer.
 private fun <L : UtbetaltLinjeMedSkjæringstidspunkt, M, P> List<L>.somPerioderPerTilfelle(
@@ -255,29 +291,35 @@ private fun <L : UtbetaltLinjeMedMottaker, U> List<L>.perMottaker(utbetalingsper
         .toSortedMap()
         .map { (mottaker, linjer) -> Mottakerutbetalinger(mottaker, utbetalingsperioder(linjer)) }
 
-private fun somUtbetalingsperioder(linjer: List<UtbetaltLinje>) = linjer.sammenslått({ it.grad }) { periode, grad -> Utbetalingsperiode(periode.start, periode.endInclusive, grad) }
+private fun somUtbetalingsperioder(linjer: List<UtbetaltLinje>) = linjer.sammenslått({ it.grad }) { fom, tom, grad, _ -> Utbetalingsperiode(fom, tom, grad) }
 
-private fun somInfotrygdUtbetalingsperioder(linjer: List<InfotrygdV1Linje>) =
-    linjer.sammenslått({ it.grad to it.usikkerGrad }) { periode, (grad, usikkerGrad) ->
-        InfotrygdUtbetalingsperiode(periode.start, periode.endInclusive, grad, usikkerGrad)
+private fun somUtbetalingsperioderMedBeløp(linjer: List<UtbetaltLinjeMedBeløp>) =
+    linjer.sammenslått({ it.grad to it.dagsats }) { fom, tom, (grad, dagsats), sammenslåtte ->
+        UtbetalingsperiodeMedBeløp(fom, tom, grad, dagsats, sammenslåtte.sumOf { it.beløp })
     }
 
-// Linjer som henger sammen og er like etter nøkkelen, slås sammen.
+private fun somInfotrygdUtbetalingsperioder(linjer: List<InfotrygdV1Linje>) =
+    linjer.sammenslått({ Triple(it.grad, it.dagsats, it.usikkerGrad) }) { fom, tom, (grad, dagsats, usikkerGrad), sammenslåtte ->
+        InfotrygdUtbetalingsperiode(fom, tom, grad, dagsats, sammenslåtte.sumOf { it.beløp }, usikkerGrad)
+    }
+
+// Linjer som er like etter nøkkelen og overlapper eller følger rett etter hverandre, slås sammen.
 private fun <L : UtbetaltLinje, K, U> List<L>.sammenslått(
     nøkkel: (L) -> K,
-    utbetalingsperiode: (Periode, K) -> U,
+    utbetalingsperiode: (LocalDate, LocalDate, K, List<L>) -> U,
 ): List<U> =
     groupBy(nøkkel)
-        .flatMap { (likeNår, linjer) -> linjer.map { Periode(it.fom, it.tom) }.grupperSammenhengendePerioder().map { it to likeNår } }
-        .sortedBy { (periode, _) -> periode.start }
-        .map { (periode, likeNår) -> utbetalingsperiode(periode, likeNår) }
+        .flatMap { (likeNår, linjer) -> linjer.sammenhengende(LocalDate::følgerRettEtter).map { sammenslåtte -> Triple(sammenslåtte.minOf { it.fom }, likeNår, sammenslåtte) } }
+        .sortedBy { (fom, _, _) -> fom }
+        .map { (fom, likeNår, sammenslåtte) -> utbetalingsperiode(fom, sammenslåtte.maxOf { it.tom }, likeNår, sammenslåtte) }
 
-private fun <L : UtbetaltLinje> List<L>.sammenhengende(): List<List<L>> {
+// Linjene i rekkefølge etter fom, gruppert så lenge neste linje henger sammen med tom for gruppen så langt.
+private fun <L : UtbetaltLinje> List<L>.sammenhengende(hengerSammen: (LocalDate, LocalDate) -> Boolean): List<List<L>> {
     val tidsrom = mutableListOf<MutableList<L>>()
     var tomForTidsrommet: LocalDate? = null
     sortedBy { it.fom }.forEach { linje ->
         val forrigeTom = tomForTidsrommet
-        if (forrigeTom == null || !linje.fom.hengerSammenMed(forrigeTom)) {
+        if (forrigeTom == null || !hengerSammen(linje.fom, forrigeTom)) {
             tidsrom.add(mutableListOf(linje))
         } else {
             tidsrom.last().add(linje)
@@ -286,6 +328,8 @@ private fun <L : UtbetaltLinje> List<L>.sammenhengende(): List<List<L>> {
     }
     return tidsrom
 }
+
+private fun LocalDate.følgerRettEtter(forrigeTom: LocalDate) = this <= forrigeTom.plusDays(1)
 
 // Helg mellom to utbetalinger teller ikke som opphold.
 private fun LocalDate.hengerSammenMed(forrigeTom: LocalDate): Boolean {

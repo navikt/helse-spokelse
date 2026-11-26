@@ -31,6 +31,8 @@ internal data class GammelUtbetaling(
     private val grad: Int,
     private val kilde: GammelKilde,
     private val mottaker: Mottaker?,
+    private val dagsats: Int?,
+    private val beløp: Int?,
 ) {
     private fun somFpUtbetalingsperiode() =
         Utbetalingsperiode(
@@ -53,10 +55,14 @@ internal data class GammelUtbetaling(
         val personidentifikator = Personidentifikator(fødselsnummer)
 
         fun mottaker() = checkNotNull(mottaker) { "Mangler mottaker for gammel utbetaling fra ${kilde.tag}" }
+
+        fun dagsats() = checkNotNull(dagsats) { "Mangler dagsats for gammel utbetaling fra ${kilde.tag}" }
+
+        fun beløp() = checkNotNull(beløp) { "Mangler beløp for gammel utbetaling fra ${kilde.tag}" }
         return when (kilde) {
             GammelKilde.GAMLE_UTBETALINGER -> SpeilV1Linje(personidentifikator, organisasjonsnummer, mottaker(), fom, tom, grad)
-            GammelKilde.OLD_VEDTAK_OG_OLD_UTBETALING -> SpeilV2Linje(personidentifikator, organisasjonsnummer, fom, tom, grad)
-            GammelKilde.VEDTAK_OPPDRAG_OG_UTBETALING -> SpeilV3Linje(personidentifikator, organisasjonsnummer, mottaker(), fom, tom, grad)
+            GammelKilde.OLD_VEDTAK_OG_OLD_UTBETALING -> SpeilV2Linje(personidentifikator, organisasjonsnummer, fom, tom, grad, dagsats(), beløp())
+            GammelKilde.VEDTAK_OPPDRAG_OG_UTBETALING -> SpeilV3Linje(personidentifikator, organisasjonsnummer, mottaker(), fom, tom, grad, dagsats(), beløp())
         }
     }
 

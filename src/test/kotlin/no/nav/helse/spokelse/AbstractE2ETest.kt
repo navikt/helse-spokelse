@@ -60,6 +60,8 @@ internal abstract class AbstractE2ETest {
         val organisasjonsnummer: String? = null,
         val tags: Set<String> = emptySet(),
         val skjæringstidspunkt: LocalDate? = fom,
+        val dagsats: Int = 1000,
+        val grad: Int = 100,
     )
 
     protected data class SpleisApiSvar(
@@ -104,7 +106,7 @@ internal abstract class AbstractE2ETest {
                                     val maksdato = it.maksdato?.let { dato -> "\"$dato\"" } ?: "null"
                                     val organisasjonsnummer = it.organisasjonsnummer?.let { orgnr -> "\"$orgnr\"" } ?: "null"
                                     val skjæringstidspunkt = it.skjæringstidspunkt?.let { dato -> "\"$dato\"" } ?: "null"
-                                    """{"personidentifikator": "$personidentifikator", "organisasjonsnummer": $organisasjonsnummer, "fom": "${it.fom}", "tom": "${it.tom}", "grad": 100, "type": "${it.type}", "maksdato": $maksdato, "tags": ${it.tags.map { tag -> "\"$tag\"" }}, "skjæringstidspunkt": $skjæringstidspunkt}"""
+                                    """{"personidentifikator": "$personidentifikator", "organisasjonsnummer": $organisasjonsnummer, "fom": "${it.fom}", "tom": "${it.tom}", "grad": ${it.grad}, "dagsats": ${it.dagsats}, "type": "${it.type}", "maksdato": $maksdato, "tags": ${it.tags.map { tag -> "\"$tag\"" }}, "skjæringstidspunkt": $skjæringstidspunkt}"""
                                 }
                         respond("""{"utbetaltePerioder": [$utbetaltePerioder]}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
                     },
@@ -270,6 +272,9 @@ internal abstract class AbstractE2ETest {
         fagsystemId: String,
         fødselsnummer: String,
         organisasjonsnummer: String = "999999999",
+        dagsats: Int = 1,
+        beløp: Int = 1,
+        totalbeløp: Int = 1,
     ) {
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
         val vedtaksperiodeId = UUID.randomUUID()
@@ -285,9 +290,9 @@ internal abstract class AbstractE2ETest {
                             fom = fom,
                             tom = tom,
                             grad = 100.0,
-                            dagsats = 1,
-                            totalbeløp = 1,
-                            beløp = 1,
+                            dagsats = dagsats,
+                            totalbeløp = totalbeløp,
+                            beløp = beløp,
                         ),
                     ),
                 opprettet = LocalDateTime.now(),
@@ -305,6 +310,9 @@ internal abstract class AbstractE2ETest {
         fødselsnummer: String,
         fagområde: String = "SPREF",
         organisasjonsnummer: String = "999999999",
+        dagsats: Int = 1,
+        beløp: Int = 1,
+        sykedager: Int = 1,
     ) {
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
         utbetaltDao.opprett(
@@ -313,7 +321,7 @@ internal abstract class AbstractE2ETest {
                 fødselsnummer = fødselsnummer,
                 orgnummer = organisasjonsnummer,
                 dokumenter = Dokumenter(sykmelding, søknad, inntektsmelding),
-                oppdrag = listOf(Vedtak.Oppdrag("mottaker", fagområde, fagsystemId, 1, listOf(Vedtak.Oppdrag.Utbetalingslinje(fom, tom, 1, 1, 100.0, 1)))),
+                oppdrag = listOf(Vedtak.Oppdrag("mottaker", fagområde, fagsystemId, 1, listOf(Vedtak.Oppdrag.Utbetalingslinje(fom, tom, dagsats, beløp, 100.0, sykedager)))),
                 fom = fom,
                 tom = tom,
                 forbrukteSykedager = 1,

@@ -10,7 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import no.nav.helse.spokelse.gjenstaendesykedager.Infotrygdperioder
 import no.nav.helse.spokelse.personoversikt.InfotrygdV1Linje
+import no.nav.helse.spokelse.personoversikt.Infotrygdferie
 import no.nav.helse.spokelse.personoversikt.Mottaker
+import no.nav.helse.spokelse.personoversikt.utbetalingsdager
 import org.intellij.lang.annotations.Language
 import org.slf4j.MDC
 import tools.jackson.databind.JsonNode
@@ -29,11 +31,22 @@ internal class Infotrygd(
         tom: LocalDate,
     ): List<SpøkelsePeriode> = hentPerioder(personidentifikatorer, fom, tom, inkluderAllePeriodetyper = false).map { it.somPeriode() }
 
+    // Feriedager inni en utbetalingsrad er ikke utbetalt, så ferieradene hentes i et eget kall over hele spennet til utbetalingene.
+    // Sparkel gir bare rader som overlapper fom–tom, og en utbetaling kan ha ferie utenfor fom–tom.
+    // Utbetalingene hentes uten de andre periodetypene, fordi Sparkel setter UsikkerGrad ut fra alle radene den gir.
     suspend fun hentUtbetalteLinjer(
         personidentifikatorer: Set<Personidentifikator>,
         fom: LocalDate,
         tom: LocalDate,
-    ): List<InfotrygdV1Linje> = hentPerioder(personidentifikatorer, fom, tom, inkluderAllePeriodetyper = false).map { it.somUtbetaltLinje() }
+    ): List<InfotrygdV1Linje> {
+        val utbetalinger = hentPerioder(personidentifikatorer, fom, tom, inkluderAllePeriodetyper = false)
+        if (utbetalinger.isEmpty()) return emptyList()
+        val ferie =
+            hentPerioder(personidentifikatorer, utbetalinger.minOf { it.dato("fom") }, utbetalinger.maxOf { it.dato("tom") }, inkluderAllePeriodetyper = true)
+                .filter { it.path("type").asString() == FERIE }
+                .map { it.somFerie() }
+        return utbetalinger.map { it.somUtbetaltLinje(ferie) }
+    }
 
     override suspend fun hentAllePeriodetyper(
         personidentifikator: Personidentifikator,
@@ -86,22 +99,29 @@ internal class Infotrygd(
             organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asString(),
         )
 
-    private fun JsonNode.somUtbetaltLinje(): InfotrygdV1Linje =
-        InfotrygdV1Linje(
-            personidentifikator = Personidentifikator(path("personidentifikator").asString()),
+    private fun JsonNode.dato(felt: String) = LocalDate.parse(path(felt).asString())
+
+    private fun JsonNode.somFerie() = Infotrygdferie(Personidentifikator(path("personidentifikator").asString()), dato("skjæringstidspunkt"), dato("fom"), dato("tom"))
+
+    private fun JsonNode.somUtbetaltLinje(ferie: List<Infotrygdferie>): InfotrygdV1Linje {
+        val personidentifikator = Personidentifikator(path("personidentifikator").asString())
+        val skjæringstidspunkt = dato("skjæringstidspunkt")
+        val fom = dato("fom")
+        val tom = dato("tom")
+        val dagsats = path("dagsats").asInt()
+        return InfotrygdV1Linje(
+            personidentifikator = personidentifikator,
             organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asString(),
-            mottaker =
-                when (val type = path("type").asString()) {
-                    "UTBETALING", "REDUKSJON_MEDLEM" -> Mottaker.PERSON
-                    "ARB_REF", "REDUKSJON_ARB_REF" -> Mottaker.ARBEIDSGIVER
-                    else -> error("Uventet periodetype fra Infotrygd: $type")
-                },
-            fom = LocalDate.parse(path("fom").asString()),
-            tom = LocalDate.parse(path("tom").asString()),
+            mottaker = path("type").asString().let { type -> checkNotNull(MOTTAKER_PER_UTBETALINGSTYPE[type]) { "Uventet periodetype fra Infotrygd: $type" } },
+            fom = fom,
+            tom = tom,
             grad = path("grad").asInt(),
+            dagsats = dagsats,
+            beløp = dagsats * utbetalingsdager(personidentifikator, skjæringstidspunkt, fom, tom, ferie),
             usikkerGrad = path("tags").values().any { it.asString() == "UsikkerGrad" },
-            skjæringstidspunkt = LocalDate.parse(path("skjæringstidspunkt").asString()),
+            skjæringstidspunkt = skjæringstidspunkt,
         )
+    }
 
     private fun JsonNode.somPeriode(): SpøkelsePeriode =
         SpøkelsePeriode(
@@ -115,5 +135,15 @@ internal class Infotrygd(
 
     private companion object {
         val objectMapper = jacksonObjectMapper()
+
+        // De samme typene som sykepengeperioder-api gir når inkluderAllePeriodetyper er false.
+        val MOTTAKER_PER_UTBETALINGSTYPE =
+            mapOf(
+                "UTBETALING" to Mottaker.PERSON,
+                "REDUKSJON_MEDLEM" to Mottaker.PERSON,
+                "ARB_REF" to Mottaker.ARBEIDSGIVER,
+                "REDUKSJON_ARB_REF" to Mottaker.ARBEIDSGIVER,
+            )
+        const val FERIE = "FERIE"
     }
 }

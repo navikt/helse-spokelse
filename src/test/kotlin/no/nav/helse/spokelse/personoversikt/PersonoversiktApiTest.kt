@@ -28,8 +28,8 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     @Test
     fun `gir perioder fra Speil med yrkesaktiviteter, mottakere og utbetalingsperioder`() {
         utbetalingFraSpeil(
-            arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-01"), dato("2024-01-31"), 100.0))),
-            personOppdrag = Oppdrag("person", listOf(Utbetalingslinje(dato("2024-01-16"), dato("2024-01-31"), 100.0))),
+            arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-01"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 23000))),
+            personOppdrag = Oppdrag("person", listOf(Utbetalingslinje(dato("2024-01-16"), dato("2024-01-31"), 100.0, dagsats = 200, totalbeløp = 2400))),
         )
 
         assertPersonoversikt(
@@ -45,8 +45,8 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
                         {
                           "organisasjonsnummer": "$ORGNR",
                           "mottakere": [
-                            { "mottaker": "ARBEIDSGIVER", "utbetalingsperioder": [ { "fom": "2024-01-01", "tom": "2024-01-31", "grad": 100 } ] },
-                            { "mottaker": "PERSON", "utbetalingsperioder": [ { "fom": "2024-01-16", "tom": "2024-01-31", "grad": 100 } ] }
+                            { "mottaker": "ARBEIDSGIVER", "beløp": 23000, "utbetalingsperioder": [ { "fom": "2024-01-01", "tom": "2024-01-31", "grad": 100, "dagsats": 1000, "beløp": 23000 } ] },
+                            { "mottaker": "PERSON", "beløp": 2400, "utbetalingsperioder": [ { "fom": "2024-01-16", "tom": "2024-01-31", "grad": 100, "dagsats": 200, "beløp": 2400 } ] }
                           ]
                         }
                       ]
@@ -60,7 +60,7 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     @Test
     fun `en linje med vedtak gir SPEIL_V5 med skjæringstidspunktet fra vedtaket`() {
         vedtakFraSpeil(fom = dato("2024-01-01"), tom = dato("2024-01-31"), skjæringstidspunkt = dato("2023-12-18"))
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-01"), dato("2024-01-31"), 100.0))))
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-01"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 23000))))
 
         assertPersonoversikt(
             forventetResponseBody = """
@@ -68,7 +68,7 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
                   "perioder": [
                     {
                       "kilde": "SPEIL", "versjon": "SPEIL_V5", "skjæringstidspunkt": "2023-12-18", "fom": "2024-01-01", "tom": "2024-01-31",
-                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "utbetalingsperioder": [ { "fom": "2024-01-01", "tom": "2024-01-31", "grad": 100 } ] } ] } ]
+                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "beløp": 23000, "utbetalingsperioder": [ { "fom": "2024-01-01", "tom": "2024-01-31", "grad": 100, "dagsats": 1000, "beløp": 23000 } ] } ] } ]
                     }
                   ]
                 }
@@ -81,7 +81,7 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
         vedtakFraSpeil(dato("2024-01-01"), dato("2024-01-31"), skjæringstidspunkt = dato("2024-01-01"), vedtakFattetTidspunkt = LocalDateTime.parse("2024-02-01T11:00:00.123"))
         vedtakFraSpeil(dato("2024-01-01"), dato("2024-01-31"), skjæringstidspunkt = dato("2023-12-18"), vedtakFattetTidspunkt = LocalDateTime.parse("2024-03-01T11:00:00.123"))
         vedtakFraSpeil(dato("2024-01-01"), dato("2024-01-31"), skjæringstidspunkt = dato("2023-12-11"), vedtakFattetTidspunkt = LocalDateTime.parse("2024-02-15T11:00:00.123"))
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0))))
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 1000))))
 
         assertEquals(listOf("SPEIL_V5" to "2023-12-18"), hentPerioder().map { it.path("versjon").asString() to it.path("skjæringstidspunkt").asString() })
     }
@@ -90,16 +90,16 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     fun `en linje uten vedtak, eller med vedtak bare hos en annen arbeidsgiver, forblir SPEIL_V4`() {
         vedtakFraSpeil(dato("2024-01-01"), dato("2024-01-31"), skjæringstidspunkt = dato("2024-01-01"), organisasjonsnummer = "888888888")
         vedtakFraSpeil(dato("2024-02-01"), dato("2024-02-29"), skjæringstidspunkt = dato("2024-01-01"))
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0))))
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 1000))))
 
         assertEquals(listOf("SPEIL_V4"), hentPerioder().map { it.path("versjon").asString() })
     }
 
     @Test
     fun `et tilfelle som går over D, deles i en periode med SPEIL_V4 og en med SPEIL_V5`() {
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("januar", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0))))
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("januar", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 1000))))
         vedtakFraSpeil(dato("2024-02-01"), dato("2024-02-29"), skjæringstidspunkt = dato("2024-01-01"))
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("februar", listOf(Utbetalingslinje(dato("2024-02-01"), dato("2024-02-29"), 100.0))))
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("februar", listOf(Utbetalingslinje(dato("2024-02-01"), dato("2024-02-29"), 100.0, dagsats = 1000, totalbeløp = 1000))))
 
         assertEquals(
             listOf(Triple("SPEIL_V4", "2024-01-17", "2024-01-31"), Triple("SPEIL_V5", "2024-02-01", "2024-02-29")),
@@ -110,7 +110,7 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     @Test
     fun `utbetalinger til selvstendig næringsdrivende kobles til vedtaket, uten organisasjonsnummer`() {
         vedtakFraSpeil(dato("2024-01-01"), dato("2024-01-31"), skjæringstidspunkt = dato("2024-01-01"), organisasjonsnummer = "SELVSTENDIG")
-        utbetalingFraSpeil(personOppdrag = Oppdrag("person", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0))), organisasjonsnummer = "SELVSTENDIG")
+        utbetalingFraSpeil(personOppdrag = Oppdrag("person", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 1000))), organisasjonsnummer = "SELVSTENDIG")
 
         val periode = hentPerioder().single()
         assertEquals("SPEIL_V5", periode.path("versjon").asString())
@@ -127,23 +127,23 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     @Test
     fun `annullerte vedtak på tbd_vedtak ignoreres`() {
         tbdVedtakHåndterer.håndter(vedtakAnnullert(FØDSELSNUMMER, ORGNR, dato("2024-01-01"), dato("2024-01-31")))
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0))))
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-17"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 1000))))
 
         assertEquals(listOf("SPEIL_V4"), hentPerioder().map { it.path("versjon").asString() })
     }
 
     @Test
-    fun `gir én periode per versjon, med mottaker, skjæringstidspunkt og usikkerGrad der versjonen har dem`() {
+    fun `gir én periode per versjon, med mottaker, dagsats, beløp, skjæringstidspunkt og usikkerGrad der versjonen har dem`() {
         lagreGammelUtbetaling(dato("2020-01-01"), dato("2020-01-31"), "FAG1", FØDSELSNUMMER, fagområde = "SPREF")
-        lagreOldVedtakOgOldUtbetaling(dato("2020-03-02"), dato("2020-03-31"), "FAG2", FØDSELSNUMMER)
-        lagreVedtakOppdragOgUtbetaling(dato("2020-05-01"), dato("2020-05-29"), "FAG3", FØDSELSNUMMER, fagområde = "SP")
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-01"), dato("2024-01-31"), 100.0))))
+        lagreOldVedtakOgOldUtbetaling(dato("2020-03-02"), dato("2020-03-31"), "FAG2", FØDSELSNUMMER, dagsats = 2000, beløp = 1000, totalbeløp = 22000)
+        lagreVedtakOppdragOgUtbetaling(dato("2020-05-01"), dato("2020-05-29"), "FAG3", FØDSELSNUMMER, fagområde = "SP", dagsats = 3000, beløp = 1500, sykedager = 21)
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-01"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 23000))))
         vedtakFraSpeil(dato("2024-05-01"), dato("2024-05-31"), skjæringstidspunkt = dato("2024-04-15"))
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("mai", listOf(Utbetalingslinje(dato("2024-05-01"), dato("2024-05-31"), 100.0))))
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("mai", listOf(Utbetalingslinje(dato("2024-05-01"), dato("2024-05-31"), 100.0, dagsats = 800, totalbeløp = 18400))))
         infotrygdperioder =
             listOf(
-                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "ARB_REF", organisasjonsnummer = ORGNR, tags = setOf("UsikkerGrad"), skjæringstidspunkt = dato("2024-02-12")),
-                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "UTBETALING", organisasjonsnummer = null, skjæringstidspunkt = dato("2024-02-12")),
+                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "ARB_REF", organisasjonsnummer = ORGNR, tags = setOf("UsikkerGrad"), skjæringstidspunkt = dato("2024-02-12"), dagsats = 1200),
+                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "UTBETALING", organisasjonsnummer = null, skjæringstidspunkt = dato("2024-02-12"), dagsats = 300),
             )
 
         assertPersonoversikt(
@@ -157,30 +157,84 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
                     },
                     {
                       "kilde": "SPEIL", "versjon": "SPEIL_V2", "fom": "2020-03-02", "tom": "2020-03-31",
-                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "utbetalingsperioder": [ { "fom": "2020-03-02", "tom": "2020-03-31", "grad": 100 } ] } ] } ]
+                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "beløp": 22000, "utbetalingsperioder": [ { "fom": "2020-03-02", "tom": "2020-03-31", "grad": 100, "dagsats": 1000, "beløp": 22000 } ] } ] } ]
                     },
                     {
                       "kilde": "SPEIL", "versjon": "SPEIL_V3", "fom": "2020-05-01", "tom": "2020-05-29",
-                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "PERSON", "utbetalingsperioder": [ { "fom": "2020-05-01", "tom": "2020-05-29", "grad": 100 } ] } ] } ]
+                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "PERSON", "beløp": 31500, "utbetalingsperioder": [ { "fom": "2020-05-01", "tom": "2020-05-29", "grad": 100, "dagsats": 1500, "beløp": 31500 } ] } ] } ]
                     },
                     {
                       "kilde": "SPEIL", "versjon": "SPEIL_V4", "fom": "2024-01-01", "tom": "2024-01-31",
-                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "utbetalingsperioder": [ { "fom": "2024-01-01", "tom": "2024-01-31", "grad": 100 } ] } ] } ]
+                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "beløp": 23000, "utbetalingsperioder": [ { "fom": "2024-01-01", "tom": "2024-01-31", "grad": 100, "dagsats": 1000, "beløp": 23000 } ] } ] } ]
                     },
                     {
                       "kilde": "INFOTRYGD", "versjon": "INFOTRYGD_V1", "skjæringstidspunkt": "2024-02-12", "fom": "2024-03-01", "tom": "2024-03-31",
                       "yrkesaktiviteter": [
-                        { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "utbetalingsperioder": [ { "fom": "2024-03-01", "tom": "2024-03-31", "grad": 100, "usikkerGrad": true } ] } ] },
-                        { "organisasjonsnummer": null, "mottakere": [ { "mottaker": "PERSON", "utbetalingsperioder": [ { "fom": "2024-03-01", "tom": "2024-03-31", "grad": 100, "usikkerGrad": false } ] } ] }
+                        { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "beløp": 25200, "utbetalingsperioder": [ { "fom": "2024-03-01", "tom": "2024-03-31", "grad": 100, "dagsats": 1200, "beløp": 25200, "usikkerGrad": true } ] } ] },
+                        { "organisasjonsnummer": null, "mottakere": [ { "mottaker": "PERSON", "beløp": 6300, "utbetalingsperioder": [ { "fom": "2024-03-01", "tom": "2024-03-31", "grad": 100, "dagsats": 300, "beløp": 6300, "usikkerGrad": false } ] } ] }
                       ]
                     },
                     {
                       "kilde": "SPEIL", "versjon": "SPEIL_V5", "skjæringstidspunkt": "2024-04-15", "fom": "2024-05-01", "tom": "2024-05-31",
-                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "utbetalingsperioder": [ { "fom": "2024-05-01", "tom": "2024-05-31", "grad": 100 } ] } ] } ]
+                      "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "beløp": 18400, "utbetalingsperioder": [ { "fom": "2024-05-01", "tom": "2024-05-31", "grad": 100, "dagsats": 800, "beløp": 18400 } ] } ] } ]
                     }
                   ]
                 }
             """,
+        )
+    }
+
+    @Test
+    fun `feriedager i Infotrygd trekkes fra beløpet hos alle arbeidsgiverne i sykefraværstilfellet, også når ferien er før fom i forespørselen`() {
+        // Mars 2024 har 21 dager fra mandag til fredag, og ferien 11.–15. mars tar 5 av dem
+        infotrygdperioder =
+            listOf(
+                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "ARB_REF", organisasjonsnummer = ORGNR, skjæringstidspunkt = dato("2024-02-12"), dagsats = 1000),
+                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "UTBETALING", organisasjonsnummer = "888888888", skjæringstidspunkt = dato("2024-02-12"), dagsats = 500),
+                Infotrygdperiode(dato("2024-03-11"), dato("2024-03-15"), type = "FERIE", organisasjonsnummer = null, skjæringstidspunkt = dato("2024-02-12"), dagsats = 0),
+            )
+
+        val perioder = hentPerioder(requestBody = """{"personidentifikatorer": ["$FØDSELSNUMMER"], "fom": "2024-03-20", "tom": "2024-12-31"}""")
+
+        assertEquals(
+            listOf("888888888" to 8000, ORGNR to 16000),
+            perioder
+                .single()
+                .path("yrkesaktiviteter")
+                .values()
+                .map {
+                    it.path("organisasjonsnummer").asString() to
+                        it
+                            .path("mottakere")
+                            .single()
+                            .path("beløp")
+                            .asInt()
+                },
+        )
+    }
+
+    @Test
+    fun `endret grad eller dagsats i Infotrygd gir egne utbetalingsperioder i samme sykefraværstilfelle, og dagsats 0 gir beløp 0`() {
+        // 4.–8., 11.–15. og 18.–22. mars 2024 er fem dager fra mandag til fredag hver
+        infotrygdperioder =
+            listOf(
+                Infotrygdperiode(dato("2024-03-04"), dato("2024-03-08"), type = "UTBETALING", skjæringstidspunkt = dato("2024-02-12"), dagsats = 1000),
+                Infotrygdperiode(dato("2024-03-11"), dato("2024-03-15"), type = "UTBETALING", skjæringstidspunkt = dato("2024-02-12"), dagsats = 500, grad = 50),
+                Infotrygdperiode(dato("2024-03-18"), dato("2024-03-22"), type = "UTBETALING", skjæringstidspunkt = dato("2024-02-12"), dagsats = 0, grad = 50),
+            )
+
+        val mottaker =
+            hentPerioder()
+                .single()
+                .path("yrkesaktiviteter")
+                .single()
+                .path("mottakere")
+                .single()
+
+        assertEquals(7500, mottaker.path("beløp").asInt())
+        assertEquals(
+            listOf(Triple(100, 1000, 5000), Triple(50, 500, 2500), Triple(50, 0, 0)),
+            mottaker.path("utbetalingsperioder").values().map { Triple(it.path("grad").asInt(), it.path("dagsats").asInt(), it.path("beløp").asInt()) },
         )
     }
 
@@ -245,15 +299,6 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     @Test
     fun `Infotrygd nede gir 500 uten audit-logging`() {
         infotrygdperioder = null
-
-        assertPersonoversikt(forventetHttpStatus = 500)
-
-        assertEquals(emptyList<FakeAuditlogg.Innslag>(), auditlogg.innslag)
-    }
-
-    @Test
-    fun `en periode fra Infotrygd uten skjæringstidspunkt gir 500 uten audit-logging`() {
-        infotrygdperioder = listOf(Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), skjæringstidspunkt = null))
 
         assertPersonoversikt(forventetHttpStatus = 500)
 
@@ -350,9 +395,9 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
         organisasjonsnummer: String = ORGNR,
     ) = tbdVedtakHåndterer.håndter(vedtakFattet(FØDSELSNUMMER, organisasjonsnummer, fom, tom, skjæringstidspunkt, vedtakFattetTidspunkt))
 
-    private fun hentPerioder() =
+    private fun hentPerioder(requestBody: String = """{"personidentifikatorer": ["$FØDSELSNUMMER"], "fom": "2024-01-01", "tom": "2024-12-31"}""") =
         jacksonObjectMapper()
-            .readTree(assertPersonoversikt())
+            .readTree(assertPersonoversikt(requestBody = requestBody))
             .path("perioder")
             .values()
             .toList()

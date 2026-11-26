@@ -65,8 +65,8 @@ internal class TbdUtbetalingDao(
             oppdrag.utbetalingslinjer.forEach { utbetalingslinje ->
                 asSQL(
                     """
-                    INSERT INTO tbdUtbetaling_Utbetalingslinje(kilde, fagsystemId, fom, tom, grad, utbetaling)
-                    VALUES (:meldingId, :fagsystemId, :fom, :tom, :grad, :utbetaling)
+                    INSERT INTO tbdUtbetaling_Utbetalingslinje(kilde, fagsystemId, fom, tom, grad, utbetaling, dagsats, totalbelop)
+                    VALUES (:meldingId, :fagsystemId, :fom, :tom, :grad, :utbetaling, :dagsats, :totalbelop)
                     """.trimIndent(),
                     "meldingId" to meldingId,
                     "fagsystemId" to oppdrag.fagsystemId,
@@ -74,6 +74,8 @@ internal class TbdUtbetalingDao(
                     "tom" to utbetalingslinje.tom,
                     "grad" to utbetalingslinje.grad,
                     "utbetaling" to utbetaling.korrelasjonsId,
+                    "dagsats" to utbetalingslinje.dagsats,
+                    "totalbelop" to utbetalingslinje.totalbeløp,
                 ).update(transaksjon)
             }
         }
@@ -86,6 +88,7 @@ internal class TbdUtbetalingDao(
     ): List<Utbetaling> =
         sessionOf(dataSource()).use { session ->
             val utbetalingslinjer = session.hentUtbetalingslinjer(fødselsnummer, fom, tom)
+
             fun oppdrag(fagsystemId: String?) = fagsystemId?.let { id -> utbetalingslinjer[id]?.let { Oppdrag(id, it) } }
             asSQL(
                 """
@@ -202,7 +205,7 @@ internal class TbdUtbetalingDao(
     ): Map<String, List<Utbetalingslinje>> =
         asSQL(
             """
-            SELECT fagsystemId, fom, tom, grad
+            SELECT fagsystemId, fom, tom, grad, dagsats, totalbelop
             FROM tbdUtbetaling_Utbetalingslinje
             WHERE fagsystemId IN (
                 SELECT unnest(ARRAY[arbeidsgiverFagsystemId, personFagsystemId])
@@ -221,6 +224,8 @@ internal class TbdUtbetalingDao(
                     fom = row.localDate("fom"),
                     tom = row.localDate("tom"),
                     grad = row.double("grad"),
+                    dagsats = row.intOrNull("dagsats"),
+                    totalbeløp = row.intOrNull("totalbelop"),
                 )
         }.groupBy({ it.first }, { it.second })
 }

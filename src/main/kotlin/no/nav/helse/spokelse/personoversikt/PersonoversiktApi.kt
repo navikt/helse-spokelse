@@ -103,7 +103,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                         ApiSpeilV2Yrkesaktivitet(
                             yrkesaktivitet.organisasjonsnummer,
                             yrkesaktivitet.mottakere.map { mottaker ->
-                                ApiSpeilV2Mottaker(mottaker.utbetalingsperioder.map { ApiSpeilV2Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                                ApiSpeilV2Mottaker(mottaker.beløp, mottaker.utbetalingsperioder.map { ApiSpeilV2Utbetalingsperiode(it.fom, it.tom, it.grad, it.dagsats, it.beløp) })
                             },
                         )
                     },
@@ -117,7 +117,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                         ApiSpeilV3Yrkesaktivitet(
                             yrkesaktivitet.organisasjonsnummer,
                             yrkesaktivitet.mottakere.map { mottaker ->
-                                ApiSpeilV3Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV3Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                                ApiSpeilV3Mottaker(mottaker.mottaker.tilApi(), mottaker.beløp, mottaker.utbetalingsperioder.map { ApiSpeilV3Utbetalingsperiode(it.fom, it.tom, it.grad, it.dagsats, it.beløp) })
                             },
                         )
                     },
@@ -131,7 +131,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                         ApiSpeilV4Yrkesaktivitet(
                             yrkesaktivitet.organisasjonsnummer,
                             yrkesaktivitet.mottakere.map { mottaker ->
-                                ApiSpeilV4Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV4Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                                ApiSpeilV4Mottaker(mottaker.mottaker.tilApi(), mottaker.beløp, mottaker.utbetalingsperioder.map { ApiSpeilV4Utbetalingsperiode(it.fom, it.tom, it.grad, it.dagsats, it.beløp) })
                             },
                         )
                     },
@@ -146,7 +146,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                         ApiSpeilV5Yrkesaktivitet(
                             yrkesaktivitet.organisasjonsnummer,
                             yrkesaktivitet.mottakere.map { mottaker ->
-                                ApiSpeilV5Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV5Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                                ApiSpeilV5Mottaker(mottaker.mottaker.tilApi(), mottaker.beløp, mottaker.utbetalingsperioder.map { ApiSpeilV5Utbetalingsperiode(it.fom, it.tom, it.grad, it.dagsats, it.beløp) })
                             },
                         )
                     },
@@ -163,7 +163,8 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                             yrkesaktivitet.mottakere.map { mottaker ->
                                 ApiInfotrygdV1Mottaker(
                                     mottaker.mottaker.tilApi(),
-                                    mottaker.utbetalingsperioder.map { ApiInfotrygdV1Utbetalingsperiode(it.fom, it.tom, it.grad, it.usikkerGrad) },
+                                    mottaker.beløp,
+                                    mottaker.utbetalingsperioder.map { ApiInfotrygdV1Utbetalingsperiode(it.fom, it.tom, it.grad, it.dagsats, it.beløp, it.usikkerGrad) },
                                 )
                             },
                         )
@@ -228,6 +229,9 @@ private const val PERIODE_TOM = "Siste dag i utbetalingsperiodene i perioden."
 private const val UTBETALINGSPERIODE_FOM = "Første dag i utbetalingsperioden."
 private const val UTBETALINGSPERIODE_TOM = "Siste dag i utbetalingsperioden."
 private const val GRAD = "Utbetalingsgraden i prosent."
+private const val DAGSATS = "Dagsatsen i kroner etter gradering, altså det som ble utbetalt per dag."
+private const val BELØP = "Beløpet i kroner før skatt som ble utbetalt for utbetalingsperioden."
+private const val MOTTAKER_BELØP = "Summen av beløpene i utbetalingsperiodene, i kroner før skatt."
 private const val KILDE = "Hvor perioden kommer fra."
 private const val SKJÆRINGSTIDSPUNKT = "Skjæringstidspunktet for sykefraværstilfellet. Alle utbetalingsperiodene i perioden hører til dette tilfellet."
 private const val VERSJON = "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre."
@@ -297,6 +301,7 @@ internal data class ApiSpeilV2Yrkesaktivitet(
 
 @Serializable
 internal data class ApiSpeilV2Mottaker(
+    @Description(MOTTAKER_BELØP) val beløp: Int,
     @Description(UTBETALINGSPERIODER) val utbetalingsperioder: List<ApiSpeilV2Utbetalingsperiode>,
 )
 
@@ -305,6 +310,8 @@ internal data class ApiSpeilV2Utbetalingsperiode(
     @Description(UTBETALINGSPERIODE_FOM) val fom: LocalDate,
     @Description(UTBETALINGSPERIODE_TOM) val tom: LocalDate,
     @Description(GRAD) val grad: Int,
+    @Description(DAGSATS) val dagsats: Int,
+    @Description(BELØP) val beløp: Int,
 )
 
 @Serializable
@@ -326,6 +333,7 @@ internal data class ApiSpeilV3Yrkesaktivitet(
 @Serializable
 internal data class ApiSpeilV3Mottaker(
     @Description(MOTTAKER) val mottaker: ApiMottaker,
+    @Description(MOTTAKER_BELØP) val beløp: Int,
     @Description(UTBETALINGSPERIODER) val utbetalingsperioder: List<ApiSpeilV3Utbetalingsperiode>,
 )
 
@@ -334,6 +342,8 @@ internal data class ApiSpeilV3Utbetalingsperiode(
     @Description(UTBETALINGSPERIODE_FOM) val fom: LocalDate,
     @Description(UTBETALINGSPERIODE_TOM) val tom: LocalDate,
     @Description(GRAD) val grad: Int,
+    @Description(DAGSATS) val dagsats: Int,
+    @Description(BELØP) val beløp: Int,
 )
 
 @Serializable
@@ -355,6 +365,7 @@ internal data class ApiSpeilV4Yrkesaktivitet(
 @Serializable
 internal data class ApiSpeilV4Mottaker(
     @Description(MOTTAKER) val mottaker: ApiMottaker,
+    @Description(MOTTAKER_BELØP) val beløp: Int,
     @Description(UTBETALINGSPERIODER) val utbetalingsperioder: List<ApiSpeilV4Utbetalingsperiode>,
 )
 
@@ -363,6 +374,8 @@ internal data class ApiSpeilV4Utbetalingsperiode(
     @Description(UTBETALINGSPERIODE_FOM) val fom: LocalDate,
     @Description(UTBETALINGSPERIODE_TOM) val tom: LocalDate,
     @Description(GRAD) val grad: Int,
+    @Description(DAGSATS) val dagsats: Int,
+    @Description(BELØP) val beløp: Int,
 )
 
 @Serializable
@@ -385,6 +398,7 @@ internal data class ApiSpeilV5Yrkesaktivitet(
 @Serializable
 internal data class ApiSpeilV5Mottaker(
     @Description(MOTTAKER) val mottaker: ApiMottaker,
+    @Description(MOTTAKER_BELØP) val beløp: Int,
     @Description(UTBETALINGSPERIODER) val utbetalingsperioder: List<ApiSpeilV5Utbetalingsperiode>,
 )
 
@@ -393,6 +407,8 @@ internal data class ApiSpeilV5Utbetalingsperiode(
     @Description(UTBETALINGSPERIODE_FOM) val fom: LocalDate,
     @Description(UTBETALINGSPERIODE_TOM) val tom: LocalDate,
     @Description(GRAD) val grad: Int,
+    @Description(DAGSATS) val dagsats: Int,
+    @Description(BELØP) val beløp: Int,
 )
 
 @Serializable
@@ -415,6 +431,7 @@ internal data class ApiInfotrygdV1Yrkesaktivitet(
 @Serializable
 internal data class ApiInfotrygdV1Mottaker(
     @Description(MOTTAKER) val mottaker: ApiMottaker,
+    @Description(MOTTAKER_BELØP) val beløp: Int,
     @Description(UTBETALINGSPERIODER) val utbetalingsperioder: List<ApiInfotrygdV1Utbetalingsperiode>,
 )
 
@@ -423,6 +440,8 @@ internal data class ApiInfotrygdV1Utbetalingsperiode(
     @Description(UTBETALINGSPERIODE_FOM) val fom: LocalDate,
     @Description(UTBETALINGSPERIODE_TOM) val tom: LocalDate,
     @Description(GRAD) val grad: Int,
+    @Description(DAGSATS) val dagsats: Int,
+    @Description(BELØP) val beløp: Int,
     @Description(
         "`true` når graden ikke kan avgjøres sikkert, for eksempel når to perioder hos ulike arbeidsgivere overlapper og begge har grad 100.",
     )
@@ -493,7 +512,7 @@ private val EKSEMPEL =
                     listOf(
                         ApiSpeilV2Yrkesaktivitet(
                             "111111111",
-                            listOf(ApiSpeilV2Mottaker(listOf(ApiSpeilV2Utbetalingsperiode(dato("2021-03-01"), dato("2021-03-31"), 100)))),
+                            listOf(ApiSpeilV2Mottaker(34500, listOf(ApiSpeilV2Utbetalingsperiode(dato("2021-03-01"), dato("2021-03-31"), 100, dagsats = 1500, beløp = 34500)))),
                         ),
                     ),
             ),
@@ -506,8 +525,8 @@ private val EKSEMPEL =
                         ApiSpeilV5Yrkesaktivitet(
                             "111111111",
                             listOf(
-                                ApiSpeilV5Mottaker(ApiMottaker.ARBEIDSGIVER, listOf(ApiSpeilV5Utbetalingsperiode(dato("2024-01-01"), dato("2024-01-31"), 100))),
-                                ApiSpeilV5Mottaker(ApiMottaker.PERSON, listOf(ApiSpeilV5Utbetalingsperiode(dato("2024-01-16"), dato("2024-01-31"), 100))),
+                                ApiSpeilV5Mottaker(ApiMottaker.ARBEIDSGIVER, 23000, listOf(ApiSpeilV5Utbetalingsperiode(dato("2024-01-01"), dato("2024-01-31"), 100, dagsats = 1000, beløp = 23000))),
+                                ApiSpeilV5Mottaker(ApiMottaker.PERSON, 2400, listOf(ApiSpeilV5Utbetalingsperiode(dato("2024-01-16"), dato("2024-01-31"), 100, dagsats = 200, beløp = 2400))),
                             ),
                         ),
                     ),
@@ -523,7 +542,8 @@ private val EKSEMPEL =
                             listOf(
                                 ApiInfotrygdV1Mottaker(
                                     ApiMottaker.ARBEIDSGIVER,
-                                    listOf(ApiInfotrygdV1Utbetalingsperiode(dato("2024-06-03"), dato("2024-06-28"), 100, usikkerGrad = true)),
+                                    24000,
+                                    listOf(ApiInfotrygdV1Utbetalingsperiode(dato("2024-06-03"), dato("2024-06-28"), 100, dagsats = 1200, beløp = 24000, usikkerGrad = true)),
                                 ),
                             ),
                         ),
@@ -532,7 +552,8 @@ private val EKSEMPEL =
                             listOf(
                                 ApiInfotrygdV1Mottaker(
                                     ApiMottaker.PERSON,
-                                    listOf(ApiInfotrygdV1Utbetalingsperiode(dato("2024-06-03"), dato("2024-06-28"), 100, usikkerGrad = true)),
+                                    16000,
+                                    listOf(ApiInfotrygdV1Utbetalingsperiode(dato("2024-06-03"), dato("2024-06-28"), 100, dagsats = 800, beløp = 16000, usikkerGrad = true)),
                                 ),
                             ),
                         ),
@@ -553,19 +574,23 @@ private val BESKRIVELSE =
     Hver periode har yrkesaktiviteter, hver yrkesaktivitet har mottakere, og hver mottaker har utbetalingsperioder.
     En periode med `skjæringstidspunkt` (`SPEIL_V5` og `INFOTRYGD_V1`) samler utbetalingene i ett sykefraværstilfelle, på tvers av arbeidsgivere.
     En periode uten `skjæringstidspunkt` (`SPEIL_V1`–`SPEIL_V4`) samler utbetalinger som henger sammen i tid, på tvers av arbeidsgivere.
-    Helg teller ikke som opphold. Utbetalingsperioder hos samme mottaker som henger sammen og har samme grad, er slått sammen.
+    Helg teller ikke som opphold. Utbetalingsperioder hos samme mottaker som henger sammen og har samme grad og dagsats, er slått sammen,
+    og beløpene er summert. I `SPEIL_V1` er de slått sammen når de har samme grad.
+
+    `beløp` er det som ble utbetalt før skatt. For Speil kommer det fra utbetalingen. For Infotrygd er det dagsatsen ganget med antall dager
+    fra mandag til fredag i utbetalingsperioden, også helligdager, minus feriedager i samme sykefraværstilfelle.
 
     Hver periode har en `versjon`. Den sier hvor perioden kommer fra og hvilke felter som er garantert, og hver versjon har sitt eget skjema.
     Et felt som en versjon ikke garanterer, finnes ikke i skjemaet for den versjonen. Et felt som finnes, er aldri `null`, unntatt `organisasjonsnummer`.
 
-    | `versjon` | `kilde` | Datakilde | `mottaker` | `skjæringstidspunkt` | `usikkerGrad` | Gjelder |
-    |---|---|---|---|---|---|---|
-    | `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
-    | `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ❌ | ❌ | utbetalt før 16.03.2022 |
-    | `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
-    | `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ❌ | ❌ | utbetalt etter 16.03.2022 |
-    | `SPEIL_V5` | `SPEIL` | `tbd.utbetaling` og `tbd.vedtak` | ✅ | ✅ | ❌ | vedtak fattet fra og med 27.11.2025 |
-    | `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | ✅ | alle perioder fra Infotrygd |
+    | `versjon` | `kilde` | Datakilde | `mottaker` | `dagsats`, `beløp` | `skjæringstidspunkt` | `usikkerGrad` | Gjelder |
+    |---|---|---|---|---|---|---|---|
+    | `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | ❌ | ❌ | utbetalt før 16.03.2022 |
+    | `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
+    | `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
+    | `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ✅ | ❌ | ❌ | utbetalt etter 16.03.2022 |
+    | `SPEIL_V5` | `SPEIL` | `tbd.utbetaling` og `tbd.vedtak` | ✅ | ✅ | ✅ | ❌ | vedtak fattet fra og med 27.11.2025 |
+    | `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | ✅ | ✅ | alle perioder fra Infotrygd |
 
     Alle versjonene har `fom`, `tom`, `grad` og `organisasjonsnummer`. En periode har bare én versjon, så utbetalinger med ulike
     versjoner havner i ulike perioder, også når de henger sammen i tid. Når samme utbetaling finnes i flere kilder i Speil,
