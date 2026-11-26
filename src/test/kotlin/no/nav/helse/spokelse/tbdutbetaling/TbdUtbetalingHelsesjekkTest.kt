@@ -38,7 +38,7 @@ internal class TbdUtbetalingHelsesjekkTest : AbstractE2ETest() {
         arbeidsgiverFagsystemId: String? = null,
         personFagsystemId: String? = null,
     ) {
-        val linjer = listOf(Utbetalingslinje(1.januar, 31.januar, 100.0))
+        val linjer = listOf(Utbetalingslinje(1.januar, 31.januar, 100.0, dagsats = 1000, totalbeløp = 1000))
         tbdUtbetalingHåndterer.håndter(
             utbetalingUtbetalt(
                 arbeidsgiverOppdrag = arbeidsgiverFagsystemId?.let { Oppdrag(it, linjer) },

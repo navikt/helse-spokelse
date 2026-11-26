@@ -227,7 +227,7 @@ internal class UtbetaltePerioderApiTest : AbstractE2ETest() {
         utbetalingUtbetalt(
             fødselsnummer = "11111111111",
             organisasjonsnummer = organisasjonsnummer,
-            arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(fom, tom, 100.0))),
+            arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(fom, tom, 100.0, dagsats = 1000, totalbeløp = 1000))),
             fom = fom,
             tom = tom,
         ),

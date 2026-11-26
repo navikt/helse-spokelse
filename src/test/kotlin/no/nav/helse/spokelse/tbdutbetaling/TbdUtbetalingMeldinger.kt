@@ -64,8 +64,7 @@ private fun Oppdrag?.json() =
     this?.let { oppdrag ->
         val linjer =
             oppdrag.utbetalingslinjer.joinToString {
-                val beløp = listOfNotNull(it.dagsats?.let { dagsats -> ", \"dagsats\": $dagsats" }, it.totalbeløp?.let { total -> ", \"totalbeløp\": $total" }).joinToString("")
-                """{ "fom": "${it.fom}", "tom": "${it.tom}", "grad": ${it.grad}$beløp }"""
+                """{ "fom": "${it.fom}", "tom": "${it.tom}", "grad": ${it.grad}, "dagsats": ${it.dagsats}, "totalbeløp": ${it.totalbeløp} }"""
             }
         """{ "fagsystemId": "${oppdrag.fagsystemId}", "utbetalingslinjer": [$linjer] }"""
     } ?: "null"

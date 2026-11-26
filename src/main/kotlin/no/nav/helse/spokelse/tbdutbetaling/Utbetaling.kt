@@ -72,11 +72,9 @@ internal data class Utbetaling(
 
         fun Oppdrag?.linjer(mottaker: Mottaker) =
             this?.utbetalingslinjer.orEmpty().map {
-                val dagsats = checkNotNull(it.dagsats) { "Mangler dagsats for linje i oppdrag ${this?.fagsystemId}. Er backfillen ferdig?" }
-                val beløp = checkNotNull(it.totalbeløp) { "Mangler totalbeløp for linje i oppdrag ${this?.fagsystemId}. Er backfillen ferdig?" }
                 when (val skjæringstidspunkt = vedtak.skjæringstidspunkt(organisasjonsnummer, it.fom)) {
-                    null -> SpeilV4Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), dagsats, beløp)
-                    else -> SpeilV5Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), dagsats, beløp, skjæringstidspunkt)
+                    null -> SpeilV4Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), it.dagsats, it.totalbeløp)
+                    else -> SpeilV5Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), it.dagsats, it.totalbeløp, skjæringstidspunkt)
                 }
             }
         return arbeidsgiverOppdrag.linjer(Mottaker.ARBEIDSGIVER) + personOppdrag.linjer(Mottaker.PERSON)

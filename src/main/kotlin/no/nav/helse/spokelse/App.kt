@@ -37,7 +37,6 @@ import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingslinjeBackfill
 import no.nav.helse.spokelse.tbdvedtak.TbdVedtakHåndterer
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
@@ -151,7 +150,6 @@ fun launchApplication(env: Map<String, String>) {
                 object : RapidsConnection.StatusListener {
                     override fun onStartup(rapidsConnection: RapidsConnection) {
                         dataSource.migrate()
-                        TbdUtbetalingslinjeBackfill(dataSource::dataSource).startIBakgrunnen()
                     }
                 },
             )

@@ -224,8 +224,8 @@ internal class TbdUtbetalingDao(
                     fom = row.localDate("fom"),
                     tom = row.localDate("tom"),
                     grad = row.double("grad"),
-                    dagsats = row.intOrNull("dagsats"),
-                    totalbeløp = row.intOrNull("totalbelop"),
+                    dagsats = row.int("dagsats"),
+                    totalbeløp = row.int("totalbelop"),
                 )
         }.groupBy({ it.first }, { it.second })
 }

@@ -21,7 +21,7 @@ internal class TbdUtbetalingHåndtererTest : AbstractE2ETest() {
     fun `ingenting lagres og ingen bø sendes når en av de siste skrivingene feiler`() {
         val melding =
             utbetalingUtbetalt(
-                arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(1.januar, 31.januar, 100.0))),
+                arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(1.januar, 31.januar, 100.0, dagsats = 1000, totalbeløp = 1000))),
             )
 
         medFeilVedLagringAvUtbetalingslinjer {
@@ -36,7 +36,7 @@ internal class TbdUtbetalingHåndtererTest : AbstractE2ETest() {
 
     @Test
     fun `sier bø etter lagret utbetaling`() {
-        val oppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(1.januar, 31.januar, 100.0)))
+        val oppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(1.januar, 31.januar, 100.0, dagsats = 1000, totalbeløp = 1000)))
         tbdUtbetalingHåndterer.håndter(utbetalingUtbetalt(arbeidsgiverOppdrag = oppdrag), SENDT)
 
         assertEquals(1, tbdUtbetalingDao.hentUtbetalinger(FØDSELSNUMMER).size)
@@ -70,7 +70,7 @@ internal class TbdUtbetalingHåndtererTest : AbstractE2ETest() {
 
     @Test
     fun `lagrer utbetalingen selv om vedtaket mangler gyldig periode`() {
-        val oppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(1.januar, 31.januar, 100.0)))
+        val oppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(1.januar, 31.januar, 100.0, dagsats = 1000, totalbeløp = 1000)))
         tbdUtbetalingHåndterer.håndter(utbetalingUtbetalt(arbeidsgiverOppdrag = oppdrag, fom = LocalDate.MIN), SENDT)
 
         assertNull(gjenståendeSykedagerDao.sisteVedtak(Personidentifikator(FØDSELSNUMMER)))

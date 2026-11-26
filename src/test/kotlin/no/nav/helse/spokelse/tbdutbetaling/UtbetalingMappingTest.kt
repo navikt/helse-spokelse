@@ -35,8 +35,8 @@ internal class UtbetalingMappingTest {
                             fagsystemId = "XI2MMEZAJZBVJL2E4K7UM4BQBY",
                             utbetalingslinjer =
                                 listOf(
-                                    Utbetalingslinje(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5),
-                                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                                    Utbetalingslinje(fom = LocalDate.parse("2018-01-01"), tom = LocalDate.parse("2018-01-31"), grad = 66.5, dagsats = 1000, totalbeløp = 1000),
+                                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0, dagsats = 1000, totalbeløp = 1000),
                                 ),
                         ),
                     personOppdrag =
@@ -44,7 +44,7 @@ internal class UtbetalingMappingTest {
                             fagsystemId = "L52NYV4KE5BEPILU4L2ERGAVYU",
                             utbetalingslinjer =
                                 listOf(
-                                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0),
+                                    Utbetalingslinje(fom = LocalDate.parse("2018-02-01"), tom = LocalDate.parse("2018-02-28"), grad = 50.0, dagsats = 1000, totalbeløp = 1000),
                                 ),
                         ),
                     sistUtbetalt = sistUtbetalt,

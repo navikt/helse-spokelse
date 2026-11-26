@@ -33,8 +33,8 @@ internal class UtbetalingTilSpøkelsePerioderTest {
                         fagsystemId = "ARBEIDSGIVER",
                         utbetalingslinjer =
                             listOf(
-                                Utbetalingslinje(17.januar, 31.januar, 100.0),
-                                Utbetalingslinje(1.mars, 31.mars, 100.0),
+                                Utbetalingslinje(17.januar, 31.januar, 100.0, dagsats = 1000, totalbeløp = 1000),
+                                Utbetalingslinje(1.mars, 31.mars, 100.0, dagsats = 1000, totalbeløp = 1000),
                             ),
                     ),
                 personOppdrag =
@@ -42,9 +42,9 @@ internal class UtbetalingTilSpøkelsePerioderTest {
                         fagsystemId = "PERSON",
                         utbetalingslinjer =
                             listOf(
-                                Utbetalingslinje(1.februar, 28.februar, 100.0),
-                                Utbetalingslinje(1.mars, 31.mars, 100.0),
-                                Utbetalingslinje(1.april, 30.april, 100.0),
+                                Utbetalingslinje(1.februar, 28.februar, 100.0, dagsats = 1000, totalbeløp = 1000),
+                                Utbetalingslinje(1.mars, 31.mars, 100.0, dagsats = 1000, totalbeløp = 1000),
+                                Utbetalingslinje(1.april, 30.april, 100.0, dagsats = 1000, totalbeløp = 1000),
                             ),
                     ),
             )
@@ -78,7 +78,7 @@ internal class UtbetalingTilSpøkelsePerioderTest {
                         fagsystemId = "ARBEIDSGIVER",
                         utbetalingslinjer =
                             listOf(
-                                Utbetalingslinje(17.januar, 31.januar, 100.0),
+                                Utbetalingslinje(17.januar, 31.januar, 100.0, dagsats = 1000, totalbeløp = 1000),
                             ),
                     ),
                 personOppdrag =
@@ -86,7 +86,7 @@ internal class UtbetalingTilSpøkelsePerioderTest {
                         fagsystemId = "PERSON",
                         utbetalingslinjer =
                             listOf(
-                                Utbetalingslinje(10.februar, 28.februar, 100.0),
+                                Utbetalingslinje(10.februar, 28.februar, 100.0, dagsats = 1000, totalbeløp = 1000),
                             ),
                     ),
             )
