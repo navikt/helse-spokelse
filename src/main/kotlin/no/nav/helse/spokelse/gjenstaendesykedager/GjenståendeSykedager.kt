@@ -3,6 +3,7 @@ package no.nav.helse.spokelse.gjenstaendesykedager
 import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.spokelse.felles.Infotrygdperiode
 import no.nav.helse.spokelse.felles.Personidentifikator
+import no.nav.helse.spokelse.felles.ukedager
 import no.nav.sykepenger.libs.logging.navngittLogger
 import java.time.LocalDate
 import java.time.ZoneId
@@ -124,25 +125,10 @@ internal class GjenståendeSykedager(
 
         // 26 uker, som TILSTREKKELIG_OPPHOLD_I_SYKEDAGER i maksdatoberegningen i spleis.
         private const val TILSTREKKELIG_OPPHOLD_I_DAGER = 182
-        private val EN_MANDAG = LocalDate.of(1970, 1, 5)
-
-        // Mandag–fredag fra og med fom til og med tom, minst 0. Helligdager telles med, slik spleis gjør.
-        private fun ukedager(
-            fom: LocalDate,
-            tom: LocalDate,
-        ): Int {
-            if (tom < fom) return 0
-            return (ukedagerFraEnMandagTil(tom.plusDays(1)) - ukedagerFraEnMandagTil(fom)).toInt()
-        }
-
+        // Negativt når til er før fra.
         private fun ukedagerMellom(
             fra: LocalDate,
             til: LocalDate,
-        ): Int = (ukedagerFraEnMandagTil(til.plusDays(1)) - ukedagerFraEnMandagTil(fra.plusDays(1))).toInt()
-
-        private fun ukedagerFraEnMandagTil(dato: LocalDate): Long {
-            val dager = ChronoUnit.DAYS.between(EN_MANDAG, dato)
-            return Math.floorDiv(dager, 7) * 5 + minOf(Math.floorMod(dager, 7), 5)
-        }
+        ): Int = if (til >= fra) ukedager(fra.plusDays(1), til) else -ukedager(til.plusDays(1), fra)
     }
 }

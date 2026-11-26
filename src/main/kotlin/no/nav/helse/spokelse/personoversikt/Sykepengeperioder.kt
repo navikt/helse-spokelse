@@ -3,6 +3,7 @@ package no.nav.helse.spokelse.personoversikt
 import no.nav.helse.spokelse.felles.Personidentifikator
 import java.time.DayOfWeek.SATURDAY
 import java.time.DayOfWeek.SUNDAY
+import java.time.Instant
 import java.time.LocalDate
 
 internal enum class Kilde { SPEIL, INFOTRYGD }
@@ -42,6 +43,12 @@ internal sealed interface UtbetaltLinjeMedBeløp : UtbetaltLinje {
     val beløp: Int
 }
 
+// gjenståendeSykedager er tallet fra utbetalingen linjen hører til. utbetaltTidspunkt er når den utbetalingen ble gjort.
+internal sealed interface UtbetaltLinjeMedGjenståendeSykedager : UtbetaltLinje {
+    val gjenståendeSykedager: Int
+    val utbetaltTidspunkt: Instant
+}
+
 internal sealed interface UtbetaltLinjeMedSkjæringstidspunkt :
     UtbetaltLinjeMedMottaker,
     UtbetaltLinjeMedBeløp {
@@ -55,7 +62,10 @@ internal data class SpeilV1Linje(
     override val fom: LocalDate,
     override val tom: LocalDate,
     override val grad: Int,
-) : UtbetaltLinjeMedMottaker {
+    override val gjenståendeSykedager: Int,
+    override val utbetaltTidspunkt: Instant,
+) : UtbetaltLinjeMedMottaker,
+    UtbetaltLinjeMedGjenståendeSykedager {
     override val versjon get() = Versjon.SPEIL_V1
 }
 
@@ -80,8 +90,11 @@ internal data class SpeilV3Linje(
     override val grad: Int,
     override val dagsats: Int,
     override val beløp: Int,
+    override val gjenståendeSykedager: Int,
+    override val utbetaltTidspunkt: Instant,
 ) : UtbetaltLinjeMedMottaker,
-    UtbetaltLinjeMedBeløp {
+    UtbetaltLinjeMedBeløp,
+    UtbetaltLinjeMedGjenståendeSykedager {
     override val versjon get() = Versjon.SPEIL_V3
 }
 
@@ -94,8 +107,11 @@ internal data class SpeilV4Linje(
     override val grad: Int,
     override val dagsats: Int,
     override val beløp: Int,
+    override val gjenståendeSykedager: Int,
+    override val utbetaltTidspunkt: Instant,
 ) : UtbetaltLinjeMedMottaker,
-    UtbetaltLinjeMedBeløp {
+    UtbetaltLinjeMedBeløp,
+    UtbetaltLinjeMedGjenståendeSykedager {
     override val versjon get() = Versjon.SPEIL_V4
 }
 
@@ -108,8 +124,11 @@ internal data class SpeilV5Linje(
     override val grad: Int,
     override val dagsats: Int,
     override val beløp: Int,
+    override val gjenståendeSykedager: Int,
+    override val utbetaltTidspunkt: Instant,
     override val skjæringstidspunkt: LocalDate,
-) : UtbetaltLinjeMedSkjæringstidspunkt {
+) : UtbetaltLinjeMedSkjæringstidspunkt,
+    UtbetaltLinjeMedGjenståendeSykedager {
     override val versjon get() = Versjon.SPEIL_V5
 }
 
@@ -124,6 +143,8 @@ internal data class InfotrygdV1Linje(
     override val beløp: Int,
     val usikkerGrad: Boolean,
     override val skjæringstidspunkt: LocalDate,
+    // null når Infotrygd ikke har maksdato.
+    val gjenståendeSykedager: Int?,
 ) : UtbetaltLinjeMedSkjæringstidspunkt {
     override val versjon get() = Versjon.INFOTRYGD_V1
 }
@@ -184,6 +205,7 @@ internal data class InfotrygdUtbetalingsperiode(
 internal data class SpeilV1Periode(
     override val fom: LocalDate,
     override val tom: LocalDate,
+    val gjenståendeSykedager: Int,
     override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<Utbetalingsperiode>>>,
 ) : Sykepengeperiode {
     override val versjon get() = Versjon.SPEIL_V1
@@ -200,6 +222,7 @@ internal data class SpeilV2Periode(
 internal data class SpeilV3Periode(
     override val fom: LocalDate,
     override val tom: LocalDate,
+    val gjenståendeSykedager: Int,
     override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<UtbetalingsperiodeMedBeløp>>>,
 ) : Sykepengeperiode {
     override val versjon get() = Versjon.SPEIL_V3
@@ -208,6 +231,7 @@ internal data class SpeilV3Periode(
 internal data class SpeilV4Periode(
     override val fom: LocalDate,
     override val tom: LocalDate,
+    val gjenståendeSykedager: Int,
     override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<UtbetalingsperiodeMedBeløp>>>,
 ) : Sykepengeperiode {
     override val versjon get() = Versjon.SPEIL_V4
@@ -217,6 +241,7 @@ internal data class SpeilV5Periode(
     val skjæringstidspunkt: LocalDate,
     override val fom: LocalDate,
     override val tom: LocalDate,
+    val gjenståendeSykedager: Int,
     override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<UtbetalingsperiodeMedBeløp>>>,
 ) : Sykepengeperiode {
     override val versjon get() = Versjon.SPEIL_V5
@@ -226,6 +251,7 @@ internal data class InfotrygdV1Periode(
     val skjæringstidspunkt: LocalDate,
     override val fom: LocalDate,
     override val tom: LocalDate,
+    val gjenståendeSykedager: Int?,
     override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<InfotrygdUtbetalingsperiode>>>,
 ) : Sykepengeperiode {
     override val versjon get() = Versjon.INFOTRYGD_V1
@@ -236,12 +262,30 @@ internal fun List<UtbetaltLinje>.somSykepengeperioder(): List<Sykepengeperiode> 
     return Versjon.entries
         .flatMap { versjon ->
             when (versjon) {
-                Versjon.SPEIL_V1 -> linjer.filterIsInstance<SpeilV1Linje>().somPerioder(::SpeilV1Periode) { it.perMottaker(::somUtbetalingsperioder) }
-                Versjon.SPEIL_V2 -> linjer.filterIsInstance<SpeilV2Linje>().somPerioder(::SpeilV2Periode) { listOf(UtbetalingerUtenKjentMottaker(somUtbetalingsperioderMedBeløp(it))) }
-                Versjon.SPEIL_V3 -> linjer.filterIsInstance<SpeilV3Linje>().somPerioder(::SpeilV3Periode) { it.perMottaker(::somUtbetalingsperioderMedBeløp) }
-                Versjon.SPEIL_V4 -> linjer.filterIsInstance<SpeilV4Linje>().somPerioder(::SpeilV4Periode) { it.perMottaker(::somUtbetalingsperioderMedBeløp) }
-                Versjon.SPEIL_V5 -> linjer.filterIsInstance<SpeilV5Linje>().somPerioderPerTilfelle(::SpeilV5Periode) { it.perMottaker(::somUtbetalingsperioderMedBeløp) }
-                Versjon.INFOTRYGD_V1 -> linjer.filterIsInstance<InfotrygdV1Linje>().somPerioderPerTilfelle(::InfotrygdV1Periode) { it.perMottaker(::somInfotrygdUtbetalingsperioder) }
+                Versjon.SPEIL_V1 ->
+                    linjer.filterIsInstance<SpeilV1Linje>().somPerioder({ linjerIPerioden, yrkesaktiviteter -> SpeilV1Periode(linjerIPerioden.fom, linjerIPerioden.tom, linjerIPerioden.gjenståendeSykedager, yrkesaktiviteter) }) {
+                        it.perMottaker(::somUtbetalingsperioder)
+                    }
+                Versjon.SPEIL_V2 ->
+                    linjer.filterIsInstance<SpeilV2Linje>().somPerioder({ linjerIPerioden, yrkesaktiviteter -> SpeilV2Periode(linjerIPerioden.fom, linjerIPerioden.tom, yrkesaktiviteter) }) {
+                        listOf(UtbetalingerUtenKjentMottaker(somUtbetalingsperioderMedBeløp(it)))
+                    }
+                Versjon.SPEIL_V3 ->
+                    linjer.filterIsInstance<SpeilV3Linje>().somPerioder({ linjerIPerioden, yrkesaktiviteter -> SpeilV3Periode(linjerIPerioden.fom, linjerIPerioden.tom, linjerIPerioden.gjenståendeSykedager, yrkesaktiviteter) }) {
+                        it.perMottaker(::somUtbetalingsperioderMedBeløp)
+                    }
+                Versjon.SPEIL_V4 ->
+                    linjer.filterIsInstance<SpeilV4Linje>().somPerioder({ linjerIPerioden, yrkesaktiviteter -> SpeilV4Periode(linjerIPerioden.fom, linjerIPerioden.tom, linjerIPerioden.gjenståendeSykedager, yrkesaktiviteter) }) {
+                        it.perMottaker(::somUtbetalingsperioderMedBeløp)
+                    }
+                Versjon.SPEIL_V5 ->
+                    linjer.filterIsInstance<SpeilV5Linje>().somPerioderPerTilfelle({ skjæringstidspunkt, linjerIPerioden, yrkesaktiviteter ->
+                        SpeilV5Periode(skjæringstidspunkt, linjerIPerioden.fom, linjerIPerioden.tom, linjerIPerioden.gjenståendeSykedager, yrkesaktiviteter)
+                    }) { it.perMottaker(::somUtbetalingsperioderMedBeløp) }
+                Versjon.INFOTRYGD_V1 ->
+                    linjer.filterIsInstance<InfotrygdV1Linje>().somPerioderPerTilfelle({ skjæringstidspunkt, linjerIPerioden, yrkesaktiviteter ->
+                        InfotrygdV1Periode(skjæringstidspunkt, linjerIPerioden.fom, linjerIPerioden.tom, linjerIPerioden.gjenståendeSykedager, yrkesaktiviteter)
+                    }) { it.perMottaker(::somInfotrygdUtbetalingsperioder) }
             }
         }.sortedWith(compareBy({ it.fom }, { it.versjon }))
 }
@@ -268,18 +312,26 @@ private fun List<UtbetaltLinje>.utenDuplikater(): List<UtbetaltLinje> {
 
 // Én periode per tidsrom med sammenhengende utbetaling, med én yrkesaktivitet per organisasjonsnummer.
 private fun <L : UtbetaltLinje, M, P> List<L>.somPerioder(
-    periode: (LocalDate, LocalDate, List<Yrkesaktivitet<M>>) -> P,
+    periode: (List<L>, List<Yrkesaktivitet<M>>) -> P,
     mottakere: (List<L>) -> List<M>,
-): List<P> = sammenhengende(LocalDate::hengerSammenMed).map { linjer -> periode(linjer.minOf { it.fom }, linjer.maxOf { it.tom }, linjer.somYrkesaktiviteter(mottakere)) }
+): List<P> = sammenhengende(LocalDate::hengerSammenMed).map { linjer -> periode(linjer, linjer.somYrkesaktiviteter(mottakere)) }
 
 // Én periode per sykefraværstilfelle, med én yrkesaktivitet per organisasjonsnummer.
 private fun <L : UtbetaltLinjeMedSkjæringstidspunkt, M, P> List<L>.somPerioderPerTilfelle(
-    periode: (LocalDate, LocalDate, LocalDate, List<Yrkesaktivitet<M>>) -> P,
+    periode: (LocalDate, List<L>, List<Yrkesaktivitet<M>>) -> P,
     mottakere: (List<L>) -> List<M>,
 ): List<P> =
     groupBy { it.skjæringstidspunkt }
         .toSortedMap()
-        .map { (skjæringstidspunkt, linjer) -> periode(skjæringstidspunkt, linjer.minOf { it.fom }, linjer.maxOf { it.tom }, linjer.somYrkesaktiviteter(mottakere)) }
+        .map { (skjæringstidspunkt, linjer) -> periode(skjæringstidspunkt, linjer, linjer.somYrkesaktiviteter(mottakere)) }
+
+private val List<UtbetaltLinje>.fom get() = minOf { it.fom }
+private val List<UtbetaltLinje>.tom get() = maxOf { it.tom }
+
+// Gjenstående sykedager ved slutten av perioden er tallet fra linjen som slutter sist. Slutter flere linjer samme dag,
+// brukes tallet fra utbetalingen som ble gjort sist, fordi det er den ferskeste utregningen for den dagen.
+private val List<UtbetaltLinjeMedGjenståendeSykedager>.gjenståendeSykedager get() = maxWith(compareBy({ it.tom }, { it.utbetaltTidspunkt })).gjenståendeSykedager
+private val List<InfotrygdV1Linje>.gjenståendeSykedager get() = maxBy { it.tom }.gjenståendeSykedager
 
 private fun <L : UtbetaltLinje, M> List<L>.somYrkesaktiviteter(mottakere: (List<L>) -> List<M>) =
     groupBy { it.organisasjonsnummer }

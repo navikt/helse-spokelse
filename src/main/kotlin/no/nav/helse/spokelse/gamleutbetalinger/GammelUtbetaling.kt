@@ -11,6 +11,7 @@ import no.nav.helse.spokelse.personoversikt.SpeilV3Linje
 import no.nav.helse.spokelse.personoversikt.UtbetaltLinje
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 // tag er navnet v1 bruker i tags, og verdien i kilde-kolonnen i spørringen i GamleUtbetalingerDao.
 internal enum class GammelKilde(
@@ -33,6 +34,7 @@ internal data class GammelUtbetaling(
     private val mottaker: Mottaker?,
     private val dagsats: Int?,
     private val beløp: Int?,
+    private val gjenståendeSykedager: Int?,
 ) {
     private fun somFpUtbetalingsperiode() =
         Utbetalingsperiode(
@@ -53,16 +55,19 @@ internal data class GammelUtbetaling(
 
     private fun somUtbetaltLinje(): UtbetaltLinje {
         val personidentifikator = Personidentifikator(fødselsnummer)
+        val utbetalt = utbetaltTidspunkt.atZone(ZoneId.of("Europe/Oslo")).toInstant()
 
         fun mottaker() = checkNotNull(mottaker) { "Mangler mottaker for gammel utbetaling fra ${kilde.tag}" }
 
         fun dagsats() = checkNotNull(dagsats) { "Mangler dagsats for gammel utbetaling fra ${kilde.tag}" }
 
         fun beløp() = checkNotNull(beløp) { "Mangler beløp for gammel utbetaling fra ${kilde.tag}" }
+
+        fun gjenståendeSykedager() = checkNotNull(gjenståendeSykedager) { "Mangler gjenstående sykedager for gammel utbetaling fra ${kilde.tag}" }
         return when (kilde) {
-            GammelKilde.GAMLE_UTBETALINGER -> SpeilV1Linje(personidentifikator, organisasjonsnummer, mottaker(), fom, tom, grad)
+            GammelKilde.GAMLE_UTBETALINGER -> SpeilV1Linje(personidentifikator, organisasjonsnummer, mottaker(), fom, tom, grad, gjenståendeSykedager(), utbetalt)
             GammelKilde.OLD_VEDTAK_OG_OLD_UTBETALING -> SpeilV2Linje(personidentifikator, organisasjonsnummer, fom, tom, grad, dagsats(), beløp())
-            GammelKilde.VEDTAK_OPPDRAG_OG_UTBETALING -> SpeilV3Linje(personidentifikator, organisasjonsnummer, mottaker(), fom, tom, grad, dagsats(), beløp())
+            GammelKilde.VEDTAK_OPPDRAG_OG_UTBETALING -> SpeilV3Linje(personidentifikator, organisasjonsnummer, mottaker(), fom, tom, grad, dagsats(), beløp(), gjenståendeSykedager(), utbetalt)
         }
     }
 

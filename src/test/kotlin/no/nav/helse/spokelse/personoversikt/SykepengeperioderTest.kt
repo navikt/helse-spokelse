@@ -14,6 +14,7 @@ import no.nav.sykepenger.libs.testing.testdata.lagIdentitetsnummer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import java.time.Instant
 
 internal class SykepengeperioderTest {
     @Test
@@ -25,6 +26,7 @@ internal class SykepengeperioderTest {
                 SpeilV4Periode(
                     fom = 1.januar,
                     tom = 31.januar,
+                    gjenståendeSykedager = GJENSTÅENDE_SYKEDAGER,
                     yrkesaktiviteter =
                         listOf(
                             Yrkesaktivitet(ORGNR_A, listOf(Mottakerutbetalinger(ARBEIDSGIVER, listOf(UtbetalingsperiodeMedBeløp(1.januar, 31.januar, 100, 1000, 1000))))),
@@ -66,6 +68,7 @@ internal class SykepengeperioderTest {
                 SpeilV4Periode(
                     fom = 1.januar,
                     tom = 31.januar,
+                    gjenståendeSykedager = GJENSTÅENDE_SYKEDAGER,
                     yrkesaktiviteter =
                         listOf(
                             Yrkesaktivitet(
@@ -110,6 +113,7 @@ internal class SykepengeperioderTest {
                     skjæringstidspunkt = SKJÆRINGSTIDSPUNKT,
                     fom = 1.januar,
                     tom = 31.januar,
+                    gjenståendeSykedager = GJENSTÅENDE_SYKEDAGER,
                     yrkesaktiviteter =
                         listOf(
                             Yrkesaktivitet(ORGNR_A, listOf(Mottakerutbetalinger(ARBEIDSGIVER, listOf(UtbetalingsperiodeMedBeløp(1.januar, 10.januar, 100, 1000, 1000))))),
@@ -250,11 +254,61 @@ internal class SykepengeperioderTest {
         assertEquals(listOf(SPEIL_V3, SPEIL_V4, INFOTRYGD_V1), perioder.map { it.versjon })
     }
 
+    @Test
+    fun `gjenstående sykedager er tallet fra linjen som slutter sist, på tvers av arbeidsgiverne`() {
+        listOf(SPEIL_V1, SPEIL_V3, SPEIL_V4, SPEIL_V5).forEach { versjon ->
+            val perioder =
+                listOf(
+                    lagLinje(1.januar, 31.januar, versjon = versjon, organisasjonsnummer = ORGNR_A, gjenståendeSykedager = 200, utbetaltTidspunkt = UTBETALT),
+                    lagLinje(1.januar, 15.januar, versjon = versjon, organisasjonsnummer = ORGNR_B, gjenståendeSykedager = 210, utbetaltTidspunkt = UTBETALT.plusSeconds(1)),
+                ).somSykepengeperioder()
+
+            assertEquals(listOf(200), perioder.map { it.gjenståendeSykedager }, "$versjon")
+        }
+    }
+
+    @Test
+    fun `når linjene slutter samme dag, er gjenstående sykedager tallet fra utbetalingen som ble gjort sist`() {
+        val perioder =
+            listOf(
+                lagLinje(1.januar, 31.januar, organisasjonsnummer = ORGNR_B, gjenståendeSykedager = 210, utbetaltTidspunkt = UTBETALT),
+                lagLinje(1.januar, 31.januar, organisasjonsnummer = ORGNR_A, gjenståendeSykedager = 200, utbetaltTidspunkt = UTBETALT.plusSeconds(1)),
+            ).somSykepengeperioder()
+
+        assertEquals(listOf(200), perioder.map { it.gjenståendeSykedager })
+    }
+
+    @Test
+    fun `gjenstående sykedager i Infotrygd er tallet fra linjen som slutter sist, og null når den mangler maksdato`() {
+        fun gjenståendeSykedager(vararg linjer: Triple<LocalDate, LocalDate, Int?>) =
+            linjer
+                .map { (fom, tom, gjenstående) -> lagLinje(fom, tom, versjon = INFOTRYGD_V1, gjenståendeSykedager = gjenstående) }
+                .somSykepengeperioder()
+                .single()
+                .gjenståendeSykedager
+
+        assertEquals(80, gjenståendeSykedager(Triple(16.januar, 31.januar, 80), Triple(1.januar, 15.januar, null)))
+        assertEquals(null, gjenståendeSykedager(Triple(1.januar, 15.januar, 100), Triple(16.januar, 31.januar, null)))
+    }
+
     private companion object {
         private val PERSONIDENTIFIKATOR = Personidentifikator(lagIdentitetsnummer())
         private const val ORGNR_A = "111111111"
         private const val ORGNR_B = "222222222"
+        private const val GJENSTÅENDE_SYKEDAGER = 100
         private val SKJÆRINGSTIDSPUNKT = 1.januar
+        private val UTBETALT = Instant.parse("2018-02-01T11:00:00Z")
+
+        private val Sykepengeperiode.gjenståendeSykedager: Int?
+            get() =
+                when (this) {
+                    is SpeilV1Periode -> gjenståendeSykedager
+                    is SpeilV2Periode -> error("SPEIL_V2 har ikke gjenstående sykedager")
+                    is SpeilV3Periode -> gjenståendeSykedager
+                    is SpeilV4Periode -> gjenståendeSykedager
+                    is SpeilV5Periode -> gjenståendeSykedager
+                    is InfotrygdV1Periode -> gjenståendeSykedager
+                }
 
         private fun lagLinje(
             fom: LocalDate,
@@ -267,14 +321,18 @@ internal class SykepengeperioderTest {
             skjæringstidspunkt: LocalDate = SKJÆRINGSTIDSPUNKT,
             dagsats: Int = 1000,
             beløp: Int = 1000,
-        ): UtbetaltLinje =
-            when (versjon) {
-                SPEIL_V1 -> SpeilV1Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad)
+            gjenståendeSykedager: Int? = GJENSTÅENDE_SYKEDAGER,
+            utbetaltTidspunkt: Instant = UTBETALT,
+        ): UtbetaltLinje {
+            fun gjenstående() = requireNotNull(gjenståendeSykedager) { "$versjon har alltid gjenstående sykedager" }
+            return when (versjon) {
+                SPEIL_V1 -> SpeilV1Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, gjenstående(), utbetaltTidspunkt)
                 SPEIL_V2 -> SpeilV2Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, fom, tom, grad, dagsats, beløp)
-                SPEIL_V3 -> SpeilV3Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, dagsats, beløp)
-                SPEIL_V4 -> SpeilV4Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, dagsats, beløp)
-                SPEIL_V5 -> SpeilV5Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, dagsats, beløp, skjæringstidspunkt)
-                INFOTRYGD_V1 -> InfotrygdV1Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, dagsats, beløp, usikkerGrad, skjæringstidspunkt)
+                SPEIL_V3 -> SpeilV3Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, dagsats, beløp, gjenstående(), utbetaltTidspunkt)
+                SPEIL_V4 -> SpeilV4Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, dagsats, beløp, gjenstående(), utbetaltTidspunkt)
+                SPEIL_V5 -> SpeilV5Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, dagsats, beløp, gjenstående(), utbetaltTidspunkt, skjæringstidspunkt)
+                INFOTRYGD_V1 -> InfotrygdV1Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, dagsats, beløp, usikkerGrad, skjæringstidspunkt, gjenståendeSykedager)
             }
+        }
     }
 }

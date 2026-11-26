@@ -17,6 +17,7 @@ import no.nav.helse.spokelse.tbdvedtak.TbdVedtak
 import no.nav.helse.spokelse.tbdvedtak.TbdVedtak.Companion.skjæringstidspunkt
 import tools.jackson.databind.JsonNode
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.*
 
 internal data class Oppdrag(
@@ -69,12 +70,13 @@ internal data class Utbetaling(
     // En linje med et vedtak som dekker linjens fom, blir SPEIL_V5. Ellers blir den SPEIL_V4.
     private fun somUtbetalteLinjer(vedtak: List<TbdVedtak>): List<UtbetaltLinjeMedMottaker> {
         val personidentifikator = Personidentifikator(fødselsnummer)
+        val utbetaltTidspunkt = sistUtbetalt.atZone(ZoneId.of("Europe/Oslo")).toInstant()
 
         fun Oppdrag?.linjer(mottaker: Mottaker) =
             this?.utbetalingslinjer.orEmpty().map {
                 when (val skjæringstidspunkt = vedtak.skjæringstidspunkt(organisasjonsnummer, it.fom)) {
-                    null -> SpeilV4Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), it.dagsats, it.totalbeløp)
-                    else -> SpeilV5Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), it.dagsats, it.totalbeløp, skjæringstidspunkt)
+                    null -> SpeilV4Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), it.dagsats, it.totalbeløp, gjenståendeSykedager, utbetaltTidspunkt)
+                    else -> SpeilV5Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), it.dagsats, it.totalbeløp, gjenståendeSykedager, utbetaltTidspunkt, skjæringstidspunkt)
                 }
             }
         return arbeidsgiverOppdrag.linjer(Mottaker.ARBEIDSGIVER) + personOppdrag.linjer(Mottaker.PERSON)

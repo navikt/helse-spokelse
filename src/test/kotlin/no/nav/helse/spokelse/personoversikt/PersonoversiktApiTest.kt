@@ -41,6 +41,7 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
                       "versjon": "SPEIL_V4",
                       "fom": "2024-01-01",
                       "tom": "2024-01-31",
+                      "gjenståendeSykedager": 50,
                       "yrkesaktiviteter": [
                         {
                           "organisasjonsnummer": "$ORGNR",
@@ -67,7 +68,7 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
                 {
                   "perioder": [
                     {
-                      "kilde": "SPEIL", "versjon": "SPEIL_V5", "skjæringstidspunkt": "2023-12-18", "fom": "2024-01-01", "tom": "2024-01-31",
+                      "kilde": "SPEIL", "versjon": "SPEIL_V5", "skjæringstidspunkt": "2023-12-18", "fom": "2024-01-01", "tom": "2024-01-31", "gjenståendeSykedager": 50,
                       "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "beløp": 23000, "utbetalingsperioder": [ { "fom": "2024-01-01", "tom": "2024-01-31", "grad": 100, "dagsats": 1000, "beløp": 23000 } ] } ] } ]
                     }
                   ]
@@ -133,17 +134,19 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
     }
 
     @Test
-    fun `gir én periode per versjon, med mottaker, dagsats, beløp, skjæringstidspunkt og usikkerGrad der versjonen har dem`() {
-        lagreGammelUtbetaling(dato("2020-01-01"), dato("2020-01-31"), "FAG1", FØDSELSNUMMER, fagområde = "SPREF")
+    fun `gir én periode per versjon, med mottaker, dagsats, beløp, skjæringstidspunkt, gjenstående sykedager og usikkerGrad der versjonen har dem`() {
+        lagreGammelUtbetaling(dato("2020-01-01"), dato("2020-01-31"), "FAG1", FØDSELSNUMMER, fagområde = "SPREF", gjenståendeSykedager = 200)
         lagreOldVedtakOgOldUtbetaling(dato("2020-03-02"), dato("2020-03-31"), "FAG2", FØDSELSNUMMER, dagsats = 2000, beløp = 1000, totalbeløp = 22000)
-        lagreVedtakOppdragOgUtbetaling(dato("2020-05-01"), dato("2020-05-29"), "FAG3", FØDSELSNUMMER, fagområde = "SP", dagsats = 3000, beløp = 1500, sykedager = 21)
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-01"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 23000))))
+        lagreVedtakOppdragOgUtbetaling(dato("2020-05-01"), dato("2020-05-29"), "FAG3", FØDSELSNUMMER, fagområde = "SP", dagsats = 3000, beløp = 1500, sykedager = 21, gjenståendeSykedager = 180)
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("arbeid", listOf(Utbetalingslinje(dato("2024-01-01"), dato("2024-01-31"), 100.0, dagsats = 1000, totalbeløp = 23000))), gjenståendeSykedager = 160)
         vedtakFraSpeil(dato("2024-05-01"), dato("2024-05-31"), skjæringstidspunkt = dato("2024-04-15"))
-        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("mai", listOf(Utbetalingslinje(dato("2024-05-01"), dato("2024-05-31"), 100.0, dagsats = 800, totalbeløp = 18400))))
+        utbetalingFraSpeil(arbeidsgiverOppdrag = Oppdrag("mai", listOf(Utbetalingslinje(dato("2024-05-01"), dato("2024-05-31"), 100.0, dagsats = 800, totalbeløp = 18400))), gjenståendeSykedager = 140)
+        // Fra 1. april til og med 28. juni 2024 er det 13 uker med fem dager fra mandag til fredag
+        val maksdato = dato("2024-06-28")
         infotrygdperioder =
             listOf(
-                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "ARB_REF", organisasjonsnummer = ORGNR, tags = setOf("UsikkerGrad"), skjæringstidspunkt = dato("2024-02-12"), dagsats = 1200),
-                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "UTBETALING", organisasjonsnummer = null, skjæringstidspunkt = dato("2024-02-12"), dagsats = 300),
+                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "ARB_REF", maksdato = maksdato, organisasjonsnummer = ORGNR, tags = setOf("UsikkerGrad"), skjæringstidspunkt = dato("2024-02-12"), dagsats = 1200),
+                Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "UTBETALING", maksdato = maksdato, organisasjonsnummer = null, skjæringstidspunkt = dato("2024-02-12"), dagsats = 300),
             )
 
         assertPersonoversikt(
@@ -152,7 +155,7 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
                 {
                   "perioder": [
                     {
-                      "kilde": "SPEIL", "versjon": "SPEIL_V1", "fom": "2020-01-01", "tom": "2020-01-31",
+                      "kilde": "SPEIL", "versjon": "SPEIL_V1", "fom": "2020-01-01", "tom": "2020-01-31", "gjenståendeSykedager": 200,
                       "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "utbetalingsperioder": [ { "fom": "2020-01-01", "tom": "2020-01-31", "grad": 100 } ] } ] } ]
                     },
                     {
@@ -160,22 +163,22 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
                       "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "beløp": 22000, "utbetalingsperioder": [ { "fom": "2020-03-02", "tom": "2020-03-31", "grad": 100, "dagsats": 1000, "beløp": 22000 } ] } ] } ]
                     },
                     {
-                      "kilde": "SPEIL", "versjon": "SPEIL_V3", "fom": "2020-05-01", "tom": "2020-05-29",
+                      "kilde": "SPEIL", "versjon": "SPEIL_V3", "fom": "2020-05-01", "tom": "2020-05-29", "gjenståendeSykedager": 180,
                       "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "PERSON", "beløp": 31500, "utbetalingsperioder": [ { "fom": "2020-05-01", "tom": "2020-05-29", "grad": 100, "dagsats": 1500, "beløp": 31500 } ] } ] } ]
                     },
                     {
-                      "kilde": "SPEIL", "versjon": "SPEIL_V4", "fom": "2024-01-01", "tom": "2024-01-31",
+                      "kilde": "SPEIL", "versjon": "SPEIL_V4", "fom": "2024-01-01", "tom": "2024-01-31", "gjenståendeSykedager": 160,
                       "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "beløp": 23000, "utbetalingsperioder": [ { "fom": "2024-01-01", "tom": "2024-01-31", "grad": 100, "dagsats": 1000, "beløp": 23000 } ] } ] } ]
                     },
                     {
-                      "kilde": "INFOTRYGD", "versjon": "INFOTRYGD_V1", "skjæringstidspunkt": "2024-02-12", "fom": "2024-03-01", "tom": "2024-03-31",
+                      "kilde": "INFOTRYGD", "versjon": "INFOTRYGD_V1", "skjæringstidspunkt": "2024-02-12", "fom": "2024-03-01", "tom": "2024-03-31", "gjenståendeSykedager": 65,
                       "yrkesaktiviteter": [
                         { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "beløp": 25200, "utbetalingsperioder": [ { "fom": "2024-03-01", "tom": "2024-03-31", "grad": 100, "dagsats": 1200, "beløp": 25200, "usikkerGrad": true } ] } ] },
                         { "organisasjonsnummer": null, "mottakere": [ { "mottaker": "PERSON", "beløp": 6300, "utbetalingsperioder": [ { "fom": "2024-03-01", "tom": "2024-03-31", "grad": 100, "dagsats": 300, "beløp": 6300, "usikkerGrad": false } ] } ] }
                       ]
                     },
                     {
-                      "kilde": "SPEIL", "versjon": "SPEIL_V5", "skjæringstidspunkt": "2024-04-15", "fom": "2024-05-01", "tom": "2024-05-31",
+                      "kilde": "SPEIL", "versjon": "SPEIL_V5", "skjæringstidspunkt": "2024-04-15", "fom": "2024-05-01", "tom": "2024-05-31", "gjenståendeSykedager": 140,
                       "yrkesaktiviteter": [ { "organisasjonsnummer": "$ORGNR", "mottakere": [ { "mottaker": "ARBEIDSGIVER", "beløp": 18400, "utbetalingsperioder": [ { "fom": "2024-05-01", "tom": "2024-05-31", "grad": 100, "dagsats": 800, "beløp": 18400 } ] } ] } ]
                     }
                   ]
@@ -236,6 +239,16 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
             listOf(Triple(100, 1000, 5000), Triple(50, 500, 2500), Triple(50, 0, 0)),
             mottaker.path("utbetalingsperioder").values().map { Triple(it.path("grad").asInt(), it.path("dagsats").asInt(), it.path("beløp").asInt()) },
         )
+    }
+
+    @Test
+    fun `Infotrygd-periode uten maksdato har gjenståendeSykedager null`() {
+        infotrygdperioder = listOf(Infotrygdperiode(dato("2024-03-01"), dato("2024-03-31"), type = "UTBETALING", maksdato = null, skjæringstidspunkt = dato("2024-02-12")))
+
+        val periode = hentPerioder().single()
+
+        assertEquals(true, periode.has("gjenståendeSykedager"))
+        assertEquals(true, periode.path("gjenståendeSykedager").isNull)
     }
 
     @Test
@@ -377,12 +390,14 @@ internal class PersonoversiktApiTest : AbstractE2ETest() {
         arbeidsgiverOppdrag: Oppdrag? = null,
         personOppdrag: Oppdrag? = null,
         organisasjonsnummer: String = ORGNR,
+        gjenståendeSykedager: Int = 50,
     ) = tbdUtbetalingHåndterer.håndter(
         utbetalingUtbetalt(
             fødselsnummer = FØDSELSNUMMER,
             organisasjonsnummer = organisasjonsnummer,
             arbeidsgiverOppdrag = arbeidsgiverOppdrag,
             personOppdrag = personOppdrag,
+            gjenståendeSykedager = gjenståendeSykedager,
         ),
         LocalDateTime.parse("2024-02-01T12:00:00"),
     )

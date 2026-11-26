@@ -95,11 +95,13 @@ internal class Infotrygd(
             fom = LocalDate.parse(path("fom").asString()),
             tom = LocalDate.parse(path("tom").asString()),
             type = path("type").asString(),
-            maksdato = path("maksdato").takeUnless { it.isMissingOrNull() }?.let { LocalDate.parse(it.asString()) },
+            maksdato = datoEllerNull("maksdato"),
             organisasjonsnummer = path("organisasjonsnummer").takeUnless { it.isMissingOrNull() }?.asString(),
         )
 
     private fun JsonNode.dato(felt: String) = LocalDate.parse(path(felt).asString())
+
+    private fun JsonNode.datoEllerNull(felt: String) = path(felt).takeUnless { it.isMissingOrNull() }?.let { LocalDate.parse(it.asString()) }
 
     private fun JsonNode.somFerie() = Infotrygdferie(Personidentifikator(path("personidentifikator").asString()), dato("skjæringstidspunkt"), dato("fom"), dato("tom"))
 
@@ -120,6 +122,8 @@ internal class Infotrygd(
             beløp = dagsats * utbetalingsdager(personidentifikator, skjæringstidspunkt, fom, tom, ferie),
             usikkerGrad = path("tags").values().any { it.asString() == "UsikkerGrad" },
             skjæringstidspunkt = skjæringstidspunkt,
+            // Samme regnestykke som Spleis bruker for gjenstående dager i Maksdatokontekst.beregnMaksdato.
+            gjenståendeSykedager = datoEllerNull("maksdato")?.let { maksdato -> ukedager(tom.plusDays(1), maksdato) },
         )
     }
 

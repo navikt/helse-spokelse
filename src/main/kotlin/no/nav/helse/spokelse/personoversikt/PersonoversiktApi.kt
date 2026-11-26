@@ -84,6 +84,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
             ApiSpeilV1Periode(
                 fom = fom,
                 tom = tom,
+                gjenståendeSykedager = gjenståendeSykedager,
                 yrkesaktiviteter =
                     yrkesaktiviteter.map { yrkesaktivitet ->
                         ApiSpeilV1Yrkesaktivitet(
@@ -112,6 +113,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
             ApiSpeilV3Periode(
                 fom = fom,
                 tom = tom,
+                gjenståendeSykedager = gjenståendeSykedager,
                 yrkesaktiviteter =
                     yrkesaktiviteter.map { yrkesaktivitet ->
                         ApiSpeilV3Yrkesaktivitet(
@@ -126,6 +128,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
             ApiSpeilV4Periode(
                 fom = fom,
                 tom = tom,
+                gjenståendeSykedager = gjenståendeSykedager,
                 yrkesaktiviteter =
                     yrkesaktiviteter.map { yrkesaktivitet ->
                         ApiSpeilV4Yrkesaktivitet(
@@ -141,6 +144,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                 skjæringstidspunkt = skjæringstidspunkt,
                 fom = fom,
                 tom = tom,
+                gjenståendeSykedager = gjenståendeSykedager,
                 yrkesaktiviteter =
                     yrkesaktiviteter.map { yrkesaktivitet ->
                         ApiSpeilV5Yrkesaktivitet(
@@ -156,6 +160,7 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                 skjæringstidspunkt = skjæringstidspunkt,
                 fom = fom,
                 tom = tom,
+                gjenståendeSykedager = gjenståendeSykedager,
                 yrkesaktiviteter =
                     yrkesaktiviteter.map { yrkesaktivitet ->
                         ApiInfotrygdV1Yrkesaktivitet(
@@ -234,6 +239,8 @@ private const val BELØP = "Beløpet i kroner før skatt som ble utbetalt for ut
 private const val MOTTAKER_BELØP = "Summen av beløpene i utbetalingsperiodene, i kroner før skatt."
 private const val KILDE = "Hvor perioden kommer fra."
 private const val SKJÆRINGSTIDSPUNKT = "Skjæringstidspunktet for sykefraværstilfellet. Alle utbetalingsperiodene i perioden hører til dette tilfellet."
+private const val GJENSTÅENDE_SYKEDAGER = "Antall sykedager som var igjen av sykepengeretten etter den siste utbetalte dagen i perioden."
+private const val GJENSTÅENDE_SYKEDAGER_INFOTRYGD = "$GJENSTÅENDE_SYKEDAGER `null` når Infotrygd ikke har maksdato."
 private const val VERSJON = "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre."
 
 @Serializable
@@ -261,6 +268,7 @@ internal data class ApiSpeilV1Periode(
     @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V1,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
+    @Description(GJENSTÅENDE_SYKEDAGER) val gjenståendeSykedager: Int,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiSpeilV1Yrkesaktivitet>,
 ) : ApiPeriode
 
@@ -321,6 +329,7 @@ internal data class ApiSpeilV3Periode(
     @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V3,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
+    @Description(GJENSTÅENDE_SYKEDAGER) val gjenståendeSykedager: Int,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiSpeilV3Yrkesaktivitet>,
 ) : ApiPeriode
 
@@ -353,6 +362,7 @@ internal data class ApiSpeilV4Periode(
     @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V4,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
+    @Description(GJENSTÅENDE_SYKEDAGER) val gjenståendeSykedager: Int,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiSpeilV4Yrkesaktivitet>,
 ) : ApiPeriode
 
@@ -386,6 +396,7 @@ internal data class ApiSpeilV5Periode(
     @Description(SKJÆRINGSTIDSPUNKT) val skjæringstidspunkt: LocalDate,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
+    @Description(GJENSTÅENDE_SYKEDAGER) val gjenståendeSykedager: Int,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiSpeilV5Yrkesaktivitet>,
 ) : ApiPeriode
 
@@ -419,6 +430,7 @@ internal data class ApiInfotrygdV1Periode(
     @Description(SKJÆRINGSTIDSPUNKT) val skjæringstidspunkt: LocalDate,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
+    @Description(GJENSTÅENDE_SYKEDAGER_INFOTRYGD) val gjenståendeSykedager: Int?,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiInfotrygdV1Yrkesaktivitet>,
 ) : ApiPeriode
 
@@ -520,6 +532,7 @@ private val EKSEMPEL =
                 skjæringstidspunkt = dato("2024-01-01"),
                 fom = dato("2024-01-01"),
                 tom = dato("2024-01-31"),
+                gjenståendeSykedager = 225,
                 yrkesaktiviteter =
                     listOf(
                         ApiSpeilV5Yrkesaktivitet(
@@ -535,6 +548,7 @@ private val EKSEMPEL =
                 skjæringstidspunkt = dato("2024-05-17"),
                 fom = dato("2024-06-03"),
                 tom = dato("2024-06-28"),
+                gjenståendeSykedager = 214,
                 yrkesaktiviteter =
                     listOf(
                         ApiInfotrygdV1Yrkesaktivitet(
@@ -580,17 +594,20 @@ private val BESKRIVELSE =
     `beløp` er det som ble utbetalt før skatt. For Speil kommer det fra utbetalingen. For Infotrygd er det dagsatsen ganget med antall dager
     fra mandag til fredag i utbetalingsperioden, også helligdager, minus feriedager i samme sykefraværstilfelle.
 
-    Hver periode har en `versjon`. Den sier hvor perioden kommer fra og hvilke felter som er garantert, og hver versjon har sitt eget skjema.
-    Et felt som en versjon ikke garanterer, finnes ikke i skjemaet for den versjonen. Et felt som finnes, er aldri `null`, unntatt `organisasjonsnummer`.
+    `gjenståendeSykedager` er antall sykedager som var igjen av sykepengeretten etter den siste utbetalte dagen i perioden.
 
-    | `versjon` | `kilde` | Datakilde | `mottaker` | `dagsats`, `beløp` | `skjæringstidspunkt` | `usikkerGrad` | Gjelder |
-    |---|---|---|---|---|---|---|---|
-    | `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | ❌ | ❌ | utbetalt før 16.03.2022 |
-    | `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
-    | `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
-    | `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ✅ | ❌ | ❌ | utbetalt etter 16.03.2022 |
-    | `SPEIL_V5` | `SPEIL` | `tbd.utbetaling` og `tbd.vedtak` | ✅ | ✅ | ✅ | ❌ | vedtak fattet fra og med 27.11.2025 |
-    | `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | ✅ | ✅ | alle perioder fra Infotrygd |
+    Hver periode har en `versjon`. Den sier hvor perioden kommer fra og hvilke felter som er garantert, og hver versjon har sitt eget skjema.
+    Et felt som en versjon ikke garanterer, finnes ikke i skjemaet for den versjonen. Et felt som finnes, er aldri `null`, unntatt `organisasjonsnummer`,
+    og `gjenståendeSykedager` i `INFOTRYGD_V1` når Infotrygd ikke har maksdato.
+
+    | `versjon` | `kilde` | Datakilde | `mottaker` | `dagsats`, `beløp` | `gjenståendeSykedager` | `skjæringstidspunkt` | `usikkerGrad` | Gjelder |
+    |---|---|---|---|---|---|---|---|---|
+    | `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
+    | `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ✅ | ❌ | ❌ | ❌ | utbetalt før 16.03.2022 |
+    | `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ✅ | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
+    | `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ✅ | ✅ | ❌ | ❌ | utbetalt etter 16.03.2022 |
+    | `SPEIL_V5` | `SPEIL` | `tbd.utbetaling` og `tbd.vedtak` | ✅ | ✅ | ✅ | ✅ | ❌ | vedtak fattet fra og med 27.11.2025 |
+    | `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | ✅, men `null` uten maksdato | ✅ | ✅ | alle perioder fra Infotrygd |
 
     Alle versjonene har `fom`, `tom`, `grad` og `organisasjonsnummer`. En periode har bare én versjon, så utbetalinger med ulike
     versjoner havner i ulike perioder, også når de henger sammen i tid. Når samme utbetaling finnes i flere kilder i Speil,

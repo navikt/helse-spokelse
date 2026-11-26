@@ -59,6 +59,7 @@ internal class GamleUtbetalingerDao(
                             o.fagområde   fagomrade,
                             u.belop       dagsats,
                             u.belop * u.sykedager belop,
+                            v.gjenstående_sykedager gjenstaende_sykedager,
                             '${GammelKilde.VEDTAK_OPPDRAG_OG_UTBETALING.tag}' kilde
                         FROM vedtak v
                         INNER JOIN oppdrag o on v.id = o.vedtak_id
@@ -76,6 +77,7 @@ internal class GamleUtbetalingerDao(
                             NULL fagomrade,
                             ou.belop dagsats,
                             ou.totalbelop belop,
+                            NULL gjenstaende_sykedager,
                             '${GammelKilde.OLD_VEDTAK_OG_OLD_UTBETALING.tag}' kilde
                         FROM old_vedtak ov
                         INNER JOIN old_utbetaling ou on ov.id = ou.vedtak_id
@@ -92,6 +94,7 @@ internal class GamleUtbetalingerDao(
                             fagomrade,
                             NULL dagsats,
                             NULL belop,
+                            gjenstaende_sykedager,
                             '${GammelKilde.GAMLE_UTBETALINGER.tag}' kilde
                         FROM gamle_utbetalinger
                         WHERE fodselsnummer = :fodselsnummer
@@ -117,6 +120,7 @@ internal class GamleUtbetalingerDao(
                         utbetaltTidspunkt = row.localDateTime("utbetalt_tidspunkt"),
                         dagsats = row.intOrNull("dagsats"),
                         beløp = row.intOrNull("belop"),
+                        gjenståendeSykedager = row.intOrNull("gjenstaende_sykedager"),
                     )
                 }
             }

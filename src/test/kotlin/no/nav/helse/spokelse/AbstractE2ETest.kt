@@ -313,6 +313,8 @@ internal abstract class AbstractE2ETest {
         dagsats: Int = 1,
         beløp: Int = 1,
         sykedager: Int = 1,
+        gjenståendeSykedager: Int = 1,
+        opprettet: LocalDateTime = LocalDateTime.now(),
     ) {
         val (sykmelding, søknad, inntektsmelding) = nyeDokumenter()
         utbetaltDao.opprett(
@@ -325,8 +327,8 @@ internal abstract class AbstractE2ETest {
                 fom = fom,
                 tom = tom,
                 forbrukteSykedager = 1,
-                gjenståendeSykedager = 1,
-                opprettet = LocalDateTime.now(),
+                gjenståendeSykedager = gjenståendeSykedager,
+                opprettet = opprettet,
             ),
         )
     }
@@ -338,13 +340,17 @@ internal abstract class AbstractE2ETest {
         fødselsnummer: String,
         fagområde: String = "SPREF",
         organisasjonsnummer: String = "999999999",
+        gjenståendeSykedager: Int = 1,
+        opprettet: LocalDateTime = LocalDateTime.now(),
     ) {
         sessionOf(dataSource).use { session ->
             asSQL(
                 """
                 INSERT INTO gamle_utbetalinger (fodselsnummer, orgnummer, opprettet, fom, tom, grad, fagsystem_id, fagomrade, gjenstaende_sykedager)
-                VALUES (:fodselsnummer, :orgnummer, now(), :fom, :tom, 100.0, :fagsystemId, :fagomrade, 1)
+                VALUES (:fodselsnummer, :orgnummer, :opprettet, :fom, :tom, 100.0, :fagsystemId, :fagomrade, :gjenstaendeSykedager)
                 """.trimIndent(),
+                "opprettet" to opprettet,
+                "gjenstaendeSykedager" to gjenståendeSykedager,
                 "fodselsnummer" to fødselsnummer,
                 "orgnummer" to organisasjonsnummer,
                 "fom" to fom,
