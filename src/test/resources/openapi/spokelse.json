@@ -685,7 +685,7 @@
       "post" : {
         "tags" : [ "Utbetalte perioder" ],
         "summary" : "Hent sykepengeperioder for Personoversikt",
-        "description" : "Gir sykepengeperiodene til en person fra Speil og Infotrygd, for perioder som overlapper `fom`–`tom`.\n\nKonsument: Personoversikt (`modiapersonoversikt-api`).\n\nSpøkelse sjekker kjerneregelsettet i Tilgangsmaskinen for hver person, med OBO-tokenet til saksbehandleren, og audit-logger oppslaget.\nAvslag for én av personene gir 403 for hele kallet. Spøkelse gir aldri et halvt svar: feiler Tilgangsmaskinen, Infotrygd eller Speil-dataene, feiler hele kallet.\n\nHver periode har yrkesaktiviteter, hver yrkesaktivitet har mottakere, og hver mottaker har utbetalingsperioder.\nEn periode samler utbetalinger som henger sammen i tid, på tvers av arbeidsgivere. Helg teller ikke som opphold.\nUtbetalingsperioder hos samme mottaker som henger sammen og har samme grad, er slått sammen.\n\nHver periode har en `versjon`. Den sier hvor perioden kommer fra og hvilke felter som er garantert, og hver versjon har sitt eget skjema.\nEt felt som en versjon ikke garanterer, finnes ikke i skjemaet for den versjonen. Et felt som finnes, er aldri `null`, unntatt `organisasjonsnummer`.\n\n| `versjon` | `kilde` | Datakilde | `mottaker` | `usikkerGrad` | Gjelder |\n|---|---|---|---|---|---|\n| `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ❌ | utbetalt etter 16.03.2022 |\n| `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | alle perioder fra Infotrygd |\n\nAlle versjonene har `fom`, `tom`, `grad` og `organisasjonsnummer`. En periode har bare én versjon, så utbetalinger med ulike\nversjoner havner i ulike perioder, også når de henger sammen i tid. Når samme utbetaling finnes i flere kilder i Speil,\ner den bare med fra kilden som rangeres høyest: `SPEIL_V4` > `SPEIL_V3` > `SPEIL_V2` > `SPEIL_V1`.\n\nNye felter og versjoner kommer. Konsumenten må tåle dem.\n\nKrever et OBO-token for en saksbehandler med scopet `personoversikt-les`. I dev godtas også OBO-tokens for medlemmer av utviklergruppen.",
+        "description" : "Gir sykepengeperiodene til en person fra Speil og Infotrygd, for perioder som overlapper `fom`–`tom`.\n\nKonsument: Personoversikt (`modiapersonoversikt-api`).\n\nSpøkelse sjekker kjerneregelsettet i Tilgangsmaskinen for hver person, med OBO-tokenet til saksbehandleren, og audit-logger oppslaget.\nAvslag for én av personene gir 403 for hele kallet. Spøkelse gir aldri et halvt svar: feiler Tilgangsmaskinen, Infotrygd eller Speil-dataene, feiler hele kallet.\n\nHver periode har yrkesaktiviteter, hver yrkesaktivitet har mottakere, og hver mottaker har utbetalingsperioder.\nEn periode med `skjæringstidspunkt` (`SPEIL_V5` og `INFOTRYGD_V1`) samler utbetalingene i ett sykefraværstilfelle, på tvers av arbeidsgivere.\nEn periode uten `skjæringstidspunkt` (`SPEIL_V1`–`SPEIL_V4`) samler utbetalinger som henger sammen i tid, på tvers av arbeidsgivere.\nHelg teller ikke som opphold. Utbetalingsperioder hos samme mottaker som henger sammen og har samme grad, er slått sammen.\n\nHver periode har en `versjon`. Den sier hvor perioden kommer fra og hvilke felter som er garantert, og hver versjon har sitt eget skjema.\nEt felt som en versjon ikke garanterer, finnes ikke i skjemaet for den versjonen. Et felt som finnes, er aldri `null`, unntatt `organisasjonsnummer`.\n\n| `versjon` | `kilde` | Datakilde | `mottaker` | `skjæringstidspunkt` | `usikkerGrad` | Gjelder |\n|---|---|---|---|---|---|---|\n| `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ❌ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |\n| `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ❌ | ❌ | utbetalt etter 16.03.2022 |\n| `SPEIL_V5` | `SPEIL` | `tbd.utbetaling` og `tbd.vedtak` | ✅ | ✅ | ❌ | vedtak fattet fra og med 27.11.2025 |\n| `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | ✅ | alle perioder fra Infotrygd |\n\nAlle versjonene har `fom`, `tom`, `grad` og `organisasjonsnummer`. En periode har bare én versjon, så utbetalinger med ulike\nversjoner havner i ulike perioder, også når de henger sammen i tid. Når samme utbetaling finnes i flere kilder i Speil,\ner den bare med fra kilden som rangeres høyest: `SPEIL_V5` og `SPEIL_V4` > `SPEIL_V3` > `SPEIL_V2` > `SPEIL_V1`.\n\nNye felter og versjoner kommer. Konsumenten må tåle dem.\n\nKrever et OBO-token for en saksbehandler med scopet `personoversikt-les`. I dev godtas også OBO-tokens for medlemmer av utviklergruppen.",
         "operationId" : "hentUtbetaltePerioderPersonoversiktV2",
         "parameters" : [ ],
         "requestBody" : {
@@ -737,7 +737,8 @@
                         } ]
                       }, {
                         "kilde" : "SPEIL",
-                        "versjon" : "SPEIL_V4",
+                        "versjon" : "SPEIL_V5",
+                        "skjæringstidspunkt" : "2024-01-01",
                         "fom" : "2024-01-01",
                         "tom" : "2024-01-31",
                         "yrkesaktiviteter" : [ {
@@ -761,6 +762,7 @@
                       }, {
                         "kilde" : "INFOTRYGD",
                         "versjon" : "INFOTRYGD_V1",
+                        "skjæringstidspunkt" : "2024-05-17",
                         "fom" : "2024-06-03",
                         "tom" : "2024-06-28",
                         "yrkesaktiviteter" : [ {
@@ -1251,6 +1253,7 @@
             "SPEIL_V2" : "#/components/schemas/ApiSpeilV2Periode",
             "SPEIL_V3" : "#/components/schemas/ApiSpeilV3Periode",
             "SPEIL_V4" : "#/components/schemas/ApiSpeilV4Periode",
+            "SPEIL_V5" : "#/components/schemas/ApiSpeilV5Periode",
             "INFOTRYGD_V1" : "#/components/schemas/ApiInfotrygdV1Periode"
           }
         },
@@ -1262,6 +1265,8 @@
           "$ref" : "#/components/schemas/ApiSpeilV3Periode"
         }, {
           "$ref" : "#/components/schemas/ApiSpeilV4Periode"
+        }, {
+          "$ref" : "#/components/schemas/ApiSpeilV5Periode"
         }, {
           "$ref" : "#/components/schemas/ApiInfotrygdV1Periode"
         } ]
@@ -1279,6 +1284,11 @@
             "type" : "string",
             "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
             "enum" : [ "INFOTRYGD_V1" ]
+          },
+          "skjæringstidspunkt" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Skjæringstidspunktet for sykefraværstilfellet. Alle utbetalingsperiodene i perioden hører til dette tilfellet."
           },
           "fom" : {
             "type" : "string",
@@ -1298,7 +1308,7 @@
             }
           }
         },
-        "required" : [ "fom", "kilde", "tom", "versjon", "yrkesaktiviteter" ]
+        "required" : [ "fom", "kilde", "skjæringstidspunkt", "tom", "versjon", "yrkesaktiviteter" ]
       },
       "ApiInfotrygdV1Yrkesaktivitet" : {
         "type" : "object",
@@ -1700,6 +1710,101 @@
         "required" : [ "mottaker", "utbetalingsperioder" ]
       },
       "ApiSpeilV4Utbetalingsperiode" : {
+        "type" : "object",
+        "properties" : {
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i utbetalingsperioden."
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i utbetalingsperioden."
+          },
+          "grad" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Utbetalingsgraden i prosent."
+          }
+        },
+        "required" : [ "fom", "grad", "tom" ]
+      },
+      "ApiSpeilV5Periode" : {
+        "type" : "object",
+        "description" : "Periode fra `tbd.utbetaling` og `tbd.vedtak` i Speil, for vedtak fattet fra og med 27.11.2025.",
+        "properties" : {
+          "kilde" : {
+            "type" : "string",
+            "description" : "Hvor perioden kommer fra.",
+            "enum" : [ "SPEIL" ]
+          },
+          "versjon" : {
+            "type" : "string",
+            "description" : "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre.",
+            "enum" : [ "SPEIL_V5" ]
+          },
+          "skjæringstidspunkt" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Skjæringstidspunktet for sykefraværstilfellet. Alle utbetalingsperiodene i perioden hører til dette tilfellet."
+          },
+          "fom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Første dag i utbetalingsperiodene i perioden."
+          },
+          "tom" : {
+            "type" : "string",
+            "format" : "date",
+            "description" : "Siste dag i utbetalingsperiodene i perioden."
+          },
+          "yrkesaktiviteter" : {
+            "type" : "array",
+            "description" : "Én oppføring per organisasjonsnummer i perioden. Minst én.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiSpeilV5Yrkesaktivitet"
+            }
+          }
+        },
+        "required" : [ "fom", "kilde", "skjæringstidspunkt", "tom", "versjon", "yrkesaktiviteter" ]
+      },
+      "ApiSpeilV5Yrkesaktivitet" : {
+        "type" : "object",
+        "properties" : {
+          "organisasjonsnummer" : {
+            "type" : [ "null", "string" ],
+            "description" : "Arbeidsgiveren. `null` når yrkesaktiviteten ikke er et arbeidsforhold, for eksempel for selvstendig næringsdrivende, eller når organisasjonsnummeret mangler i Infotrygd.",
+            "example" : "999999999"
+          },
+          "mottakere" : {
+            "type" : "array",
+            "description" : "Én oppføring per mottaker. Minst én.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiSpeilV5Mottaker"
+            }
+          }
+        },
+        "required" : [ "mottakere", "organisasjonsnummer" ]
+      },
+      "ApiSpeilV5Mottaker" : {
+        "type" : "object",
+        "properties" : {
+          "mottaker" : {
+            "$ref" : "#/components/schemas/ApiMottaker",
+            "description" : "Hvem utbetalingen gikk til."
+          },
+          "utbetalingsperioder" : {
+            "type" : "array",
+            "description" : "Utbetalingsperiodene til mottakeren. Minst én.",
+            "items" : {
+              "$ref" : "#/components/schemas/ApiSpeilV5Utbetalingsperiode"
+            }
+          }
+        },
+        "required" : [ "mottaker", "utbetalingsperioder" ]
+      },
+      "ApiSpeilV5Utbetalingsperiode" : {
         "type" : "object",
         "properties" : {
           "fom" : {

@@ -22,6 +22,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import io.prometheus.metrics.model.registry.PrometheusRegistry
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.spokelse.felles.Infotrygd
+import no.nav.helse.spokelse.felles.Kafkakonsument
 import no.nav.helse.spokelse.gamleutbetalinger.GamleUtbetalingerDao
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedager
 import no.nav.helse.spokelse.gjenstaendesykedager.GjenståendeSykedagerDao
@@ -34,9 +35,9 @@ import no.nav.helse.spokelse.personoversikt.Personoversikt
 import no.nav.helse.spokelse.personoversikt.personoversiktApi
 import no.nav.helse.spokelse.tbdutbetaling.HelsesjekkRiver
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
-import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingConsumer
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
+import no.nav.helse.spokelse.tbdvedtak.TbdVedtakHåndterer
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.helse.spokelse.utbetalteperioder.utbetaltePerioderApi
 import org.slf4j.LoggerFactory
@@ -87,7 +88,7 @@ fun launchApplication(env: Map<String, String>) {
             gamleUtbetalingerDao = gamleUtbetalingerDao,
         )
     val miljø = Miljø.fra(env)
-    val personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao)
+    val personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao, dataSource::dataSource)
     val tilgangskontroll = PopulasjonstilgangConfig.fraEnv(env).tilgangsmaskinenClient(accessTokenProvider)
     val meterRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, PrometheusRegistry.defaultRegistry, Clock.SYSTEM)
     val gjenståendeSykedager =
@@ -105,7 +106,9 @@ fun launchApplication(env: Map<String, String>) {
         )
 
     val tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(dataSource::dataSource, tbdUtbetalingDao, gjenståendeSykedagerDao, gamleUtbetalingerDao, utbetalingVarsel)
-    val tbdUtbetalingConsumer = TbdUtbetalingConsumer(env, tbdUtbetalingHåndterer)
+    val tbdUtbetalingKonsument = Kafkakonsument(env, TbdUtbetalingHåndterer.TOPIC, "tbd-utbetaling-spokelse-v1", tbdUtbetalingHåndterer::håndter)
+    val tbdVedtakHåndterer = TbdVedtakHåndterer(dataSource::dataSource)
+    val tbdVedtakKonsument = Kafkakonsument(env, TbdVedtakHåndterer.TOPIC, "tbd-vedtak-spokelse-v1") { json, _ -> tbdVedtakHåndterer.håndter(json) }
     RapidApplication
         .create(
             env = env,
@@ -141,7 +144,8 @@ fun launchApplication(env: Map<String, String>) {
             },
         ).apply {
             registerRivers(tbdUtbetalingDao, utbetalingVarsel)
-            register(tbdUtbetalingConsumer)
+            register(tbdUtbetalingKonsument)
+            register(tbdVedtakKonsument)
             register(
                 object : RapidsConnection.StatusListener {
                     override fun onStartup(rapidsConnection: RapidsConnection) {

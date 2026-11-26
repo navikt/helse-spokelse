@@ -23,11 +23,14 @@ kombinerer den disse med eldre Spleis-utbetalinger og perioder hentet fra Infotr
 ```mermaid
 flowchart LR
     utbetaling["tbd.utbetaling"] -->|Utbetalinger, vedtak uten utbetaling og annulleringer| spokelse["Spøkelse"]
+    vedtak["tbd.vedtak"] -->|Skjæringstidspunkt for vedtak som er fattet| spokelse
     infotrygd["sparkel-sykepengeperioder-api"] -->|Infotrygd-perioder| spokelse
     spokelse <-->|Infotrygd-perioder inn, gjenstående sykedager ut| spleisapi["spleis-api"]
     spokelse -->|Data| konsument["API-konsument"]
     spokelse -->|Varsler om endringer| boo["tbd.boo"]
 ```
+
+Fra `tbd.vedtak` lagrer Spøkelse skjæringstidspunktet for hvert vedtak, slik at v2 for Personoversikt kan gruppere utbetalingene per sykefraværstilfelle.
 
 Spøkelse lytter også på `tbd.rapid.v1`, blant annet etter varsler om nye opplysninger i Infotrygd.
 Den publiserer endringsvarsler på `tbd.boo` ved utbetalinger, annulleringer og nye Infotrygd-opplysninger.

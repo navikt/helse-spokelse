@@ -3,7 +3,7 @@ package no.nav.helse.spokelse
 import no.nav.sykepenger.libs.postgres.TestDatabase
 import java.util.concurrent.LinkedBlockingQueue
 
-internal val databaseContainer = TestDatabaser("alle_annulleringer, annullering, gamle_utbetalinger, gjenstående_sykedager, hendelse, old_utbetaling, old_vedtak, oppdrag, tbdutbetaling_melding, tbdutbetaling_utbetaling, tbdutbetaling_utbetalingslinje, utbetaling, vedtak, vedtak_utbetalingsref")
+internal val databaseContainer = TestDatabaser("alle_annulleringer, annullering, gamle_utbetalinger, gjenstående_sykedager, hendelse, old_utbetaling, old_vedtak, oppdrag, tbdutbetaling_melding, tbdutbetaling_utbetaling, tbdutbetaling_utbetalingslinje, tbd_vedtak, utbetaling, vedtak, vedtak_utbetalingsref")
 
 internal class TestDatabaser(
     private val tabeller: String,

@@ -136,8 +136,24 @@ private fun Sykepengeperiode.tilApi(): ApiPeriode =
                         )
                     },
             )
+        is SpeilV5Periode ->
+            ApiSpeilV5Periode(
+                skjæringstidspunkt = skjæringstidspunkt,
+                fom = fom,
+                tom = tom,
+                yrkesaktiviteter =
+                    yrkesaktiviteter.map { yrkesaktivitet ->
+                        ApiSpeilV5Yrkesaktivitet(
+                            yrkesaktivitet.organisasjonsnummer,
+                            yrkesaktivitet.mottakere.map { mottaker ->
+                                ApiSpeilV5Mottaker(mottaker.mottaker.tilApi(), mottaker.utbetalingsperioder.map { ApiSpeilV5Utbetalingsperiode(it.fom, it.tom, it.grad) })
+                            },
+                        )
+                    },
+            )
         is InfotrygdV1Periode ->
             ApiInfotrygdV1Periode(
+                skjæringstidspunkt = skjæringstidspunkt,
                 fom = fom,
                 tom = tom,
                 yrkesaktiviteter =
@@ -168,6 +184,7 @@ private val skjemaPerVersjon =
             Versjon.SPEIL_V2 -> ApiSpeilV2Periode::class
             Versjon.SPEIL_V3 -> ApiSpeilV3Periode::class
             Versjon.SPEIL_V4 -> ApiSpeilV4Periode::class
+            Versjon.SPEIL_V5 -> ApiSpeilV5Periode::class
             Versjon.INFOTRYGD_V1 -> ApiInfotrygdV1Periode::class
         }.simpleName!!
     }
@@ -212,6 +229,7 @@ private const val UTBETALINGSPERIODE_FOM = "Første dag i utbetalingsperioden."
 private const val UTBETALINGSPERIODE_TOM = "Siste dag i utbetalingsperioden."
 private const val GRAD = "Utbetalingsgraden i prosent."
 private const val KILDE = "Hvor perioden kommer fra."
+private const val SKJÆRINGSTIDSPUNKT = "Skjæringstidspunktet for sykefraværstilfellet. Alle utbetalingsperiodene i perioden hører til dette tilfellet."
 private const val VERSJON = "Hvilke felter som er garantert. Skiller skjemaene for periodene fra hverandre."
 
 @Serializable
@@ -224,7 +242,7 @@ internal data class ApiPersonoversikt(
 internal enum class ApiKilde { SPEIL, INFOTRYGD }
 
 @Serializable
-internal enum class ApiVersjon { SPEIL_V1, SPEIL_V2, SPEIL_V3, SPEIL_V4, INFOTRYGD_V1 }
+internal enum class ApiVersjon { SPEIL_V1, SPEIL_V2, SPEIL_V3, SPEIL_V4, SPEIL_V5, INFOTRYGD_V1 }
 
 @Serializable
 internal enum class ApiMottaker { ARBEIDSGIVER, PERSON }
@@ -348,10 +366,41 @@ internal data class ApiSpeilV4Utbetalingsperiode(
 )
 
 @Serializable
+@Description("Periode fra `tbd.utbetaling` og `tbd.vedtak` i Speil, for vedtak fattet fra og med 27.11.2025.")
+internal data class ApiSpeilV5Periode(
+    @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.SPEIL,
+    @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.SPEIL_V5,
+    @Description(SKJÆRINGSTIDSPUNKT) val skjæringstidspunkt: LocalDate,
+    @Description(PERIODE_FOM) val fom: LocalDate,
+    @Description(PERIODE_TOM) val tom: LocalDate,
+    @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiSpeilV5Yrkesaktivitet>,
+) : ApiPeriode
+
+@Serializable
+internal data class ApiSpeilV5Yrkesaktivitet(
+    @Description(ORGANISASJONSNUMMER) @Example("999999999") val organisasjonsnummer: String?,
+    @Description(MOTTAKERE) val mottakere: List<ApiSpeilV5Mottaker>,
+)
+
+@Serializable
+internal data class ApiSpeilV5Mottaker(
+    @Description(MOTTAKER) val mottaker: ApiMottaker,
+    @Description(UTBETALINGSPERIODER) val utbetalingsperioder: List<ApiSpeilV5Utbetalingsperiode>,
+)
+
+@Serializable
+internal data class ApiSpeilV5Utbetalingsperiode(
+    @Description(UTBETALINGSPERIODE_FOM) val fom: LocalDate,
+    @Description(UTBETALINGSPERIODE_TOM) val tom: LocalDate,
+    @Description(GRAD) val grad: Int,
+)
+
+@Serializable
 @Description("Periode fra Infotrygd.")
 internal data class ApiInfotrygdV1Periode(
     @Description(KILDE) @Required val kilde: ApiKilde = ApiKilde.INFOTRYGD,
     @Description(VERSJON) @Required val versjon: ApiVersjon = ApiVersjon.INFOTRYGD_V1,
+    @Description(SKJÆRINGSTIDSPUNKT) val skjæringstidspunkt: LocalDate,
     @Description(PERIODE_FOM) val fom: LocalDate,
     @Description(PERIODE_TOM) val tom: LocalDate,
     @Description(YRKESAKTIVITETER) val yrkesaktiviteter: List<ApiInfotrygdV1Yrkesaktivitet>,
@@ -418,7 +467,7 @@ private fun RouteConfig.personoversiktDokumentasjon() {
         code(HttpStatusCode.Forbidden) {
             description =
                 "Tokenet er ikke et OBO-token for en saksbehandler eller mangler scopet `$PERSONOVERSIKT_SCOPE`, " +
-                    "eller saksbehandleren mangler tilgang til en av personene etter kjerneregelsettet i Tilgangsmaskinen."
+                "eller saksbehandleren mangler tilgang til en av personene etter kjerneregelsettet i Tilgangsmaskinen."
             problemJson()
         }
         code(HttpStatusCode.NotFound) {
@@ -448,21 +497,23 @@ private val EKSEMPEL =
                         ),
                     ),
             ),
-            ApiSpeilV4Periode(
+            ApiSpeilV5Periode(
+                skjæringstidspunkt = dato("2024-01-01"),
                 fom = dato("2024-01-01"),
                 tom = dato("2024-01-31"),
                 yrkesaktiviteter =
                     listOf(
-                        ApiSpeilV4Yrkesaktivitet(
+                        ApiSpeilV5Yrkesaktivitet(
                             "111111111",
                             listOf(
-                                ApiSpeilV4Mottaker(ApiMottaker.ARBEIDSGIVER, listOf(ApiSpeilV4Utbetalingsperiode(dato("2024-01-01"), dato("2024-01-31"), 100))),
-                                ApiSpeilV4Mottaker(ApiMottaker.PERSON, listOf(ApiSpeilV4Utbetalingsperiode(dato("2024-01-16"), dato("2024-01-31"), 100))),
+                                ApiSpeilV5Mottaker(ApiMottaker.ARBEIDSGIVER, listOf(ApiSpeilV5Utbetalingsperiode(dato("2024-01-01"), dato("2024-01-31"), 100))),
+                                ApiSpeilV5Mottaker(ApiMottaker.PERSON, listOf(ApiSpeilV5Utbetalingsperiode(dato("2024-01-16"), dato("2024-01-31"), 100))),
                             ),
                         ),
                     ),
             ),
             ApiInfotrygdV1Periode(
+                skjæringstidspunkt = dato("2024-05-17"),
                 fom = dato("2024-06-03"),
                 tom = dato("2024-06-28"),
                 yrkesaktiviteter =
@@ -500,23 +551,25 @@ private val BESKRIVELSE =
     Avslag for én av personene gir 403 for hele kallet. Spøkelse gir aldri et halvt svar: feiler Tilgangsmaskinen, Infotrygd eller Speil-dataene, feiler hele kallet.
 
     Hver periode har yrkesaktiviteter, hver yrkesaktivitet har mottakere, og hver mottaker har utbetalingsperioder.
-    En periode samler utbetalinger som henger sammen i tid, på tvers av arbeidsgivere. Helg teller ikke som opphold.
-    Utbetalingsperioder hos samme mottaker som henger sammen og har samme grad, er slått sammen.
+    En periode med `skjæringstidspunkt` (`SPEIL_V5` og `INFOTRYGD_V1`) samler utbetalingene i ett sykefraværstilfelle, på tvers av arbeidsgivere.
+    En periode uten `skjæringstidspunkt` (`SPEIL_V1`–`SPEIL_V4`) samler utbetalinger som henger sammen i tid, på tvers av arbeidsgivere.
+    Helg teller ikke som opphold. Utbetalingsperioder hos samme mottaker som henger sammen og har samme grad, er slått sammen.
 
     Hver periode har en `versjon`. Den sier hvor perioden kommer fra og hvilke felter som er garantert, og hver versjon har sitt eget skjema.
     Et felt som en versjon ikke garanterer, finnes ikke i skjemaet for den versjonen. Et felt som finnes, er aldri `null`, unntatt `organisasjonsnummer`.
 
-    | `versjon` | `kilde` | Datakilde | `mottaker` | `usikkerGrad` | Gjelder |
-    |---|---|---|---|---|---|
-    | `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | utbetalt før 16.03.2022 |
-    | `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ❌ | utbetalt før 16.03.2022 |
-    | `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ❌ | utbetalt før 16.03.2022 |
-    | `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ❌ | utbetalt etter 16.03.2022 |
-    | `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | alle perioder fra Infotrygd |
+    | `versjon` | `kilde` | Datakilde | `mottaker` | `skjæringstidspunkt` | `usikkerGrad` | Gjelder |
+    |---|---|---|---|---|---|---|
+    | `SPEIL_V1` | `SPEIL` | `gamle_utbetalinger` | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
+    | `SPEIL_V2` | `SPEIL` | `old_vedtak` og `old_utbetaling` | ❌ | ❌ | ❌ | utbetalt før 16.03.2022 |
+    | `SPEIL_V3` | `SPEIL` | `vedtak`, `oppdrag` og `utbetaling` | ✅ | ❌ | ❌ | utbetalt før 16.03.2022 |
+    | `SPEIL_V4` | `SPEIL` | `tbd.utbetaling` | ✅ | ❌ | ❌ | utbetalt etter 16.03.2022 |
+    | `SPEIL_V5` | `SPEIL` | `tbd.utbetaling` og `tbd.vedtak` | ✅ | ✅ | ❌ | vedtak fattet fra og med 27.11.2025 |
+    | `INFOTRYGD_V1` | `INFOTRYGD` | Infotrygd | ✅ | ✅ | ✅ | alle perioder fra Infotrygd |
 
     Alle versjonene har `fom`, `tom`, `grad` og `organisasjonsnummer`. En periode har bare én versjon, så utbetalinger med ulike
     versjoner havner i ulike perioder, også når de henger sammen i tid. Når samme utbetaling finnes i flere kilder i Speil,
-    er den bare med fra kilden som rangeres høyest: `SPEIL_V4` > `SPEIL_V3` > `SPEIL_V2` > `SPEIL_V1`.
+    er den bare med fra kilden som rangeres høyest: `SPEIL_V5` og `SPEIL_V4` > `SPEIL_V3` > `SPEIL_V2` > `SPEIL_V1`.
 
     Nye felter og versjoner kommer. Konsumenten må tåle dem.
     """.trimIndent()

@@ -100,6 +100,7 @@ internal class Infotrygd(
             tom = LocalDate.parse(path("tom").asString()),
             grad = path("grad").asInt(),
             usikkerGrad = path("tags").values().any { it.asString() == "UsikkerGrad" },
+            skjæringstidspunkt = LocalDate.parse(path("skjæringstidspunkt").asString()),
         )
 
     private fun JsonNode.somPeriode(): SpøkelsePeriode =

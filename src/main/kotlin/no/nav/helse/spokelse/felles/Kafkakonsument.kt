@@ -1,0 +1,105 @@
+package no.nav.helse.spokelse.felles
+
+import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
+import no.nav.sykepenger.libs.logging.loggError
+import no.nav.sykepenger.libs.logging.loggInfo
+import org.apache.kafka.clients.CommonClientConfigs
+import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.config.SslConfigs
+import org.apache.kafka.common.errors.WakeupException
+import org.apache.kafka.common.security.auth.SecurityProtocol
+import org.apache.kafka.common.serialization.StringDeserializer
+import tools.jackson.databind.JsonNode
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.net.InetAddress
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
+
+// Leser en topic fra begynnelsen med sin egen group id, utenfor rapiden.
+internal class Kafkakonsument(
+    env: Map<String, String>,
+    private val topic: String,
+    groupId: String,
+    private val håndter: (JsonNode, LocalDateTime) -> Unit,
+) : Runnable,
+    RapidsConnection.StatusListener {
+    private val kafkaConsumer = KafkaConsumer(consumerProperties(env, topic.replace('.', '-'), groupId), StringDeserializer(), StringDeserializer())
+    private val konsumerer = AtomicBoolean(false)
+
+    override fun run() {
+        loggInfo("Starter konsumering av $topic")
+        try {
+            kafkaConsumer.subscribe(listOf(topic))
+
+            while (konsumerer.get()) {
+                val records = kafkaConsumer.poll(Duration.ofSeconds(1))
+                records.forEach { record ->
+                    håndter(jackson.readTree(record.value()), record.timestamp().somLocalDateTime())
+                }
+            }
+        } catch (wakeupException: WakeupException) {
+            if (konsumerer.get()) throw wakeupException
+        } catch (exception: Exception) {
+            loggError("Feil ved håndtering av melding på $topic", exception)
+        } finally {
+            loggInfo("Stopper konsumering av $topic")
+            kafkaConsumer.close()
+        }
+    }
+
+    override fun onReady(rapidsConnection: RapidsConnection) {
+        if (konsumerer.get()) return
+        konsumerer.set(true)
+        Thread(this).start()
+    }
+
+    override fun onShutdown(rapidsConnection: RapidsConnection) {
+        if (!konsumerer.get()) return
+        konsumerer.set(false)
+        kafkaConsumer.wakeup()
+    }
+
+    private companion object {
+        private fun Long.somLocalDateTime() = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDateTime()
+
+        private val jackson = jacksonObjectMapper()
+        private const val maxPollRecords = 200
+        private val maxPollIntervalMs = Duration.ofSeconds(120 + maxPollRecords * 4.toLong()).toMillis()
+
+        private fun consumerProperties(
+            env: Map<String, String>,
+            prefix: String,
+            groupId: String,
+        ) = Properties().apply {
+            // Credentials
+            put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, env.getValue("KAFKA_BROKERS"))
+            put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, SecurityProtocol.SSL.name)
+            put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "")
+            put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "jks")
+            put(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12")
+            put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, env.getValue("KAFKA_TRUSTSTORE_PATH"))
+            put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, env.getValue("KAFKA_CREDSTORE_PASSWORD"))
+            put(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, env.getValue("KAFKA_KEYSTORE_PATH"))
+            put(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, env.getValue("KAFKA_CREDSTORE_PASSWORD"))
+            put(ConsumerConfig.GROUP_ID_CONFIG, groupId)
+            generateInstanceId(env).also { instanceId ->
+                put(ConsumerConfig.CLIENT_ID_CONFIG, "$prefix-consumer-$instanceId")
+                put(ConsumerConfig.GROUP_INSTANCE_ID_CONFIG, "$prefix-$instanceId")
+            }
+            put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+            put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
+            put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "$maxPollRecords")
+            put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, "$maxPollIntervalMs")
+        }
+
+        private fun generateInstanceId(env: Map<String, String>): String {
+            if (env.containsKey("NAIS_APP_NAME")) return InetAddress.getLocalHost().hostName
+            return UUID.randomUUID().toString()
+        }
+    }
+}

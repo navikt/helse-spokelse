@@ -7,10 +7,14 @@ import no.nav.helse.spokelse.grunnlag.FpVedtak
 import no.nav.helse.spokelse.grunnlag.Utbetalingsperiode
 import no.nav.helse.spokelse.personoversikt.Mottaker
 import no.nav.helse.spokelse.personoversikt.SpeilV4Linje
+import no.nav.helse.spokelse.personoversikt.SpeilV5Linje
+import no.nav.helse.spokelse.personoversikt.UtbetaltLinjeMedMottaker
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.erUtbetaling
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.event
 import no.nav.helse.spokelse.tbdutbetaling.Melding.Companion.fødselsnummer
 import no.nav.helse.spokelse.tbdutbetaling.Utbetalingslinje.Companion.utbetalingslinje
+import no.nav.helse.spokelse.tbdvedtak.TbdVedtak
+import no.nav.helse.spokelse.tbdvedtak.TbdVedtak.Companion.skjæringstidspunkt
 import tools.jackson.databind.JsonNode
 import java.time.LocalDateTime
 import java.util.*
@@ -62,12 +66,16 @@ internal data class Utbetaling(
         }
     }
 
-    private fun somUtbetalteLinjer(): List<SpeilV4Linje> {
+    // En linje med et vedtak som dekker linjens fom, blir SPEIL_V5. Ellers blir den SPEIL_V4.
+    private fun somUtbetalteLinjer(vedtak: List<TbdVedtak>): List<UtbetaltLinjeMedMottaker> {
         val personidentifikator = Personidentifikator(fødselsnummer)
 
         fun Oppdrag?.linjer(mottaker: Mottaker) =
             this?.utbetalingslinjer.orEmpty().map {
-                SpeilV4Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt())
+                when (val skjæringstidspunkt = vedtak.skjæringstidspunkt(organisasjonsnummer, it.fom)) {
+                    null -> SpeilV4Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt())
+                    else -> SpeilV5Linje(personidentifikator, organisasjonsnummer, mottaker, it.fom, it.tom, it.grad.toInt(), skjæringstidspunkt)
+                }
             }
         return arbeidsgiverOppdrag.linjer(Mottaker.ARBEIDSGIVER) + personOppdrag.linjer(Mottaker.PERSON)
     }
@@ -103,6 +111,6 @@ internal data class Utbetaling(
 
         internal fun List<Utbetaling>.somSpøkelsePerioder() = flatMap(Utbetaling::somSpøkelsePeriode)
 
-        internal fun List<Utbetaling>.somUtbetalteLinjer() = flatMap(Utbetaling::somUtbetalteLinjer)
+        internal fun List<Utbetaling>.somUtbetalteLinjer(vedtak: List<TbdVedtak>) = flatMap { it.somUtbetalteLinjer(vedtak) }
     }
 }

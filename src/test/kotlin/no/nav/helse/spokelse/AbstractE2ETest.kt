@@ -28,6 +28,7 @@ import no.nav.helse.spokelse.personoversikt.Personoversikt
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingApi
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingDao
 import no.nav.helse.spokelse.tbdutbetaling.TbdUtbetalingHåndterer
+import no.nav.helse.spokelse.tbdvedtak.TbdVedtakHåndterer
 import no.nav.helse.spokelse.utbetalteperioder.UtbetaltePerioder
 import no.nav.sykepenger.libs.logging.navngittLogger
 import no.nav.sykepenger.libs.postgres.TestDatabase
@@ -58,6 +59,7 @@ internal abstract class AbstractE2ETest {
         val maksdato: LocalDate? = null,
         val organisasjonsnummer: String? = null,
         val tags: Set<String> = emptySet(),
+        val skjæringstidspunkt: LocalDate? = fom,
     )
 
     protected data class SpleisApiSvar(
@@ -101,7 +103,8 @@ internal abstract class AbstractE2ETest {
                                 .joinToString {
                                     val maksdato = it.maksdato?.let { dato -> "\"$dato\"" } ?: "null"
                                     val organisasjonsnummer = it.organisasjonsnummer?.let { orgnr -> "\"$orgnr\"" } ?: "null"
-                                    """{"personidentifikator": "$personidentifikator", "organisasjonsnummer": $organisasjonsnummer, "fom": "${it.fom}", "tom": "${it.tom}", "grad": 100, "type": "${it.type}", "maksdato": $maksdato, "tags": ${it.tags.map { tag -> "\"$tag\"" }}}"""
+                                    val skjæringstidspunkt = it.skjæringstidspunkt?.let { dato -> "\"$dato\"" } ?: "null"
+                                    """{"personidentifikator": "$personidentifikator", "organisasjonsnummer": $organisasjonsnummer, "fom": "${it.fom}", "tom": "${it.tom}", "grad": 100, "type": "${it.type}", "maksdato": $maksdato, "tags": ${it.tags.map { tag -> "\"$tag\"" }}, "skjæringstidspunkt": $skjæringstidspunkt}"""
                                 }
                         respond("""{"utbetaltePerioder": [$utbetaltePerioder]}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
                     },
@@ -120,6 +123,7 @@ internal abstract class AbstractE2ETest {
     protected lateinit var tbdUtbetalingDao: TbdUtbetalingDao
     protected lateinit var gjenståendeSykedagerDao: GjenståendeSykedagerDao
     protected lateinit var tbdUtbetalingHåndterer: TbdUtbetalingHåndterer
+    protected lateinit var tbdVedtakHåndterer: TbdVedtakHåndterer
     protected lateinit var meterRegistry: PrometheusMeterRegistry
     protected lateinit var booProducer: MockProducer<String, String>
     protected var utviklergruppe: String? = UTVIKLERGRUPPE
@@ -157,6 +161,7 @@ internal abstract class AbstractE2ETest {
         gjenståendeSykedagerDao = GjenståendeSykedagerDao(::dataSource)
         booProducer = MockProducer(true, null, StringSerializer(), StringSerializer())
         tbdUtbetalingHåndterer = TbdUtbetalingHåndterer(::dataSource, tbdUtbetalingDao, gjenståendeSykedagerDao, gamleUtbetalingerDao, UtbetalingVarsel(booProducer))
+        tbdVedtakHåndterer = TbdVedtakHåndterer(::dataSource)
         infotrygdperioder = emptyList()
         spleisApiSvar = SpleisApiSvar(HttpStatusCode.OK, """{"gjenståendeDager": 87, "vurdertTilOgMed": "2023-02-28", "maksdato": "2023-06-29"}""")
         idag = LocalDate.now()
@@ -209,7 +214,7 @@ internal abstract class AbstractE2ETest {
                         ),
                     meterRegistry = meterRegistry,
                     miljø = miljø,
-                    personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao),
+                    personoversikt = Personoversikt(infotrygd, tbdUtbetalingApi, gamleUtbetalingerDao, ::dataSource),
                     tilgangskontroll = tilgangsmaskinen,
                     auditlogg = auditlogg,
                     utviklergruppe = utviklergruppe,

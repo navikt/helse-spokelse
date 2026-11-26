@@ -18,6 +18,7 @@ internal enum class Versjon(
     SPEIL_V2(Kilde.SPEIL, 2),
     SPEIL_V3(Kilde.SPEIL, 3),
     SPEIL_V4(Kilde.SPEIL, 4),
+    SPEIL_V5(Kilde.SPEIL, 5),
     INFOTRYGD_V1(Kilde.INFOTRYGD, 0),
 }
 
@@ -35,6 +36,10 @@ internal sealed interface UtbetaltLinje {
 
 internal sealed interface UtbetaltLinjeMedMottaker : UtbetaltLinje {
     val mottaker: Mottaker
+}
+
+internal sealed interface UtbetaltLinjeMedSkjæringstidspunkt : UtbetaltLinjeMedMottaker {
+    val skjæringstidspunkt: LocalDate
 }
 
 internal data class SpeilV1Linje(
@@ -80,6 +85,18 @@ internal data class SpeilV4Linje(
     override val versjon get() = Versjon.SPEIL_V4
 }
 
+internal data class SpeilV5Linje(
+    override val personidentifikator: Personidentifikator,
+    override val organisasjonsnummer: String?,
+    override val mottaker: Mottaker,
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val grad: Int,
+    override val skjæringstidspunkt: LocalDate,
+) : UtbetaltLinjeMedSkjæringstidspunkt {
+    override val versjon get() = Versjon.SPEIL_V5
+}
+
 internal data class InfotrygdV1Linje(
     override val personidentifikator: Personidentifikator,
     override val organisasjonsnummer: String?,
@@ -88,7 +105,8 @@ internal data class InfotrygdV1Linje(
     override val tom: LocalDate,
     override val grad: Int,
     val usikkerGrad: Boolean,
-) : UtbetaltLinjeMedMottaker {
+    override val skjæringstidspunkt: LocalDate,
+) : UtbetaltLinjeMedSkjæringstidspunkt {
     override val versjon get() = Versjon.INFOTRYGD_V1
 }
 
@@ -159,7 +177,17 @@ internal data class SpeilV4Periode(
     override val versjon get() = Versjon.SPEIL_V4
 }
 
+internal data class SpeilV5Periode(
+    val skjæringstidspunkt: LocalDate,
+    override val fom: LocalDate,
+    override val tom: LocalDate,
+    override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<Utbetalingsperiode>>>,
+) : Sykepengeperiode {
+    override val versjon get() = Versjon.SPEIL_V5
+}
+
 internal data class InfotrygdV1Periode(
+    val skjæringstidspunkt: LocalDate,
     override val fom: LocalDate,
     override val tom: LocalDate,
     override val yrkesaktiviteter: List<Yrkesaktivitet<Mottakerutbetalinger<InfotrygdUtbetalingsperiode>>>,
@@ -176,7 +204,8 @@ internal fun List<UtbetaltLinje>.somSykepengeperioder(): List<Sykepengeperiode> 
                 Versjon.SPEIL_V2 -> linjer.filterIsInstance<SpeilV2Linje>().somPerioder(::SpeilV2Periode) { listOf(UtbetalingerUtenKjentMottaker(somUtbetalingsperioder(it))) }
                 Versjon.SPEIL_V3 -> linjer.filterIsInstance<SpeilV3Linje>().somPerioder(::SpeilV3Periode) { it.perMottaker(::somUtbetalingsperioder) }
                 Versjon.SPEIL_V4 -> linjer.filterIsInstance<SpeilV4Linje>().somPerioder(::SpeilV4Periode) { it.perMottaker(::somUtbetalingsperioder) }
-                Versjon.INFOTRYGD_V1 -> linjer.filterIsInstance<InfotrygdV1Linje>().somPerioder(::InfotrygdV1Periode) { it.perMottaker(::somInfotrygdUtbetalingsperioder) }
+                Versjon.SPEIL_V5 -> linjer.filterIsInstance<SpeilV5Linje>().somPerioderPerTilfelle(::SpeilV5Periode) { it.perMottaker(::somUtbetalingsperioder) }
+                Versjon.INFOTRYGD_V1 -> linjer.filterIsInstance<InfotrygdV1Linje>().somPerioderPerTilfelle(::InfotrygdV1Periode) { it.perMottaker(::somInfotrygdUtbetalingsperioder) }
             }
         }.sortedWith(compareBy({ it.fom }, { it.versjon }))
 }
@@ -205,17 +234,21 @@ private fun List<UtbetaltLinje>.utenDuplikater(): List<UtbetaltLinje> {
 private fun <L : UtbetaltLinje, M, P> List<L>.somPerioder(
     periode: (LocalDate, LocalDate, List<Yrkesaktivitet<M>>) -> P,
     mottakere: (List<L>) -> List<M>,
+): List<P> = sammenhengende().map { linjer -> periode(linjer.minOf { it.fom }, linjer.maxOf { it.tom }, linjer.somYrkesaktiviteter(mottakere)) }
+
+// Én periode per sykefraværstilfelle, med én yrkesaktivitet per organisasjonsnummer.
+private fun <L : UtbetaltLinjeMedSkjæringstidspunkt, M, P> List<L>.somPerioderPerTilfelle(
+    periode: (LocalDate, LocalDate, LocalDate, List<Yrkesaktivitet<M>>) -> P,
+    mottakere: (List<L>) -> List<M>,
 ): List<P> =
-    sammenhengende().map { linjer ->
-        periode(
-            linjer.minOf { it.fom },
-            linjer.maxOf { it.tom },
-            linjer
-                .groupBy { it.organisasjonsnummer }
-                .toSortedMap(nullsLast())
-                .map { (organisasjonsnummer, linjerHosArbeidsgiver) -> Yrkesaktivitet(organisasjonsnummer, mottakere(linjerHosArbeidsgiver)) },
-        )
-    }
+    groupBy { it.skjæringstidspunkt }
+        .toSortedMap()
+        .map { (skjæringstidspunkt, linjer) -> periode(skjæringstidspunkt, linjer.minOf { it.fom }, linjer.maxOf { it.tom }, linjer.somYrkesaktiviteter(mottakere)) }
+
+private fun <L : UtbetaltLinje, M> List<L>.somYrkesaktiviteter(mottakere: (List<L>) -> List<M>) =
+    groupBy { it.organisasjonsnummer }
+        .toSortedMap(nullsLast())
+        .map { (organisasjonsnummer, linjerHosArbeidsgiver) -> Yrkesaktivitet(organisasjonsnummer, mottakere(linjerHosArbeidsgiver)) }
 
 private fun <L : UtbetaltLinjeMedMottaker, U> List<L>.perMottaker(utbetalingsperioder: (List<L>) -> List<U>) =
     groupBy { it.mottaker }

@@ -27,7 +27,7 @@ internal class TbdUtbetalingHåndterer(
     ) {
         val melding =
             json.tbdUtbetalingMelding(sendt)
-                ?: return loggWarn("Uventet event på ${TbdUtbetalingConsumer.TOPIC}. Lagres ikke i spøkelse", "event" to json.event, "melding" to json.toString())
+                ?: return loggWarn("Uventet event på $TOPIC. Lagres ikke i spøkelse", "event" to json.event, "melding" to json.toString())
 
         sessionOf(dataSource()).use { session ->
             session.transaction { transaksjon -> transaksjon.lagre(melding) }
@@ -43,7 +43,7 @@ internal class TbdUtbetalingHåndterer(
     private fun TransactionalSession.lagre(melding: TbdUtbetalingMelding) {
         val meldingId = tbdUtbetalingDao.lagreMelding(this, melding.råmelding)
         loggInfo(
-            "Håndterer melding fra ${TbdUtbetalingConsumer.TOPIC}",
+            "Håndterer melding fra $TOPIC",
             "event" to melding.råmelding.type,
             "fødselsnummer" to melding.råmelding.fødselsnummer,
             "korrelasjonsId" to "${melding.korrelasjonsId}",
@@ -80,5 +80,9 @@ internal class TbdUtbetalingHåndterer(
             )
         }
         gjenståendeSykedagerDao.lagreVedtak(this, meldingId, vedtak)
+    }
+
+    internal companion object {
+        internal const val TOPIC = "tbd.utbetaling"
     }
 }

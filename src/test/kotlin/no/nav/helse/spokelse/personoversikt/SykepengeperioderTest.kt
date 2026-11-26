@@ -9,6 +9,7 @@ import no.nav.helse.spokelse.personoversikt.Versjon.SPEIL_V1
 import no.nav.helse.spokelse.personoversikt.Versjon.SPEIL_V2
 import no.nav.helse.spokelse.personoversikt.Versjon.SPEIL_V3
 import no.nav.helse.spokelse.personoversikt.Versjon.SPEIL_V4
+import no.nav.helse.spokelse.personoversikt.Versjon.SPEIL_V5
 import no.nav.sykepenger.libs.testing.testdata.lagIdentitetsnummer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -92,6 +93,46 @@ internal class SykepengeperioderTest {
             ).somSykepengeperioder()
 
         assertEquals(listOf(Triple(SPEIL_V3, 1.januar, 15.januar), Triple(SPEIL_V4, 16.januar, 31.januar)), perioder.map { Triple(it.versjon, it.fom, it.tom) })
+    }
+
+    @Test
+    fun `linjer med skjæringstidspunkt gir én periode per tilfelle, også med opphold i utbetalingen`() {
+        // 11. januar 2018 er en torsdag
+        val perioder =
+            listOf(
+                lagLinje(1.januar, 10.januar, versjon = SPEIL_V5),
+                lagLinje(15.januar, 31.januar, versjon = SPEIL_V5, organisasjonsnummer = ORGNR_B),
+            ).somSykepengeperioder()
+
+        assertEquals(
+            listOf(
+                SpeilV5Periode(
+                    skjæringstidspunkt = SKJÆRINGSTIDSPUNKT,
+                    fom = 1.januar,
+                    tom = 31.januar,
+                    yrkesaktiviteter =
+                        listOf(
+                            Yrkesaktivitet(ORGNR_A, listOf(Mottakerutbetalinger(ARBEIDSGIVER, listOf(Utbetalingsperiode(1.januar, 10.januar, 100))))),
+                            Yrkesaktivitet(ORGNR_B, listOf(Mottakerutbetalinger(ARBEIDSGIVER, listOf(Utbetalingsperiode(15.januar, 31.januar, 100))))),
+                        ),
+                ),
+            ),
+            perioder,
+        )
+    }
+
+    @Test
+    fun `to tilfeller som henger sammen i tid, gir to perioder`() {
+        val perioder =
+            listOf(
+                lagLinje(16.januar, 31.januar, versjon = INFOTRYGD_V1, skjæringstidspunkt = 16.januar),
+                lagLinje(1.januar, 15.januar, versjon = INFOTRYGD_V1, skjæringstidspunkt = 1.januar),
+            ).somSykepengeperioder()
+
+        assertEquals(
+            listOf(Triple(1.januar, 1.januar, 15.januar), Triple(16.januar, 16.januar, 31.januar)),
+            perioder.map { (it as InfotrygdV1Periode).let { periode -> Triple(periode.skjæringstidspunkt, periode.fom, periode.tom) } },
+        )
     }
 
     @Test
@@ -189,6 +230,7 @@ internal class SykepengeperioderTest {
         private val PERSONIDENTIFIKATOR = Personidentifikator(lagIdentitetsnummer())
         private const val ORGNR_A = "111111111"
         private const val ORGNR_B = "222222222"
+        private val SKJÆRINGSTIDSPUNKT = 1.januar
 
         private fun lagLinje(
             fom: LocalDate,
@@ -198,13 +240,15 @@ internal class SykepengeperioderTest {
             mottaker: Mottaker = ARBEIDSGIVER,
             grad: Int = 100,
             usikkerGrad: Boolean = false,
+            skjæringstidspunkt: LocalDate = SKJÆRINGSTIDSPUNKT,
         ): UtbetaltLinje =
             when (versjon) {
                 SPEIL_V1 -> SpeilV1Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad)
                 SPEIL_V2 -> SpeilV2Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, fom, tom, grad)
                 SPEIL_V3 -> SpeilV3Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad)
                 SPEIL_V4 -> SpeilV4Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad)
-                INFOTRYGD_V1 -> InfotrygdV1Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, usikkerGrad)
+                SPEIL_V5 -> SpeilV5Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, skjæringstidspunkt)
+                INFOTRYGD_V1 -> InfotrygdV1Linje(PERSONIDENTIFIKATOR, organisasjonsnummer, mottaker, fom, tom, grad, usikkerGrad, skjæringstidspunkt)
             }
     }
 }
