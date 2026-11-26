@@ -7,6 +7,10 @@ metadata:
     team: tbd
 spec:
   port: 8080
+  startup:
+    path: isalive
+    periodSeconds: 5
+    failureThreshold: 36
   liveness:
     path: isalive
     initialDelay: 5
