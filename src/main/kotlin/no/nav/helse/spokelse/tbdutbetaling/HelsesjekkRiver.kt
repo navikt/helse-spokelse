@@ -8,6 +8,7 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
+import no.nav.helse.spokelse.Miljø
 import no.nav.sykepenger.libs.logging.loggError
 import no.nav.sykepenger.libs.logging.loggInfo
 import org.slf4j.event.Level
@@ -22,6 +23,7 @@ import java.time.temporal.ChronoUnit.WEEKS
 internal class HelsesjekkRiver(
     rapidsConnection: RapidsConnection,
     private val dao: TbdUtbetalingDao,
+    miljø: Miljø,
 ) : River.PacketListener {
     init {
         River(rapidsConnection)
@@ -32,16 +34,19 @@ internal class HelsesjekkRiver(
                     it.interestedIn("ukedag")
                 }
             }.register(this)
-        River(rapidsConnection)
-            .apply {
-                precondition {
-                    it.requireValue("@event_name", "halv_time")
-                    it.forbidValues("ukedag", listOf("SATURDAY", "SUNDAY"))
-                }
-                validate {
-                    it.requireKey("system_participating_services", "@opprettet")
-                }
-            }.register(this)
+        // Dev har for lite trafikk til at helsesjekken gir mening, så der kjører den bare når den startes manuelt.
+        if (miljø == Miljø.PROD) {
+            River(rapidsConnection)
+                .apply {
+                    precondition {
+                        it.requireValue("@event_name", "halv_time")
+                        it.forbidValues("ukedag", listOf("SATURDAY", "SUNDAY"))
+                    }
+                    validate {
+                        it.requireKey("system_participating_services", "@opprettet")
+                    }
+                }.register(this)
+        }
     }
 
     override fun onPacket(

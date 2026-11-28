@@ -38,6 +38,7 @@ dependencies {
     testImplementation(testFixtures(libs.sykepengerLibs.postgres))
     testImplementation(libs.sykepengerLibs.testing)
     testImplementation(libs.tbdLibs.naisfulTestApp)
+    testImplementation(libs.tbdLibs.rapidsAndRiversTest)
     testImplementation(libs.tbdLibs.signedJwtIssuerTest)
     testImplementation(libs.jsonassert)
 }

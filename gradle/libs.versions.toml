@@ -39,6 +39,7 @@ tbdLibs-naisfulApp = { module = "com.github.navikt.tbd-libs:naisful-app", versio
 tbdLibs-populasjonstilgangskontrollApi = { module = "com.github.navikt.tbd-libs:populasjonstilgangskontroll-provider-api", version.ref = "tbdLibs" }
 tbdLibs-populasjonstilgangskontrollTilgangsmaskinen = { module = "com.github.navikt.tbd-libs:populasjonstilgangskontroll-provider-tilgangsmaskinen", version.ref = "tbdLibs" }
 tbdLibs-naisfulTestApp = { module = "com.github.navikt.tbd-libs:naisful-test-app", version.ref = "tbdLibs" }
+tbdLibs-rapidsAndRiversTest = { module = "com.github.navikt.tbd-libs:rapids-and-rivers-test", version.ref = "tbdLibs" }
 tbdLibs-signedJwtIssuerTest = { module = "com.github.navikt.tbd-libs:signed-jwt-issuer-test", version.ref = "tbdLibsSignedJwtIssuerTest" }
 
 [bundles]

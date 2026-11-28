@@ -143,7 +143,7 @@ fun launchApplication(env: Map<String, String>) {
                 }
             },
         ).apply {
-            registerRivers(tbdUtbetalingDao, utbetalingVarsel)
+            registerRivers(tbdUtbetalingDao, utbetalingVarsel, miljø)
             register(tbdUtbetalingKonsument)
             register(tbdVedtakKonsument)
             register(
@@ -159,8 +159,9 @@ fun launchApplication(env: Map<String, String>) {
 internal fun RapidsConnection.registerRivers(
     tbdUtbetalingDao: TbdUtbetalingDao,
     utbetalingVarsel: UtbetalingVarsel,
+    miljø: Miljø,
 ) {
-    HelsesjekkRiver(this, tbdUtbetalingDao)
+    HelsesjekkRiver(this, tbdUtbetalingDao, miljø)
     NyInformasjonIInfotrygdPåPersonSpleisKjennerTilRiver(this, utbetalingVarsel)
     NyInformasjonIInfotrygdPåPersonSpleisIkkeKjennerTilRiver(this, utbetalingVarsel)
 }
